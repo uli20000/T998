@@ -1,14 +1,633 @@
-🧧
-刮刮樂代碼查詢
-紅白金質感配色 • 智慧按鍵過濾
-🐾
-mini 說
-嗨！輸入刮刮樂上的英文字母，我幫你看看財神爺有沒有來！✨
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>刮刮樂代碼查詢 ✨ mini 陪你開獎</title>
+  <style>
+    /* ===== 全域重置與基礎 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-等待輸入...
-🎉
----
----
----
----
-再查一張 🎰
+    :root {
+      --pure-white: #FFFFFF;
+      --soft-white: #F8F9FA;
+      --gold: #D4AF37; /* 質感金 */
+      --red: #C0392B; /* 經典紅 */
+      --text-dark: #2C3E50;
+      --text-gray: #7F8C8D;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+      background-color: var(--soft-white);
+      color: var(--text-dark);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== 主容器 ===== */
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 60px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ===== 標題區 ===== */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header-icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      color: var(--text-gray);
+      font-size: 0.85rem;
+    }
+
+    /* ===== mini 角色卡 ===== */
+    .mini-card {
+      width: 100%;
+      background: var(--pure-white);
+      border-left: 5px solid var(--red);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .mini-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--red);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .mini-speech {
+      flex: 1;
+    }
+
+    .mini-name {
+      font-size: 0.75rem;
+      color: var(--red);
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .mini-text {
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      line-height: 1.4;
+    }
+
+    /* ===== 輸入區 ===== */
+    .input-section {
+      width: 100%;
+      background: var(--pure-white);
+      border-radius: 24px;
+      padding: 24px 16px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    /* 三格代碼顯示 */
+    .code-display {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .code-box {
+      width: 70px;
+      height: 85px;
+      border-radius: 16px;
+      border: 2px solid #EEE;
+      background: #FDFDFD;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--red);
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .code-box.active {
+      border-color: var(--red);
+      background: white;
+      box-shadow: 0 0 15px rgba(192, 57, 43, 0.1);
+    }
+
+    .code-box.filled {
+      border-color: var(--gold);
+      background: #FFFBF0;
+    }
+
+    .code-box .cursor {
+      width: 3px;
+      height: 36px;
+      background: var(--red);
+      animation: blink 1s step-end infinite;
+    }
+
+    /* 智慧鍵盤區 */
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .key-btn {
+      aspect-ratio: 0.85;
+      border-radius: 10px;
+      border: 1px solid #EEE;
+      background: white;
+      color: var(--text-dark);
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-shadow: 0 2px 0 #DDD;
+    }
+
+    .key-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 #DDD;
+      background: #F5F5F5;
+    }
+
+    .key-btn.disabled {
+      opacity: 0.1;
+      pointer-events: none;
+      filter: grayscale(1);
+    }
+
+    .key-btn.highlight {
+      border-color: var(--red);
+      color: var(--red);
+      background: #FFF5F5;
+      box-shadow: 0 2px 0 var(--red);
+      font-size: 1.3rem;
+    }
+
+    .key-btn.special {
+      grid-column: span 1;
+      background: #F0F0F0;
+      font-size: 0.8rem;
+      color: var(--text-gray);
+    }
+
+    .key-btn.delete-btn {
+      grid-column: span 1;
+      background: #FFF5F5;
+      color: var(--red);
+      border-color: #FFE0E0;
+    }
+
+    /* ===== 預測結果區 ===== */
+    .prediction-section {
+      width: 100%;
+    }
+
+    .prediction-title {
+      font-size: 0.85rem;
+      color: var(--text-gray);
+      margin-bottom: 12px;
+      padding-left: 4px;
+      font-weight: 700;
+    }
+
+    .prediction-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pred-item {
+      background: var(--pure-white);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .pred-item:active {
+      transform: scale(0.98);
+      border-color: var(--gold);
+    }
+
+    .pred-code {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 2px;
+    }
+
+    .pred-amount {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    /* ===== 最終結果彈窗 ===== */
+    .result-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .result-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .result-card {
+      width: 100%;
+      max-width: 340px;
+      background: white;
+      border-radius: 28px;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      transform: scale(0.9);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-top: 8px solid var(--red);
+    }
+
+    .result-overlay.show .result-card {
+      transform: scale(1);
+    }
+
+    .result-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .result-code {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 6px;
+      margin-bottom: 4px;
+    }
+
+    .result-amount {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: var(--gold);
+      margin: 12px 0;
+    }
+
+    .result-detail {
+      font-size: 0.9rem;
+      color: var(--text-gray);
+      margin-bottom: 20px;
+    }
+
+    .result-msg {
+      background: #FFF9E6;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      color: #856404;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .close-btn {
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 0;
+      width: 100%;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @media (max-width: 380px) {
+      .code-box { width: 60px; height: 75px; font-size: 2rem; }
+      .key-btn { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <div class="header">
+    <span class="header-icon">🧧</span>
+    <h1>刮刮樂代碼查詢</h1>
+    <p>紅白金質感配色 • 智慧按鍵過濾</p>
+  </div>
+
+  <div class="mini-card">
+    <div class="mini-avatar">🐾</div>
+    <div class="mini-speech">
+      <div class="mini-name">mini 說</div>
+      <div class="mini-text" id="mini-text">嗨！輸入刮刮樂上的英文字母，我幫你看看財神爺有沒有來！✨</div>
+    </div>
+  </div>
+
+  <div class="input-section">
+    <div class="code-display">
+      <div class="code-box" id="box-0"><span class="cursor"></span></div>
+      <div class="code-box" id="box-1"></div>
+      <div class="code-box" id="box-2"></div>
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <div class="prediction-section">
+    <div class="prediction-title" id="pred-title">等待輸入...</div>
+    <div class="prediction-list" id="prediction-list"></div>
+  </div>
+</div>
+
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <span class="result-icon" id="res-icon">🎉</span>
+    <div class="result-code" id="res-code">---</div>
+    <div class="result-amount" id="res-amount">---</div>
+    <div class="result-detail" id="res-detail">---</div>
+    <div class="result-msg" id="res-msg">---</div>
+    <button class="close-btn" onclick="resetApp()">再查一張 🎰</button>
+  </div>
+</div>
+
+<script>
+// 獎金對照表
+const PRIZE_TABLE = {
+  "HUN": 100, "TWO": 200, "THR": 300, "FOR": 400, "FIV": 500,
+  "SIX": 600, "SEV": 700, "EGT": 800, "NIN": 900, "THO": 1000,
+  "ELE": 1100, "TWL": 1200, "TRN": 1300, "TFH": 1400, "FTN": 1500,
+  "TSN": 1600, "SEN": 1700, "EGN": 1800, "TTH": 2000, "TTT": 2100,
+  "EET": 2500, "TRT": 3000, "TSF": 3500, "TTS": 3600, "FHO": 4200,
+  "FCH": 4500, "FVT": 5000, "SXT": 6000, "SVT": 7000, "SCH": 7500,
+  "ETT": 8000, "NIT": 9000, "TEN": 10000, "ELT": 11000, "FRT": 14000,
+  "FCT": 15000, "SIT": 16000, "ETH": 18000, "TTO": 20000, "TTF": 25000,
+  "THY": 30000, "FTY": 50000, "SVY": 70000, "ETY": 80000, "NTY": 90000,
+  "OHK": 100000, "OML": 1000000, "TML": 2000000, "TOP": "頭獎"
+};
+
+const MINI_MSGS = {
+  idle: "嗨！輸入刮刮樂上的英文字母，我幫你看看財神爺有沒有來！✨",
+  p1: "有機會喔！感覺財神爺在附近了！🧧",
+  p2: "心跳開始加速了，會是大獎嗎？Mifa 衝啊！🔥",
+  win: "恭喜 Mifa！這張手氣真的太旺了！要把好運分享給 mini 嗎？🎊",
+  lose: "咦？沒看到這個代碼，要不要再仔細看一遍刮刮樂？🔍"
+};
+
+let currentInput = "";
+const ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+// 初始化鍵盤
+function initKeyboard() {
+  const kb = document.getElementById("keyboard");
+  kb.innerHTML = "";
+  
+  // 獲取當前可選字母
+  const validNextLetters = getValidNextLetters();
+
+  ALL_LETTERS.forEach(l => {
+    const btn = document.createElement("button");
+    btn.className = "key-btn";
+    btn.textContent = l;
+    
+    if (!validNextLetters.has(l)) {
+      btn.classList.add("disabled");
+    } else if (currentInput.length > 0) {
+      btn.classList.add("highlight");
+    }
+
+    btn.onclick = () => handleInput(l);
+    kb.appendChild(btn);
+  });
+
+  // 功能鍵
+  const del = document.createElement("button");
+  del.className = "key-btn delete-btn";
+  del.textContent = "⌫";
+  del.onclick = handleBack;
+  kb.appendChild(del);
+
+  const clr = document.createElement("button");
+  clr.className = "key-btn special";
+  clr.textContent = "清除";
+  clr.onclick = resetApp;
+  kb.appendChild(clr);
+}
+
+// 智慧過濾邏輯
+function getValidNextLetters() {
+  const valid = new Set();
+  const codes = Object.keys(PRIZE_TABLE);
+  
+  for (let code of codes) {
+    if (code.startsWith(currentInput)) {
+      const nextChar = code[currentInput.length];
+      if (nextChar) valid.add(nextChar);
+    }
+  }
+  return valid;
+}
+
+// 輸入處理
+function handleInput(l) {
+  if (currentInput.length >= 3) return;
+  currentInput += l;
+  updateUI();
+  if (currentInput.length === 3) {
+    setTimeout(showResult, 300);
+  }
+}
+
+// 刪除處理
+function handleBack() {
+  if (currentInput.length === 0) return;
+  currentInput = currentInput.slice(0, -1);
+  updateUI();
+}
+
+// 更新介面
+function updateUI() {
+  // 更新格子
+  for (let i = 0; i < 3; i++) {
+    const box = document.getElementById(`box-${i}`);
+    box.className = "code-box";
+    if (i < currentInput.length) {
+      box.textContent = currentInput[i];
+      box.classList.add("filled");
+    } else if (i === currentInput.length) {
+      box.innerHTML = '<span class="cursor"></span>';
+      box.classList.add("active");
+    } else {
+      box.textContent = "";
+    }
+  }
+
+  // 更新 mini 話語
+  const mini = document.getElementById("mini-text");
+  if (currentInput.length === 0) mini.textContent = MINI_MSGS.idle;
+  else if (currentInput.length === 1) mini.textContent = MINI_MSGS.p1;
+  else if (currentInput.length === 2) mini.textContent = MINI_MSGS.p2;
+
+  // 更新預測
+  updatePredictions();
+  // 更新鍵盤
+  initKeyboard();
+}
+
+// 更新預測列表
+function updatePredictions() {
+  const list = document.getElementById("prediction-list");
+  const title = document.getElementById("pred-title");
+  list.innerHTML = "";
+
+  if (currentInput === "") {
+    title.textContent = "等待輸入...";
+    return;
+  }
+
+  const matches = Object.entries(PRIZE_TABLE)
+    .filter(([code]) => code.startsWith(currentInput))
+    .sort((a, b) => {
+      const valA = typeof a[1] === 'number' ? a[1] : 9999999;
+      const valB = typeof b[1] === 'number' ? b[1] : 9999999;
+      return valB - valA;
+    });
+
+  title.textContent = matches.length > 0 ? `符合 ${matches.length} 個可能代碼` : "無符合代碼";
+
+  matches.forEach(([code, prize]) => {
+    const item = document.createElement("div");
+    item.className = "pred-item";
+    item.innerHTML = `
+      <span class="pred-code">${code}</span>
+      <span class="pred-amount">${formatPrize(prize)}</span>
+    `;
+    item.onclick = () => {
+      currentInput = code;
+      updateUI();
+      showResult();
+    };
+    list.appendChild(item);
+  });
+}
+
+// 格式化獎金
+function formatPrize(p) {
+  if (p === "頭獎") return "🏆 頭獎";
+  if (p >= 10000) return `$${(p/10000).toFixed(p%10000===0?0:1)}萬`;
+  return `$${p.toLocaleString()}`;
+}
+
+// 顯示結果彈窗
+function showResult() {
+  const prize = PRIZE_TABLE[currentInput];
+  const overlay = document.getElementById("result-overlay");
+  
+  document.getElementById("res-code").textContent = currentInput;
+  
+  if (prize === undefined) {
+    document.getElementById("res-icon").textContent = "🔍";
+    document.getElementById("res-amount").textContent = "查無此代碼";
+    document.getElementById("res-detail").textContent = "請確認刮刮樂上的字母是否正確";
+    document.getElementById("res-msg").textContent = MINI_MSGS.lose;
+  } else {
+    document.getElementById("res-icon").textContent = prize === "頭獎" || prize >= 100000 ? "💰" : "🎉";
+    document.getElementById("res-amount").textContent = formatPrize(prize);
+    document.getElementById("res-detail").textContent = prize === "頭獎" ? "恭喜獲得最高榮譽！" : `（新台幣 ${prize.toLocaleString()} 元）`;
+    document.getElementById("res-msg").textContent = MINI_MSGS.win;
+  }
+  
+  overlay.classList.add("show");
+}
+
+// 重置應用
+function resetApp() {
+  currentInput = "";
+  document.getElementById("result-overlay").classList.remove("show");
+  updateUI();
+}
+
+// 鍵盤快捷鍵支援
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toUpperCase();
+  if (/^[A-Z]$/.test(key)) {
+    const valid = getValidNextLetters();
+    if (valid.has(key)) handleInput(key);
+  } else if (e.key === 'Backspace') {
+    handleBack();
+  } else if (e.key === 'Escape') {
+    resetApp();
+  }
+});
+
+// 初始化
+initKeyboard();
+</script>
+</body>
+</html>
