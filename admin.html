@@ -1,1 +1,3359 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4f0e8">
+<title>KFC｜T998 巡檢後台</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --red:#c8102e;
+  --black:#242424;
+  --gray:#77736d;
+  --linen:#f4f0e8;
+  --paper:#fff;
+  --line:#ddd8ce;
+  --green:#356b4b;
+  --green-bg:#eef5f0;
+  --danger:#b42318;
+  --danger-bg:#fff0ee;
+  --yellow:#9a6b00;
+  --yellow-bg:#fff8df;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--linen);
+  color:var(--black);
+  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Helvetica Neue",Arial,sans-serif;
+  text-align:center
+}
+
+button,input,textarea{font-family:inherit}
+button{cursor:pointer}
+
+.page{
+  max-width:900px;
+  margin:auto;
+  padding-bottom:50px
+}
+
+.header{
+  background:#fff;
+  padding:30px 20px 26px;
+  border-bottom:1px solid var(--line)
+}
+
+.eyebrow{
+  color:var(--gray);
+  font-size:12px;
+  letter-spacing:4px;
+  margin-bottom:8px
+}
+
+.title-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px
+}
+
+.title{
+  margin:0;
+  font-size:34px;
+  font-weight:800
+}
+
+.kfc{
+  color:var(--red);
+  font-size:28px;
+  font-weight:900
+}
+
+.date{
+  margin-top:10px;
+  color:var(--gray);
+  font-size:14px
+}
+
+.section{
+  padding:22px 16px 0
+}
+
+.section-title{
+  margin-bottom:14px;
+  font-size:20px;
+  font-weight:800
+}
+
+.summary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px
+}
+
+.summary-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px 8px
+}
+
+.summary-card.clickable{
+  cursor:pointer
+}
+
+.summary-label{
+  color:var(--gray);
+  font-size:13px;
+  margin-bottom:8px
+}
+
+.summary-number{
+  font-size:30px;
+  font-weight:800
+}
+
+.summary-card.done .summary-number{
+  color:var(--green)
+}
+
+.summary-card.abnormal .summary-number{
+  color:var(--danger)
+}
+
+.search-box{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px
+}
+
+.search-input{
+  width:100%;
+  height:54px;
+  border:2px solid #d8d3ca;
+  border-radius:14px;
+  padding:0 16px;
+  font-size:18px;
+  text-align:center;
+  outline:none
+}
+
+.search-input:focus{
+  border-color:var(--red)
+}
+
+.action-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px
+}
+
+.action-btn{
+  height:48px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+  font-size:15px;
+  font-weight:800
+}
+
+.action-btn.danger{
+  background:var(--danger-bg);
+  color:var(--danger);
+  border-color:#e7b7b2
+}
+
+.vehicle-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.vehicle-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  cursor:pointer
+}
+
+.vehicle-card.has-unresolved{
+  border:2px solid var(--danger);
+  background:#fffafa
+}
+
+.vehicle-card.oil-warning{
+  border:2px solid #e1c66e;
+  background:#fffdf5
+}
+
+.vehicle-card.oil-danger{
+  border:2px solid #d9958d;
+  background:#fffafa
+}
+
+.vehicle-top{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px
+}
+
+.plate{
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:1px
+}
+
+.center{
+  font-size:13px;
+  color:var(--gray);
+  font-weight:700
+}
+
+.status,
+.oil-status{
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  padding:5px 11px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:800
+}
+
+.status-normal,
+.oil-normal{
+  background:var(--green-bg);
+  color:var(--green)
+}
+
+.status-abnormal,
+.oil-danger{
+  background:var(--danger-bg);
+  color:var(--danger)
+}
+
+.status-none,
+.oil-none{
+  background:#f1eee8;
+  color:var(--gray)
+}
+
+.oil-warning{
+  background:var(--yellow-bg);
+  color:var(--yellow)
+}
+
+.vehicle-card.claim-pending{
+  border:2px solid #6f9b7a;
+  background:#f7fbf8
+}
+
+.claim-pending-badge{
+  padding:5px 10px;
+  border-radius:20px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:12px;
+  font-weight:800
+}
+
+.unresolved-badge{
+  padding:5px 10px;
+  border-radius:20px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:12px;
+  font-weight:800
+}
+
+.priority-badge{
+  padding:4px 10px;
+  border-radius:20px;
+  background:var(--danger);
+  color:#fff;
+  font-size:11px;
+  font-weight:800
+}
+
+.vehicle-info{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  margin-top:10px;
+  gap:5px;
+  color:var(--gray);
+  font-size:13px
+}
+
+.vehicle-info>div{
+  padding:5px 3px
+}
+
+.vehicle-info strong{
+  display:block;
+  margin-top:3px;
+  color:var(--black);
+  font-size:14px
+}
+
+.claim-info{
+  grid-column:1 / -1;
+  padding:7px 3px 2px;
+  border-top:1px solid var(--line);
+  color:var(--gray);
+  font-size:12px;
+  line-height:1.6
+}
+
+.claim-info strong{
+  display:inline;
+  margin:0 12px 0 4px;
+  color:var(--black);
+  font-size:13px
+}
+
+.empty,
+.loading{
+  padding:40px 20px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  color:var(--gray)
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  justify-content:center;
+  align-items:flex-end;
+  z-index:1000
+}
+
+.modal.show{
+  display:flex
+}
+
+.modal-content{
+  width:100%;
+  max-width:700px;
+  max-height:90vh;
+  overflow-y:auto;
+  background:#fff;
+  border-radius:25px 25px 0 0;
+  padding:24px 18px 35px
+}
+
+.modal-title{
+  font-size:25px;
+  font-weight:800
+}
+
+.modal-subtitle{
+  color:var(--gray);
+  margin-top:5px;
+  font-size:14px
+}
+
+.quick-list,
+.history{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:18px
+}
+
+.quick-item,
+.history-card{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  background:#faf9f6
+}
+
+.quick-item{
+  cursor:pointer
+}
+
+.quick-plate{
+  font-size:21px;
+  font-weight:800
+}
+
+.quick-center{
+  margin-top:5px;
+  color:var(--gray);
+  font-size:14px
+}
+
+.quick-detail{
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+  background:#fff;
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.6
+}
+
+.health-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.health-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:12px
+}
+
+.health-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px
+}
+
+.health-item{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px 8px
+}
+
+.health-label{
+  color:var(--gray);
+  font-size:12px
+}
+
+.health-value{
+  margin-top:5px;
+  font-size:15px;
+  font-weight:800
+}
+
+.oil-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.oil-panel-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:10px
+}
+
+.oil-panel-info{
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.8
+}
+
+'.oil-panel-status{
+  margin-top:10px;
+  font-size:17px;
+  font-weight:800
+}
+
+.claim-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.claim-panel-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:10px
+}
+
+.claim-summary{
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.7;
+  margin-bottom:12px
+}
+
+.claim-card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  margin-top:10px
+}
+
+.claim-card:first-child{
+  margin-top:0
+}
+
+.claim-time{
+  font-size:13px;
+  color:var(--gray);
+  margin-bottom:7px
+}
+
+.claim-person{
+  font-size:17px;
+  font-weight:800
+}
+
+.claim-detail{
+  margin-top:8px;
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.8
+}
+
+.oil-action,
+.resolve-btn,
+.close-btn{
+  width:100%;
+  height:50px;
+  margin-top:14px;
+  border:0;
+  border-radius:14px;
+  color:#fff;
+  font-size:16px;
+  font-weight:800
+}
+
+.oil-action{
+  background:var(--red)
+}
+
+.resolve-btn{
+  background:var(--green)
+}
+
+.close-btn{
+  height:52px;
+  background:var(--black)
+}
+
+.history-top{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px
+}
+
+.history-date{
+  font-size:14px;
+  color:var(--gray)
+}
+
+.history-mileage{
+  margin-top:12px;
+  font-size:18px;
+  font-weight:800
+}
+
+.history-normal{
+  margin-top:10px;
+  padding:10px;
+  border-radius:11px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:14px;
+  font-weight:700
+}
+
+.history-abnormal{
+  margin-top:10px;
+  padding:12px;
+  border-radius:11px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:14px;
+  line-height:1.7;
+  white-space:pre-wrap
+}
+
+.unresolved-box{
+  margin-top:12px;
+  padding:14px;
+  border-radius:12px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:14px;
+  line-height:1.7
+}
+
+.resolution-note{
+  width:100%;
+  min-height:90px;
+  margin-top:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  resize:vertical;
+  text-align:center;
+  font-size:15px;
+  outline:none
+}
+
+.resolved-box{
+  margin-top:12px;
+  padding:13px;
+  border-radius:12px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:14px;
+  line-height:1.8
+}
+
+@media(max-width:700px){
+  .summary{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px
+  }
+
+  .summary-card:first-child{
+    grid-column:auto
+  }
+
+  .summary-card{
+    padding:14px 6px;
+    border-radius:16px
+  }
+
+  .summary-label{
+    font-size:12px;
+    margin-bottom:6px
+  }
+
+  .summary-number{
+    font-size:25px
+  }
+
+  .title{
+    font-size:28px
+  }
+
+  .kfc{
+    font-size:24px
+  }
+
+  .action-row{
+    grid-template-columns:1fr
+  }
+
+  .vehicle-list{
+    gap:7px
+  }
+
+  .vehicle-card{
+    padding:12px;
+    border-radius:15px
+  }
+
+  .vehicle-top{
+    gap:5px
+  }
+
+  .plate{
+    font-size:19px
+  }
+
+  .vehicle-info{
+    margin-top:8px;
+    font-size:12px
+  }
+
+  .vehicle-info strong{
+    font-size:13px
+  }
+}
+
+
+.admin-menu{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  padding:20px 16px 0;
+}
+
+.admin-mode-btn{
+  min-height:110px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 3px 12px rgba(0,0,0,.035);
+  font-size:18px;
+  font-weight:800;
+}
+
+.admin-mode-btn .icon{
+  display:block;
+  font-size:32px;
+  margin-bottom:8px;
+}
+
+.admin-mode-page{display:none}
+
+.card-abnormal-text{
+  max-width:100%;
+  margin-top:6px;
+  color:var(--danger);
+  font-size:12px;
+  line-height:1.45;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.resolved-detail{
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:11px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:12px;
+  line-height:1.65;
+}
+
+.resolved-detail summary{
+  cursor:pointer;
+  font-weight:800;
+}
+
+.survey-summary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.survey-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:15px;
+  text-align:left;
+}
+
+.survey-card-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+}
+
+.survey-name{font-size:18px;font-weight:800}
+.survey-time{color:var(--gray);font-size:12px}
+.survey-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.survey-item{padding:9px;border-radius:10px;background:#faf9f6;color:var(--gray);font-size:13px;line-height:1.5}
+.survey-item strong{display:block;color:var(--black);font-size:15px}
+.survey-result-pass{color:var(--green)!important}
+.survey-result-fail{color:var(--danger)!important}
+.survey-detail{margin-top:10px;color:var(--gray);font-size:13px;line-height:1.6}
+.record-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.record-actions .action-btn{width:auto;min-width:104px;padding:9px 12px;font-size:13px}
+.record-actions .delete-btn{background:var(--danger-bg);border:1px solid #e2aaa4;color:var(--danger);cursor:pointer;border-radius:10px;font:inherit;font-weight:800;padding:9px 12px;min-width:104px}
+.mode-tools{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+
+@media(max-width:700px){
+  .admin-menu{grid-template-columns:1fr}
+  .survey-summary{grid-template-columns:repeat(2,1fr)}
+}
+
+
+.mode-back-row{padding:16px 16px 0}
+.mode-back-row .action-btn{width:100%}
+
+
+
+/* 前後台標題字體統一 */
+.title{font-size:30px;line-height:1.2}
+@media(max-width:700px){.title{font-size:26px}}
+
+
+
+/* 三行標題：城市-Rider Center／KFC／日期 */
+.header-row,
+.title-row{
+  flex-direction:column;
+  gap:4px;
+}
+.title{font-size:30px;line-height:1.2}
+.kfc{font-size:26px}
+.date{margin-top:4px;font-size:14px}
+@media(max-width:700px){.title{font-size:26px}}
+
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+<header class="header">
+  <div class="eyebrow">KFC DELIVERY CENTER</div>
+
+  <div class="title-row">
+    <h1 id="adminTitle" class="title">台南-Rider Center</h1>
+    <div class="kfc">KFC</div>
+  </div>
+
+  <div id="todayDate" class="date"></div>
+</header>
+
+<div id="adminModeMenu" class="admin-menu">
+  <button id="vehicleModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">🚗</span>
+    車輛檢查
+  </button>
+  <button id="surveyModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">📋</span>
+    意向調查
+  </button>
+  <button id="batteryModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">🔋</span>
+    電池設備查看
+  </button>
+</div>
+
+<section id="vehicleModePage" class="admin-mode-page">
+
+<div class="mode-back-row"><button id="vehicleBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+
+<section class="section">
+
+  <div class="section-title">今日車輛狀態</div>
+
+  <div class="summary">
+
+    <div class="summary-card">
+      <div class="summary-label">總車輛數</div>
+      <div id="totalCount" class="summary-number">—</div>
+    </div>
+
+    <div id="claimedCard" class="summary-card done clickable">
+      <div class="summary-label">已領車</div>
+      <div id="claimedCount" class="summary-number">—</div>
+    </div>
+
+    <div id="returnedCard" class="summary-card done clickable">
+      <div class="summary-label">已還車</div>
+      <div id="returnedCount" class="summary-number">—</div>
+    </div>
+
+    <div id="unresolvedCard" class="summary-card abnormal clickable">
+      <div class="summary-label">待處理</div>
+      <div id="unresolvedCount" class="summary-number">—</div>
+    </div>
+
+  </div>
+
+  <div class="action-row">
+    <button id="refreshBtn" class="action-btn">
+      ↻ 重新整理資料
+    </button>
+
+    <button id="cleanupBtn" class="action-btn danger">
+      🗑️ 清理 2 個月前資料
+    </button>
+  </div>
+
+</section>
+
+<section class="section">
+
+  <div class="section-title">查詢車輛</div>
+
+  <div class="search-box">
+    <input
+      id="searchInput"
+      class="search-input"
+      type="text"
+      inputmode="text"
+      placeholder="輸入車牌搜尋"
+      autocomplete="off"
+    >
+  </div>
+
+</section>
+
+<section class="section">
+
+  <div class="section-title">車輛列表</div>
+
+  <div id="vehicleList" class="vehicle-list">
+    <div class="loading">
+      載入車輛資料中…
+    </div>
+  </div>
+
+</section>
+
+<section class="section export-section">
+  <div class="section-title">月份資料匯出</div>
+  <div class="search-box">
+    <input id="exportMonth" class="search-input" type="month">
+    <button id="exportExcelBtn" class="action-btn" style="width:100%;margin-top:12px">📊 匯出 Excel</button>
+  </div>
+</section>
+
+</div>
+
+<section id="surveyModePage" class="admin-mode-page">
+  <div class="mode-back-row"><button id="surveyBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+  <section class="section">
+    <div class="section-title">駕駛意向調查</div>
+    <div id="surveySummary" class="survey-summary"></div>
+    <div class="search-box">
+      <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋填寫人姓名">
+      <div class="mode-tools">
+        <button id="surveyExportBtn" class="action-btn" type="button">📊 匯出意向調查</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div id="surveyResponseList" class="vehicle-list">
+      <div class="loading">尚未載入問卷資料</div>
+    </div>
+  </section>
+</section>
+
+<section id="batteryModePage" class="admin-mode-page">
+  <div class="mode-back-row"><button id="batteryBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+  <section class="section">
+    <div class="section-title">電池設備查看</div>
+    <div id="batterySummary" class="survey-summary"></div>
+    <div class="search-box">
+      <input id="batterySearchInput" class="search-input" type="text" placeholder="搜尋電池編號或餐廳店號">
+      <div class="mode-tools">
+        <button id="batteryRefreshBtn" class="action-btn" type="button">↻ 重新整理電池紀錄</button>
+        <button id="batteryExportBtn" class="action-btn" type="button">📊 匯出電池異常</button>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div id="batteryReportList" class="vehicle-list">
+      <div class="loading">尚未載入電池紀錄</div>
+    </div>
+  </section>
+</section>
+</div>
+
+<!-- 快速清單 -->
+<div id="quickModal" class="modal">
+
+  <div class="modal-content">
+
+    <div id="quickModalTitle" class="modal-title"></div>
+
+    <div id="quickModalSubtitle" class="modal-subtitle"></div>
+
+    <div id="quickList" class="quick-list"></div>
+
+    <button id="closeQuickModal" class="close-btn">
+      關閉
+    </button>
+
+  </div>
+
+</div>
+
+<!-- 車輛詳細 -->
+<div id="modal" class="modal">
+
+  <div class="modal-content">
+
+    <div id="modalTitle" class="modal-title"></div>
+
+    <div id="modalSubtitle" class="modal-subtitle"></div>
+
+    <div id="healthPanel"></div>
+
+    <div id="oilPanel"></div>
+
+    <div id="oilHistory"></div>
+
+    <div id="claimHistory"></div>
+
+    <div id="history" class="history"></div>
+
+    <button id="closeModal" class="close-btn">
+      關閉
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+  "https://flismbitnsaffebsepos.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_HjkU0Bonn1HyfxG19sAx-A_3tAcz8_W";
+
+const db =
+  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const OIL_INTERVAL = 1500;
+const OIL_WARNING_DISTANCE = 300;
+
+const $ = id =>
+  document.getElementById(id);
+
+const vehicleList =
+  $("vehicleList");
+
+const searchInput =
+  $("searchInput");
+
+const totalCount =
+  $("totalCount");
+
+const claimedCount =
+  $("claimedCount");
+
+const claimedCard =
+  $("claimedCard");
+
+const returnedCount =
+  $("returnedCount");
+
+const returnedCard =
+  $("returnedCard");
+
+const unresolvedCount =
+  $("unresolvedCount");
+
+const unresolvedCard =
+  $("unresolvedCard");
+
+const refreshBtn =
+  $("refreshBtn");
+
+const cleanupBtn =
+  $("cleanupBtn");
+
+const todayDate =
+  $("todayDate");
+
+const quickModal =
+  $("quickModal");
+
+const quickModalTitle =
+  $("quickModalTitle");
+
+const quickModalSubtitle =
+  $("quickModalSubtitle");
+
+const quickList =
+  $("quickList");
+
+const closeQuickModal =
+  $("closeQuickModal");
+
+const modal =
+  $("modal");
+
+const modalTitle =
+  $("modalTitle");
+
+const modalSubtitle =
+  $("modalSubtitle");
+
+const healthPanel =
+  $("healthPanel");
+
+const oilPanel =
+  $("oilPanel");
+
+const oilHistory =
+  $("oilHistory");
+
+const claimHistory =
+  $("claimHistory");
+
+const historyContainer =
+  $("history");
+
+const closeModal =
+  $("closeModal");
+
+const exportMonth =
+  $("exportMonth");
+
+const exportExcelBtn =
+  $("exportExcelBtn");
+
+const adminTitle = $("adminTitle");
+const adminModeMenu = $("adminModeMenu");
+const vehicleModePage = $("vehicleModePage");
+const surveyModePage = $("surveyModePage");
+const vehicleModeBtn = $("vehicleModeBtn");
+const surveyModeBtn = $("surveyModeBtn");
+const vehicleBackBtn = $("vehicleBackBtn");
+const surveyBackBtn = $("surveyBackBtn");
+const surveySearchInput = $("surveySearchInput");
+const surveyExportBtn = $("surveyExportBtn");
+const surveySummary = $("surveySummary");
+const surveyResponseList = $("surveyResponseList");
+const batteryModePage = $("batteryModePage");
+const batteryModeBtn = $("batteryModeBtn");
+const batteryBackBtn = $("batteryBackBtn");
+const batteryRefreshBtn = $("batteryRefreshBtn");
+const batteryExportBtn = $("batteryExportBtn");
+const batterySearchInput = $("batterySearchInput");
+const batterySummary = $("batterySummary");
+const batteryReportList = $("batteryReportList");
+let surveyResponses = [];
+let batteryReports = [];
+
+let vehicles = [];
+let allReports = [];
+let todayReports = [];
+let latestReports = [];
+let unresolvedReports = [];
+let allClaims = [];
+let claimLoadError = null;
+
+function esc(v){
+
+  return String(v ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+function fmt(v){
+
+  if(!v)
+    return "尚無紀錄";
+
+  const d =
+    new Date(v);
+
+  if(Number.isNaN(d.getTime()))
+    return "日期錯誤";
+
+  return d.toLocaleString(
+    "zh-TW",
+    {
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit",
+      hour:"2-digit",
+      minute:"2-digit"
+    }
+  );
+
+}
+
+function ranges(){
+
+  const n =
+    new Date();
+
+  const s =
+    new Date(
+      n.getFullYear(),
+      n.getMonth(),
+      n.getDate()
+    );
+
+  const e =
+    new Date(
+      n.getFullYear(),
+      n.getMonth(),
+      n.getDate()+1
+    );
+
+  return {
+    s,
+    e
+  };
+
+}
+
+/* =========================
+   車輛詳細頁只顯示最近 5 天
+   注意：只限制畫面顯示，不刪除雲端資料
+========================= */
+
+function fiveDayCutoff(){
+
+  const n = new Date();
+
+  return new Date(
+    n.getFullYear(),
+    n.getMonth(),
+    n.getDate()-4
+  );
+
+}
+
+function isWithinFiveDays(v){
+
+  if(!v)
+    return false;
+
+  const t = new Date(v).getTime();
+  const cutoff = fiveDayCutoff().getTime();
+
+  return !Number.isNaN(t) && t >= cutoff;
+
+}
+
+/* =========================
+   今日巡檢
+========================= */
+
+function todayReport(v){
+
+  return todayReports.find(
+    r => r.vehicle_id === v.id
+  ) || null;
+
+}
+
+/* =========================
+   最新巡檢
+========================= */
+
+function latestReport(v){
+
+  return latestReports.find(
+    r => r.vehicle_id === v.id
+  ) || null;
+
+}
+
+/* =========================
+   所有未解決異常
+   注意：
+   只要 abnormal + 尚未 resolved
+   不分今天或歷史
+========================= */
+
+function unresolvedForVehicle(v){
+
+  return unresolvedReports.filter(
+    r => r.vehicle_id === v.id
+  );
+
+}
+
+/* =========================
+   異常文字
+========================= */
+
+function abnormalText(r){
+
+  if(!r?.abnormal_items)
+    return "異常未填寫";
+
+  return Array.isArray(r.abnormal_items)
+    ? r.abnormal_items.join("、")
+    : String(r.abnormal_items);
+
+}
+
+/* =========================
+   機油狀態
+========================= */
+
+function oilStatus(v){
+
+  const l =
+    latestReport(v);
+
+  const cur =
+    l ? Number(l.mileage) : null;
+
+  const last =
+    v.last_oil_change_mileage != null
+      ? Number(v.last_oil_change_mileage)
+      : null;
+
+  if(
+    last == null ||
+    Number.isNaN(last)
+  ){
+
+    return {
+      type:"none",
+      text:"尚未設定換油基準",
+      current:cur,
+      last:null,
+      remaining:null
+    };
+
+  }
+
+  if(
+    cur == null ||
+    Number.isNaN(cur)
+  ){
+
+    return {
+      type:"none",
+      text:"等待里程",
+      current:null,
+      last,
+      remaining:null
+    };
+
+  }
+
+  const rem =
+    OIL_INTERVAL -
+    (cur-last);
+
+  if(rem <= 0){
+
+    return {
+      type:"danger",
+      text:`需要換油 ${Math.abs(rem)} km`,
+      current:cur,
+      last,
+      remaining:rem
+    };
+
+  }
+
+  if(rem <= OIL_WARNING_DISTANCE){
+
+    return {
+      type:"warning",
+      text:`即將換油，剩餘 ${rem} km`,
+      current:cur,
+      last,
+      remaining:rem
+    };
+
+  }
+
+  return {
+    type:"normal",
+    text:`距離換油剩餘 ${rem} km`,
+    current:cur,
+    last,
+    remaining:rem
+  };
+
+}
+
+/* =========================
+   領車狀態
+========================= */
+
+function latestClaim(v){
+
+  return allClaims.find(
+    r => r.vehicle_id === v.id
+  ) || null;
+
+}
+
+function isClaimPending(v){
+  return isClaimedToday(v) && !isReturnedToday(v);
+}
+
+/* =========================
+   車輛排序
+
+   1. 待處理異常
+   2. 已處理異常
+   3. 正常
+   4. 未檢查
+========================= */
+
+function isToday(value){
+  if(!value) return false;
+  const d = new Date(value);
+  const n = new Date();
+  return d.getFullYear() === n.getFullYear()
+    && d.getMonth() === n.getMonth()
+    && d.getDate() === n.getDate();
+}
+
+function isClaimedToday(v){
+  const claim = latestClaim(v);
+  return Boolean(claim && isToday(claim.claimed_at));
+}
+
+function isReturnedToday(v){
+  const claim = latestClaim(v);
+  const report = todayReport(v);
+  if(!claim || !report || !isToday(claim.claimed_at)) return false;
+  return new Date(report.reported_at).getTime() >= new Date(claim.claimed_at).getTime();
+}
+
+function priority(v){
+  if(unresolvedForVehicle(v).length) return 1;
+  if(isClaimedToday(v) && !isReturnedToday(v)) return 2;
+  if(isReturnedToday(v)) return 3;
+  return 4;
+}
+
+/* =========================
+   載入資料
+========================= */
+
+async function loadData(){
+
+  vehicleList.innerHTML =
+    '<div class="loading">載入資料中…</div>';
+
+  claimLoadError = null;
+
+  try{
+
+    const vr =
+      await db
+        .from("vehicles")
+        .select("*")
+        .eq("active",true)
+        .order("plate4",{ascending:true});
+
+    if(vr.error)
+      throw vr.error;
+
+    vehicles =
+      vr.data || [];
+
+    if(!vehicles.length){
+
+      allReports = [];
+      todayReports = [];
+      latestReports = [];
+      unresolvedReports = [];
+      allClaims = [];
+
+      updateSummary();
+      renderVehicles();
+
+      return;
+
+    }
+
+    const ids =
+      vehicles.map(v => v.id);
+
+    const rr =
+      await db
+        .from("inspection_reports")
+        .select("*")
+        .in("vehicle_id",ids)
+        .order("reported_at",{ascending:false});
+
+    if(rr.error)
+      throw rr.error;
+
+    allReports =
+      rr.data || [];
+
+    const {s,e} =
+      ranges();
+
+    todayReports =
+      allReports.filter(r => {
+
+        const t =
+          new Date(r.reported_at).getTime();
+
+        return (
+          t >= s.getTime() &&
+          t < e.getTime()
+        );
+
+      });
+
+    /* 最新一筆巡檢 */
+
+    const lm =
+      new Map();
+
+    allReports.forEach(r => {
+
+      if(!lm.has(r.vehicle_id))
+        lm.set(r.vehicle_id,r);
+
+    });
+
+    latestReports =
+      [...lm.values()];
+
+    /* 所有未解決異常 */
+
+    unresolvedReports =
+      allReports.filter(r => {
+
+        return (
+          r.overall_status === "abnormal" &&
+          r.resolution_status !== "resolved"
+        );
+
+      });
+
+    /*
+      領車資料獨立讀取：
+      claim_records 讀取失敗時，
+      不讓整個後台跟著顯示資料讀取失敗。
+    */
+
+    const cr =
+      await db
+        .from("claim_records")
+        .select("*")
+        .in("vehicle_id",ids)
+        .order("claimed_at",{ascending:false});
+
+    if(cr.error){
+
+      console.warn(
+        "領車紀錄讀取失敗：",
+        cr.error
+      );
+
+      allClaims = [];
+      claimLoadError = cr.error;
+
+    }
+    else{
+
+      allClaims =
+        cr.data || [];
+
+    }
+
+    updateSummary();
+    renderVehicles();
+
+  }
+  catch(e){
+
+    console.error(e);
+
+    vehicleList.innerHTML =
+      `
+      <div class="empty">
+
+        <strong>資料讀取失敗</strong>
+
+        <br><br>
+
+        ${esc(e.message || "未知錯誤")}
+
+      </div>
+      `;
+
+  }
+
+}
+/* =========================
+   上方統計
+========================= */
+
+function updateSummary(){
+  const unresolvedVehicleIds = new Set(
+    unresolvedReports.map(r => r.vehicle_id)
+  );
+
+  totalCount.textContent = vehicles.length;
+  // 已領車只計算「今天已領、目前尚未還車」的車輛
+  claimedCount.textContent = vehicles.filter(isClaimPending).length;
+  returnedCount.textContent = vehicles.filter(isReturnedToday).length;
+  unresolvedCount.textContent = unresolvedVehicleIds.size;
+}
+
+/* =========================
+   車輛列表
+========================= */
+
+function renderVehicles(){
+
+  const k =
+    searchInput.value
+      .trim()
+      .toLowerCase();
+
+  let list =
+    vehicles.filter(v => {
+
+      if(!k)
+        return true;
+
+      return [
+        v.plate4,
+        v.full_plate,
+        v.center
+      ]
+      .filter(Boolean)
+      .some(x =>
+        String(x)
+          .toLowerCase()
+          .includes(k)
+      );
+
+    });
+
+  list.sort(
+    (a,b) =>
+      priority(a) -
+      priority(b) ||
+      String(a.plate4 || "")
+        .localeCompare(
+          String(b.plate4 || "")
+        )
+  );
+
+  if(!list.length){
+
+    vehicleList.innerHTML =
+      '<div class="empty">找不到符合的車輛</div>';
+
+    return;
+
+  }
+
+  vehicleList.innerHTML = "";
+
+  list.forEach(v => {
+
+    const t =
+      todayReport(v);
+
+    const l =
+      latestReport(v);
+
+    const o =
+      oilStatus(v);
+
+    const u =
+      unresolvedForVehicle(v);
+
+    const claim =
+      latestClaim(v);
+
+    let sc =
+      t
+        ? (
+            t.overall_status === "abnormal"
+              ? "status-abnormal"
+              : "status-normal"
+          )
+        : "status-none";
+
+    let st =
+      t
+        ? (
+            t.overall_status === "abnormal"
+              ? "今日異常"
+              : "今日正常"
+          )
+        : "今日未巡檢";
+
+    let oc =
+      o.type === "danger"
+        ? "oil-danger"
+        : o.type === "warning"
+          ? "oil-warning"
+          : o.type === "normal"
+            ? "oil-normal"
+            : "oil-none";
+
+    const c =
+      document.createElement("div");
+
+    c.className =
+      `
+      vehicle-card
+      ${u.length ? "has-unresolved" : ""}
+      ${isClaimPending(v) ? "claim-pending" : ""}
+      ${o.type === "warning" ? "oil-warning" : ""}
+      ${o.type === "danger" ? "oil-danger" : ""}
+      `;
+
+    c.innerHTML =
+      `
+
+      <div class="vehicle-top">
+
+        ${
+          priority(v) === 1
+            ? '<div class="priority-badge">🔴 待處理</div>'
+            : isClaimedToday(v) && !isReturnedToday(v)
+              ? '<div class="claim-pending-badge">🟢 已領車｜未還車</div>'
+              : isReturnedToday(v)
+                ? '<div class="claim-pending-badge">✅ 已領車｜已還車</div>'
+                : '<div class="status status-none">⚪ 未領車</div>'
+        }
+
+        <div class="plate">
+          ${esc(v.full_plate || v.plate4 || "")}
+        </div>
+
+        <div class="center">
+          CENTER｜${esc(v.center || "未設定")}
+        </div>
+
+        <div class="status ${sc}">
+          ${st}
+        </div>
+
+        ${
+          u.length
+            ? `
+              <div class="unresolved-badge">待處理異常 ${u.length} 筆</div>
+              <div class="card-abnormal-text">${esc(abnormalText(u[0]))}</div>
+            `
+            : ""
+        }
+
+        <div class="oil-status ${oc}">
+          🛢️ ${esc(o.text)}
+        </div>
+
+      </div>
+
+      <div class="vehicle-info">
+
+        <div>
+          最新里程
+
+          <strong>
+            ${
+              l
+                ? Number(l.mileage).toLocaleString()+" km"
+                : "尚無紀錄"
+            }
+          </strong>
+        </div>
+
+        <div>
+          最新巡檢
+
+          <strong>
+            ${
+              l
+                ? fmt(l.reported_at)
+                : "尚無紀錄"
+            }
+          </strong>
+        </div>
+
+        <div class="claim-info">
+          最新領車人
+          <strong>${esc(claim?.claimant_name || "尚無紀錄")}</strong>
+          領車時間
+          <strong>${esc(claim ? fmt(claim.claimed_at) : "尚無紀錄")}</strong>
+        </div>
+
+      </div>
+
+      `;
+
+    c.onclick =
+      () => openHistory(v);
+
+    vehicleList.appendChild(c);
+
+  });
+
+}
+
+/* =========================
+   快速清單
+========================= */
+
+function openQuickList(type){
+
+  let list = [];
+
+  if(type === "claimed"){
+
+    list =
+      vehicles.filter(isClaimPending);
+
+    quickModalTitle.textContent =
+      "已領車｜尚未還車";
+
+  }
+  else if(type === "returned"){
+
+    list =
+      vehicles.filter(isReturnedToday);
+
+    quickModalTitle.textContent =
+      "已領車｜已還車";
+
+  }
+  else if(type === "pending"){
+
+    list =
+      vehicles.filter(
+        v => !todayReport(v)
+      );
+
+    quickModalTitle.textContent =
+      "尚未巡檢車輛";
+
+  }
+  else{
+
+    /*
+      現在只有一種異常清單：
+      所有尚未解決異常
+    */
+
+    const ids =
+      new Set(
+        unresolvedReports.map(
+          r => r.vehicle_id
+        )
+      );
+
+    list =
+      vehicles.filter(
+        v => ids.has(v.id)
+      );
+
+    quickModalTitle.textContent =
+      "待處理異常車輛";
+
+  }
+
+  quickModalSubtitle.textContent =
+    `共 ${list.length} 台｜點選車輛查看詳細紀錄`;
+
+  quickList.innerHTML = "";
+
+  if(!list.length){
+
+    quickList.innerHTML =
+      '<div class="empty">目前沒有符合資料</div>';
+
+  }
+  else{
+
+    list.forEach(v => {
+
+      const l =
+        latestReport(v);
+
+      const u =
+        unresolvedForVehicle(v)[0];
+
+      const o =
+        oilStatus(v);
+
+      const claim =
+        latestClaim(v);
+
+      let detail;
+
+      if(type === "unresolved" && u){
+
+        detail =
+          `
+          🔴 ${esc(abnormalText(u))}
+
+          <br>
+
+          發生時間：
+          ${esc(fmt(u.reported_at))}
+
+          <br>
+
+          里程：
+          ${Number(u.mileage || 0).toLocaleString()} km
+          `;
+
+      }
+      else{
+
+        detail =
+          `
+          最新里程：
+          ${
+            l
+              ? Number(l.mileage).toLocaleString()+" km"
+              : "尚無紀錄"
+          }
+
+          <br>
+
+          ${esc(o.text)}
+
+          <br>
+
+          最新領車人：${esc(claim?.claimant_name || "尚無紀錄")}
+
+          <br>
+
+          領車時間：${esc(claim ? fmt(claim.claimed_at) : "尚無紀錄")}
+          `;
+
+      }
+
+      const item =
+        document.createElement("div");
+
+      item.className =
+        "quick-item";
+
+      item.innerHTML =
+        `
+
+        <div class="quick-plate">
+          ${esc(v.full_plate || v.plate4)}
+        </div>
+
+        <div class="quick-center">
+          CENTER｜${esc(v.center || "未設定")}
+        </div>
+
+        <div class="quick-detail">
+          ${detail}
+        </div>
+
+        `;
+
+      item.onclick =
+        () => {
+
+          quickModal.classList.remove("show");
+
+          openHistory(v);
+
+        };
+
+      quickList.appendChild(item);
+
+    });
+
+  }
+
+  quickModal.classList.add("show");
+
+}
+
+/* =========================
+   車輛健康履歷
+========================= */
+
+function renderHealthPanel(v,reports){
+
+  const latest =
+    reports[0] || null;
+
+  const abnormalReports =
+    reports.filter(
+      r => r.overall_status === "abnormal"
+    );
+
+  const unresolved =
+    abnormalReports.filter(
+      r => r.resolution_status !== "resolved"
+    );
+
+  const oil =
+    oilStatus(v);
+
+  healthPanel.innerHTML =
+    `
+
+    <div class="health-panel">
+
+      <div class="health-title">
+        📋 車輛健康履歷
+      </div>
+
+      <div class="health-grid">
+
+        <div class="health-item">
+
+          <div class="health-label">
+            最近巡檢
+          </div>
+
+          <div class="health-value">
+            ${
+              latest
+                ? fmt(latest.reported_at)
+                : "尚無紀錄"
+            }
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            目前里程
+          </div>
+
+          <div class="health-value">
+            ${
+              latest
+                ? Number(latest.mileage).toLocaleString()+" km"
+                : "尚無紀錄"
+            }
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            巡檢次數
+          </div>
+
+          <div class="health-value">
+            ${reports.length} 次
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            最近狀態
+          </div>
+
+          <div class="health-value">
+            ${
+              latest
+                ? (
+                    latest.overall_status === "abnormal"
+                      ? "🔴 異常"
+                      : "🟢 正常"
+                  )
+                : "尚無紀錄"
+            }
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            累計異常
+          </div>
+
+          <div class="health-value">
+            ${abnormalReports.length} 筆
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            未解決異常
+          </div>
+
+          <div class="health-value">
+            ${
+              unresolved.length
+                ? `🔴 ${unresolved.length} 筆`
+                : "🟢 0 筆"
+            }
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            上次換油
+          </div>
+
+          <div class="health-value">
+            ${
+              oil.last != null
+                ? oil.last.toLocaleString()+" km"
+                : "尚未設定"
+            }
+          </div>
+
+        </div>
+
+        <div class="health-item">
+
+          <div class="health-label">
+            機油狀態
+          </div>
+
+          <div class="health-value">
+            ${esc(oil.text)}
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    `;
+
+}
+
+/* =========================
+   換油歷史
+========================= */
+
+async function renderOilHistory(v){
+
+  oilHistory.innerHTML =
+    '<div class="loading">讀取換油紀錄中…</div>';
+
+  try{
+    const r = await db
+      .from("oil_change_records")
+      .select("*")
+      .eq("vehicle_id",v.id)
+      .order("changed_at",{ascending:false});
+
+    if(r.error)
+      throw r.error;
+
+    const rows = r.data || [];
+
+    if(!rows.length){
+      oilHistory.innerHTML =
+        '<div class="empty" style="margin-top:18px">尚無換油紀錄</div>';
+      return;
+    }
+
+    oilHistory.innerHTML = `
+      <div class="health-panel">
+        <div class="health-title">🔧 換油紀錄</div>
+        <div class="history">
+          ${rows.map(x => `
+            <div class="history-card">
+              <div class="history-date">${esc(fmt(x.changed_at))}</div>
+              <div class="history-mileage">換油里程：${Number(x.mileage || 0).toLocaleString()} km</div>
+              ${x.note ? `<div class="quick-detail">${esc(x.note)}</div>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </div>`;
+  }
+  catch(e){
+    oilHistory.innerHTML =
+      `<div class="empty" style="margin-top:18px">換油紀錄讀取失敗：${esc(e.message || "未知錯誤")}</div>`;
+  }
+}
+
+/* =========================
+   領車歷史
+========================= */
+
+async function renderClaimHistory(v){
+
+  claimHistory.innerHTML =
+    '<div class="loading">讀取領車紀錄中…</div>';
+
+  try{
+
+    const r =
+      await db
+        .from("claim_records")
+        .select("*")
+        .eq("vehicle_id",v.id)
+        .order("claimed_at",{ascending:false});
+
+    if(r.error)
+      throw r.error;
+
+    const allRows =
+      r.data || [];
+
+    const rows =
+      allRows.filter(x =>
+        isWithinFiveDays(x.claimed_at)
+      );
+
+    if(!rows.length){
+
+      claimHistory.innerHTML =
+        `
+        <div class="claim-panel">
+          <div class="claim-panel-title">🚗 領車紀錄</div>
+          <div class="claim-summary">只顯示最近 5 天紀錄</div>
+          <div class="empty">最近 5 天尚無領車紀錄</div>
+        </div>
+        `;
+
+      return;
+
+    }
+
+    claimHistory.innerHTML =
+      `
+      <div class="claim-panel">
+        <div class="claim-panel-title">🚗 領車紀錄</div>
+        <div class="claim-summary">
+          最近 5 天共 ${rows.length} 筆｜超過 5 天資料仍保存在雲端，可由月份匯出查看
+        </div>
+
+        ${rows.map(x => `
+          <div class="claim-card">
+            <div class="claim-time">${esc(fmt(x.claimed_at))}</div>
+            <div class="claim-person">${esc(x.claimant_name || "未填寫")}</div>
+            <div class="claim-detail">
+              領車點：${esc(x.claim_point || "未填寫")}<br>
+              記錄器號碼：${esc(x.recorder_number || "未填寫")}<br>
+              油卡狀態：${esc(x.oil_card_status || "未填寫")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      `;
+
+  }
+  catch(e){
+
+    claimHistory.innerHTML =
+      `
+      <div class="empty" style="margin-top:18px">
+        領車紀錄讀取失敗：${esc(e.message || "未知錯誤")}
+      </div>
+      `;
+
+  }
+
+}
+
+/* =========================
+   車輛歷史
+========================= */
+
+async function openHistory(v){
+
+  modal.classList.add("show");
+
+  modalTitle.textContent =
+    v.full_plate || v.plate4 || "車輛";
+
+  modalSubtitle.textContent =
+    `CENTER｜${v.center || "未設定"}`;
+
+  renderOilPanel(v);
+  renderOilHistory(v);
+  renderClaimHistory(v);
+
+  healthPanel.innerHTML =
+    '<div class="loading">讀取車輛健康資料中…</div>';
+
+  historyContainer.innerHTML =
+    '<div class="loading">讀取歷史紀錄中…</div>';
+
+  try{
+
+    const r =
+      await db
+        .from("inspection_reports")
+        .select("*")
+        .eq("vehicle_id",v.id)
+        .order("reported_at",{ascending:false});
+
+    if(r.error)
+      throw r.error;
+
+    const allVehicleReports =
+      r.data || [];
+
+    renderHealthPanel(
+      v,
+      allVehicleReports
+    );
+
+    const reports =
+      allVehicleReports.filter(report =>
+        isWithinFiveDays(report.reported_at)
+      );
+
+    historyContainer.innerHTML =
+      "";
+
+    if(!reports.length){
+
+      historyContainer.innerHTML =
+        `
+        <div class="empty">
+          最近 5 天尚無巡檢紀錄
+          <br><br>
+          <span style="font-size:13px">超過 5 天的原始資料仍保存在雲端，可由月份匯出查看</span>
+        </div>
+        `;
+
+      return;
+
+    }
+
+    const historyNote =
+      document.createElement("div");
+
+    historyNote.className = "empty";
+    historyNote.style.padding = "16px";
+    historyNote.style.fontSize = "13px";
+    historyNote.textContent = "巡檢紀錄僅顯示最近 5 天｜更早資料仍保存在雲端，可由月份匯出查看";
+    historyContainer.appendChild(historyNote);
+
+    reports.forEach(report => {
+
+      const card =
+        document.createElement("div");
+
+      const bad =
+        report.overall_status === "abnormal";
+
+      card.className =
+        "history-card";
+
+      card.innerHTML =
+        `
+
+        <div class="history-top">
+
+          <div class="history-date">
+            ${esc(fmt(report.reported_at))}
+          </div>
+
+          <div class="status ${
+            bad
+              ? "status-abnormal"
+              : "status-normal"
+          }">
+
+            ${
+              bad
+                ? "異常"
+                : "正常"
+            }
+
+          </div>
+
+        </div>
+
+        <div class="history-mileage">
+
+          里程：
+          ${Number(report.mileage || 0).toLocaleString()}
+          km
+
+        </div>
+
+        ${
+          bad
+            ? renderAbnormal(report)
+            : `
+              <div class="history-normal">
+                本次巡檢全部正常
+              </div>
+            `
+        }
+
+        `;
+
+      historyContainer.appendChild(card);
+
+    });
+
+  }
+  catch(e){
+
+    healthPanel.innerHTML = "";
+
+    historyContainer.innerHTML =
+      `
+      <div class="empty">
+
+        歷史紀錄讀取失敗
+
+        <br><br>
+
+        ${esc(e.message || "未知錯誤")}
+
+      </div>
+      `;
+
+  }
+
+}
+
+/* =========================
+   異常顯示
+========================= */
+
+function renderAbnormal(r){
+
+  if(
+    r.resolution_status === "resolved"
+  ){
+
+    return `
+      <details class="resolved-detail">
+        <summary>🟢 已解決｜點擊查看異常原因</summary>
+        <div class="history-abnormal">
+          <strong>異常項目：</strong>${esc(abnormalText(r))}
+        </div>
+        <div>
+          處理時間：${esc(fmt(r.resolved_at))}
+          ${r.resolution_note ? `<br>處理備註：${esc(r.resolution_note)}` : ""}
+        </div>
+      </details>
+    `;
+
+  }
+
+  return `
+
+    <div class="history-abnormal">
+
+      <strong>異常項目</strong>
+
+      <br>
+
+      ${esc(abnormalText(r))}
+
+    </div>
+
+    <div class="unresolved-box">
+
+      🔴 <strong>待處理異常</strong>
+
+      <br>
+
+      此異常尚未結案。
+
+    </div>
+
+    <textarea
+      id="note-${r.id}"
+      class="resolution-note"
+      placeholder="處理備註，例如：已更換前輪胎、已調整煞車、已送修"
+    ></textarea>
+
+    <button
+      class="resolve-btn"
+      onclick="resolveReport('${r.id}')"
+    >
+      ✅ 標記已解決
+    </button>
+
+  `;
+
+}
+
+/* =========================
+   標記異常已解決
+========================= */
+
+async function resolveReport(id){
+
+  const el =
+    $("note-"+id);
+
+  const note =
+    el
+      ? el.value.trim()
+      : "";
+
+  if(
+    !confirm(
+      "確認這筆異常已經處理完成嗎？"
+    )
+  )
+    return;
+
+  try{
+
+    const r =
+      await db
+        .from("inspection_reports")
+        .update({
+          resolution_status:"resolved",
+          resolved_at:new Date().toISOString(),
+          resolution_note:
+            note || null
+        })
+        .eq("id",id);
+
+    if(r.error)
+      throw r.error;
+
+    alert(
+      "✅ 已標記為解決"
+    );
+
+    await loadData();
+
+    const report =
+      allReports.find(
+        x => x.id === id
+      );
+
+    if(report){
+
+      const v =
+        vehicles.find(
+          x => x.id === report.vehicle_id
+        );
+
+      if(v)
+        await openHistory(v);
+
+    }
+
+  }
+  catch(e){
+
+    alert(
+      "更新失敗：\n" +
+      (e.message || "未知錯誤")
+    );
+
+  }
+
+}
+
+/* =========================
+   機油面板
+========================= */
+
+function renderOilPanel(v){
+
+  const o =
+    oilStatus(v);
+
+  const color =
+    o.type === "danger"
+      ? "var(--danger)"
+      : o.type === "warning"
+        ? "var(--yellow)"
+        : o.type === "normal"
+          ? "var(--green)"
+          : "var(--gray)";
+
+  oilPanel.innerHTML =
+    `
+
+    <div class="oil-panel">
+
+      <div class="oil-panel-title">
+        🛢️ 機油保養
+      </div>
+
+      <div class="oil-panel-info">
+
+        CENTER：
+        <strong>
+          ${esc(v.center || "未設定")}
+        </strong>
+
+        <br>
+
+        上次換油里程：
+        <strong>
+          ${
+            o.last != null
+              ? o.last.toLocaleString()+" km"
+              : "尚未設定"
+          }
+        </strong>
+
+        <br>
+
+        目前里程：
+        <strong>
+          ${
+            o.current != null
+              ? o.current.toLocaleString()+" km"
+              : "尚無巡檢里程"
+          }
+        </strong>
+
+        <br>
+
+        換油週期：
+        <strong>
+          ${OIL_INTERVAL.toLocaleString()} km
+        </strong>
+
+      </div>
+
+      <div
+        class="oil-panel-status"
+        style="color:${color}"
+      >
+        ${esc(o.text)}
+      </div>
+
+      <button
+        class="oil-action"
+        onclick="confirmOilChange('${v.id}')"
+      >
+        🔧 已更換機油
+      </button>
+
+    </div>
+
+    `;
+
+}
+
+/* =========================
+   確認換油
+========================= */
+
+async function confirmOilChange(id){
+
+  const v =
+    vehicles.find(
+      x => x.id === id
+    );
+
+  const l =
+    v
+      ? latestReport(v)
+      : null;
+
+  if(!v || !l){
+
+    alert(
+      "這台車目前沒有巡檢里程，無法設定換油基準。"
+    );
+
+    return;
+
+  }
+
+  const m =
+    Number(l.mileage || 0);
+
+  if(
+    !confirm(
+      `
+確認已更換機油？
+
+CENTER：
+${v.center || "未設定"}
+
+目前里程：
+${m.toLocaleString()} km
+
+系統會以
+${m.toLocaleString()} km
+作為新的換油基準。
+      `
+    )
+  )
+    return;
+
+  try{
+
+    const record =
+      await db.rpc("record_oil_change",{
+        p_vehicle_id:id,
+        p_mileage:m,
+        p_changed_at:new Date().toISOString()
+      });
+
+    if(record.error)
+      throw record.error;
+
+    v.last_oil_change_mileage =
+      m;
+
+    renderOilPanel(v);
+    await renderOilHistory(v);
+    renderVehicles();
+
+    alert(
+      `
+完成！
+
+下一次換油里程：
+${(m + OIL_INTERVAL).toLocaleString()} km
+      `
+    );
+
+  }
+  catch(e){
+
+    alert(
+      "更新失敗：\n" +
+      (e.message || "未知錯誤")
+    );
+
+  }
+
+}
+
+/* =========================
+   清理 2 個月以前資料
+========================= */
+
+async function cleanupOldReports(){
+
+  const cutoff =
+    new Date();
+
+  cutoff.setMonth(
+    cutoff.getMonth()-2
+  );
+
+  try{
+
+    cleanupBtn.disabled = true;
+
+    cleanupBtn.textContent =
+      "🗑️ 查詢中…";
+
+    const check =
+      await db
+        .from("inspection_reports")
+        .select(
+          "id",
+          {
+            count:"exact",
+            head:true
+          }
+        )
+        .lt(
+          "reported_at",
+          cutoff.toISOString()
+        );
+
+    if(check.error)
+      throw check.error;
+
+    const count =
+      check.count || 0;
+
+    if(!count){
+
+      alert(
+        "目前沒有 2 個月以前的巡檢資料。"
+      );
+
+      return;
+
+    }
+
+    if(
+      !confirm(
+        `
+即將刪除 ${count} 筆巡檢資料。
+
+範圍：
+${cutoff.toLocaleDateString("zh-TW")} 以前
+
+⚠️ 只會刪除巡檢紀錄。
+不會刪除車輛資料。
+也不會刪除換油基準。
+
+確定要刪除嗎？
+        `
+      )
+    )
+      return;
+
+    cleanupBtn.textContent =
+      "🗑️ 清理中…";
+
+    const rpc =
+      await db.rpc(
+        "cleanup_old_inspection_reports"
+      );
+
+    if(rpc.error)
+      throw rpc.error;
+
+    const deleted =
+      rpc.data?.deleted_count ?? count;
+
+    alert(
+      `
+✅ 清理完成！
+
+已刪除 ${deleted} 筆巡檢資料。
+      `
+    );
+
+    await loadData();
+
+  }
+  catch(e){
+
+    alert(
+      "清理失敗：\n" +
+      (e.message || "未知錯誤")
+    );
+
+  }
+  finally{
+
+    cleanupBtn.disabled = false;
+
+    cleanupBtn.textContent =
+      "🗑️ 清理 2 個月前資料";
+
+  }
+
+}
+
+/* =========================
+   月份 Excel 匯出
+========================= */
+
+async function exportMonthlyExcel(){
+
+  const month = exportMonth.value;
+
+  if(!month){
+    alert("請先選擇月份。");
+    return;
+  }
+
+  const [year,monthNo] = month.split("-").map(Number);
+  const start = new Date(year,monthNo-1,1);
+  const end = new Date(year,monthNo,1);
+
+  exportExcelBtn.disabled = true;
+  exportExcelBtn.textContent = "📊 匯出中…";
+
+  try{
+    const vr = await db
+      .from("vehicles")
+      .select("id,plate4,full_plate,center");
+
+    if(vr.error)
+      throw vr.error;
+
+    const vehicleMap = new Map(
+      (vr.data || []).map(v => [v.id,v])
+    );
+
+    const rr = await db
+      .from("inspection_reports")
+      .select("*")
+      .gte("reported_at",start.toISOString())
+      .lt("reported_at",end.toISOString())
+      .order("reported_at",{ascending:true})
+      .range(0,9999);
+
+    if(rr.error)
+      throw rr.error;
+
+    const or = await db
+      .from("oil_change_records")
+      .select("*")
+      .gte("changed_at",start.toISOString())
+      .lt("changed_at",end.toISOString())
+      .order("changed_at",{ascending:true})
+      .range(0,9999);
+
+    if(or.error)
+      throw or.error;
+
+    const cr =
+      await db
+        .from("claim_records")
+        .select("*")
+        .gte("claimed_at",start.toISOString())
+        .lt("claimed_at",end.toISOString())
+        .order("claimed_at",{ascending:true})
+        .range(0,9999);
+
+    if(cr.error)
+      throw cr.error;
+
+    const reportRows = (rr.data || []).map(r => {
+      const v = vehicleMap.get(r.vehicle_id) || {};
+      return {
+        "日期":r.reported_at ? new Date(r.reported_at).toLocaleDateString("zh-TW") : "",
+        "時間":r.reported_at ? new Date(r.reported_at).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"}) : "",
+        "車牌":v.full_plate || v.plate4 || "",
+        "CENTER":v.center || "",
+        "里程":r.mileage ?? "",
+        "引擎發動":r.engine_start || "",
+        "前輪胎紋":r.front_tire || "",
+        "前輪胎壓":r.front_tire_pressure || "",
+        "後輪胎紋":r.rear_tire || "",
+        "後輪胎壓":r.rear_tire_pressure || "",
+        "前剎車":r.front_brake || "",
+        "後剎車":r.rear_brake || "",
+        "大燈":r.headlight || "",
+        "剎車燈":r.brake_light || "",
+        "其他":r.other || "",
+        "舊版機油燈":r.oil_light || "",
+        "舊版煞車":r.brake || "",
+        "整體狀態":r.overall_status === "abnormal" ? "異常" : "正常",
+        "異常項目":Array.isArray(r.abnormal_items) ? r.abnormal_items.join("、") : (r.abnormal_items || ""),
+        "處理狀態":r.resolution_status === "resolved" ? "已處理" : (r.overall_status === "abnormal" ? "待處理" : "-"),
+        "處理時間":r.resolved_at ? fmt(r.resolved_at) : "",
+        "處理備註":r.resolution_note || ""
+      };
+    });
+
+    const oilRows = (or.data || []).map(r => {
+      const v = vehicleMap.get(r.vehicle_id) || {};
+      return {
+        "日期":r.changed_at ? new Date(r.changed_at).toLocaleDateString("zh-TW") : "",
+        "時間":r.changed_at ? new Date(r.changed_at).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"}) : "",
+        "車牌":v.full_plate || v.plate4 || "",
+        "CENTER":v.center || "",
+        "換油里程":r.mileage ?? "",
+        "備註":r.note || ""
+      };
+    });
+
+    const claimRows =
+      (cr.data || []).map(r => {
+
+        const v =
+          vehicleMap.get(r.vehicle_id) || {};
+
+        return {
+          "日期":r.claimed_at ? new Date(r.claimed_at).toLocaleDateString("zh-TW") : "",
+          "時間":r.claimed_at ? new Date(r.claimed_at).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"}) : "",
+          "車牌":v.full_plate || v.plate4 || "",
+          "CENTER":v.center || "",
+          "領車人":r.claimant_name || "",
+          "領車點":r.claim_point || "",
+          "記錄器號碼":r.recorder_number || "",
+          "油卡狀態":r.oil_card_status || ""
+        };
+
+      });
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(reportRows);
+    const ws2 = XLSX.utils.json_to_sheet(oilRows);
+    const ws3 = XLSX.utils.json_to_sheet(claimRows);
+    XLSX.utils.book_append_sheet(wb,ws1,"巡檢紀錄");
+    XLSX.utils.book_append_sheet(wb,ws2,"換油紀錄");
+    XLSX.utils.book_append_sheet(wb,ws3,"領車紀錄");
+
+    XLSX.writeFile(
+      wb,
+      `KFC車輛巡檢_${month}.xlsx`
+    );
+
+    alert(`✅ 匯出完成！\n\n巡檢紀錄：${reportRows.length} 筆\n換油紀錄：${oilRows.length} 筆\n領車紀錄：${claimRows.length} 筆`);
+  }
+  catch(e){
+    alert(
+      "匯出失敗：\n" +
+      (e.message || "未知錯誤")
+    );
+  }
+  finally{
+    exportExcelBtn.disabled = false;
+    exportExcelBtn.textContent = "📊 匯出 Excel";
+  }
+}
+
+
+/* =========================
+   駕駛意向調查後台
+========================= */
+
+function parseSurveyPart(value){
+  if(!value) return {};
+  if(typeof value === "object") return value;
+  try { return JSON.parse(value); } catch(e) { return {}; }
+}
+
+function surveyResultClass(value){
+  return value === "合格" ? "survey-result-pass" : "survey-result-fail";
+}
+
+function renderSurveySummary(){
+  const part1Fail = surveyResponses.filter(x => x.part1_result === "不合格").length;
+  const part2Fail = surveyResponses.filter(x => x.part2_result === "不合格").length;
+  const accident = surveyResponses.filter(x => x.accident_within_one_year === true).length;
+  surveySummary.innerHTML = `
+    <div class="summary-card"><div class="summary-label">調查總數</div><div class="summary-number">${surveyResponses.length}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">第一部分不合格</div><div class="summary-number">${part1Fail}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">第二部分不合格</div><div class="summary-number">${part2Fail}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">一年內有肇事</div><div class="summary-number">${accident}</div></div>
+  `;
+}
+
+function renderSurveyResponses(){
+  const keyword = surveySearchInput.value.trim().toLowerCase();
+  const rows = surveyResponses.filter(x =>
+    !keyword || String(x.respondent_name || "").toLowerCase().includes(keyword)
+  );
+
+  if(!rows.length){
+    surveyResponseList.innerHTML = '<div class="empty">目前沒有問卷紀錄</div>';
+    return;
+  }
+
+  surveyResponseList.innerHTML = rows.map(row => {
+    const p1 = parseSurveyPart(row.part1_answers);
+    const p1Answers = p1.answers || p1;
+    const violation = p1.violation_points ?? "未填";
+    const accident = row.accident_within_one_year === true;
+    return `
+      <div class="survey-card">
+        <div class="survey-card-top">
+          <div class="survey-name">${esc(row.respondent_name || "未填姓名")}</div>
+          <div class="survey-time">${esc(fmt(row.submitted_at))}</div>
+        </div>
+        <div class="survey-grid">
+          <div class="survey-item">違規記點<strong>${esc(violation)} 點</strong></div>
+          <div class="survey-item">第一部分<strong class="${surveyResultClass(row.part1_result)}">${esc(row.part1_total ?? "-")} 分｜${esc(row.part1_result || "未判定")}</strong></div>
+          <div class="survey-item">第二部分<strong class="${surveyResultClass(row.part2_result)}">${esc(row.part2_total ?? "-")} 分｜${esc(row.part2_result || "未判定")}</strong></div>
+          <div class="survey-item">一年內肇事<strong class="${accident ? "survey-result-fail" : "survey-result-pass"}">${accident ? "有" : "沒有"}</strong></div>
+        </div>
+        ${accident ? `<div class="survey-detail"><strong>肇事說明：</strong>${esc(row.accident_description || "未填寫")}</div>` : ""}
+        <div class="record-actions">
+          <button class="delete-btn survey-delete-btn" type="button" data-id="${esc(row.id || "")}" data-name="${esc(row.respondent_name || "")}" data-submitted-at="${esc(row.submitted_at || "")}">🗑 刪除這筆</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function exportSurveyResponses(){
+  if(!surveyResponses.length){
+    alert("目前沒有可匯出的意向調查資料。");
+    return;
+  }
+  const rows = surveyResponses.map(row => {
+    const p1 = parseSurveyPart(row.part1_answers);
+    return {
+      id: row.id || "",
+      填寫人姓名: row.respondent_name || "",
+      違規記點: p1.violation_points ?? "",
+      第一部分答案: JSON.stringify(row.part1_answers ?? ""),
+      第一部分總分: row.part1_total ?? "",
+      第一部分結果: row.part1_result || "",
+      第二部分答案: JSON.stringify(row.part2_answers ?? ""),
+      第二部分總分: row.part2_total ?? "",
+      第二部分結果: row.part2_result || "",
+      一年內肇事: row.accident_within_one_year === true ? "有" : "沒有",
+      肇事說明: row.accident_description || "",
+      填寫時間: row.submitted_at || ""
+    };
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "駕駛意向調查");
+  XLSX.writeFile(wb, `KFC_駕駛意向調查_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function deleteSurveyResponse(id, name, submittedAt){
+  const row = surveyResponses.find(item => id && String(item.id) === String(id))
+    || surveyResponses.find(item => String(item.respondent_name || "") === String(name || "") && String(item.submitted_at || "") === String(submittedAt || ""));
+  if(!row) return;
+  const displayName = row.respondent_name || "未填姓名";
+  if(!confirm(`確定要刪除「${displayName}」的這筆意向調查嗎？\n\n刪除後無法復原。`)) return;
+  try{
+    let query = db.from("driver_survey_responses").delete();
+    if(row.id){
+      query = query.eq("id", row.id);
+    }else{
+      query = query.eq("respondent_name", row.respondent_name).eq("submitted_at", row.submitted_at);
+    }
+    const result = await query;
+    if(result.error) throw result.error;
+    surveyResponses = surveyResponses.filter(item => item !== row);
+    renderSurveySummary();
+    renderSurveyResponses();
+    alert("✅ 意向調查已刪除。");
+  }catch(e){
+    alert("刪除意向調查失敗：\n" + (e.message || "未知錯誤") + "\n\n請確認 Supabase 已允許 anon DELETE。");
+  }
+}
+
+async function loadSurveyData(){
+  surveyResponseList.innerHTML = '<div class="loading">載入問卷資料中…</div>';
+  try{
+    const result = await db
+      .from("driver_survey_responses")
+      .select("*")
+      .order("submitted_at",{ascending:false});
+    if(result.error) throw result.error;
+    surveyResponses = result.data || [];
+    renderSurveySummary();
+    renderSurveyResponses();
+  }
+  catch(e){
+    surveySummary.innerHTML = "";
+    surveyResponseList.innerHTML = `<div class="empty">問卷資料讀取失敗：${esc(e.message || "請確認 anon SELECT 權限")}</div>`;
+  }
+}
+
+function exportBatteryReports(){
+  if(!batteryReports.length){
+    alert("目前沒有可匯出的電池異常資料。");
+    return;
+  }
+  const rows = batteryReports.map(row => ({
+    id: row.id || "",
+    電池編號: row.battery_number || "",
+    餐廳店號: row.restaurant_no || "",
+    異常內容: row.issue_description || "",
+    回報時間: row.reported_at || "",
+    處理狀態: row.resolution_status || "",
+    處理完成時間: row.resolved_at || "",
+    處理備註: row.resolution_note || ""
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "電池異常回報");
+  XLSX.writeFile(wb, `KFC_電池異常回報_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function deleteBatteryReport(id){
+  const row = batteryReports.find(item => String(item.id) === String(id));
+  if(!row) return;
+  const label = row.battery_number || "未填電池編號";
+  if(!confirm(`確定要刪除「${label}」的這筆電池異常回報嗎？\n\n刪除後無法復原。`)) return;
+  try{
+    const result = await db
+      .from("battery_issue_reports")
+      .delete()
+      .eq("id", id);
+    if(result.error) throw result.error;
+    batteryReports = batteryReports.filter(item => String(item.id) !== String(id));
+    renderBatterySummary();
+    renderBatteryReports();
+    alert("✅ 電池異常回報已刪除。");
+  }catch(e){
+    alert("刪除電池異常回報失敗：\n" + (e.message || "未知錯誤") + "\n\n請確認 Supabase 已允許 anon DELETE。");
+  }
+}
+
+function renderBatterySummary(){
+  const pending = batteryReports.filter(x => x.resolution_status !== "resolved").length;
+  const resolved = batteryReports.filter(x => x.resolution_status === "resolved").length;
+  batterySummary.innerHTML = `
+    <div class="summary-card"><div class="summary-label">回報總數</div><div class="summary-number">${batteryReports.length}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">待處理</div><div class="summary-number">${pending}</div></div>
+    <div class="summary-card done"><div class="summary-label">已處理</div><div class="summary-number">${resolved}</div></div>
+  `;
+}
+
+function renderBatteryReports(){
+  const keyword = batterySearchInput.value.trim().toLowerCase();
+  const rows = batteryReports.filter(x => {
+    if(!keyword) return true;
+    return [x.battery_number, x.restaurant_no, x.issue_description]
+      .filter(Boolean)
+      .some(value => String(value).toLowerCase().includes(keyword));
+  });
+
+  if(!rows.length){
+    batteryReportList.innerHTML = '<div class="empty">目前沒有電池異常回報</div>';
+    return;
+  }
+
+  batteryReportList.innerHTML = rows.map(row => {
+    const resolved = row.resolution_status === "resolved";
+    return `
+      <div class="survey-card">
+        <div class="survey-card-top">
+          <div class="survey-name">🔋 ${esc(row.battery_number || "未填編號")}</div>
+          <div class="survey-time">${esc(fmt(row.reported_at))}</div>
+        </div>
+        <div class="survey-grid">
+          <div class="survey-item">所在餐廳<strong>${esc(row.restaurant_no || "未填寫")}</strong></div>
+          <div class="survey-item">處理狀態<strong class="${resolved ? "survey-result-pass" : "survey-result-fail"}">${resolved ? "已處理" : "待處理"}</strong></div>
+        </div>
+        <div class="survey-detail"><strong>異常內容：</strong>${esc(row.issue_description || "未填寫")}</div>
+        ${row.resolution_note ? `<div class="survey-detail"><strong>處理備註：</strong>${esc(row.resolution_note)}</div>` : ""}
+        <div class="record-actions">
+          <button class="delete-btn battery-delete-btn" type="button" data-id="${esc(row.id)}">🗑 刪除這筆</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadBatteryData(){
+  batteryReportList.innerHTML = '<div class="loading">載入電池紀錄中…</div>';
+  try{
+    const result = await db
+      .from("battery_issue_reports")
+      .select("*")
+      .order("reported_at",{ascending:false});
+    if(result.error) throw result.error;
+    batteryReports = result.data || [];
+    renderBatterySummary();
+    renderBatteryReports();
+  }
+  catch(e){
+    batterySummary.innerHTML = "";
+    batteryReportList.innerHTML = `<div class="empty">電池資料讀取失敗：${esc(e.message || "請確認 anon SELECT 權限")}</div>`;
+  }
+}
+
+function showAdminMode(mode){
+  adminModeMenu.style.display = mode === "home" ? "grid" : "none";
+  vehicleModePage.style.display = mode === "vehicle" ? "block" : "none";
+  surveyModePage.style.display = mode === "survey" ? "block" : "none";
+  batteryModePage.style.display = mode === "battery" ? "block" : "none";
+  if(mode === "vehicle") loadData();
+  if(mode === "survey") loadSurveyData();
+  if(mode === "battery") loadBatteryData();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* =========================
+   事件
+========================= */
+
+searchInput.oninput =
+  renderVehicles;
+
+vehicleModeBtn.onclick =
+  () => showAdminMode("vehicle");
+
+surveyModeBtn.onclick =
+  () => showAdminMode("survey");
+
+batteryModeBtn.onclick =
+  () => showAdminMode("battery");
+
+vehicleBackBtn.onclick =
+  () => showAdminMode("home");
+
+surveyBackBtn.onclick =
+  () => showAdminMode("home");
+
+batteryBackBtn.onclick =
+  () => showAdminMode("home");
+
+batteryRefreshBtn.onclick =
+  loadBatteryData;
+
+batterySearchInput.oninput =
+  renderBatteryReports;
+
+surveySearchInput.oninput =
+  renderSurveyResponses;
+
+surveyExportBtn.onclick =
+  exportSurveyResponses;
+
+surveyResponseList.onclick =
+  e => {
+    const button = e.target.closest(".survey-delete-btn");
+    if(button) deleteSurveyResponse(button.dataset.id, button.dataset.name, button.dataset.submittedAt);
+  };
+
+batteryReportList.onclick =
+  e => {
+    const button = e.target.closest(".battery-delete-btn");
+    if(button) deleteBatteryReport(button.dataset.id);
+  };
+
+batteryExportBtn.onclick =
+  exportBatteryReports;
+
+claimedCard.onclick =
+  () => openQuickList("claimed");
+
+returnedCard.onclick =
+  () => openQuickList("returned");
+
+unresolvedCard.onclick =
+  () => openQuickList("unresolved");
+
+refreshBtn.onclick =
+  async () => {
+
+    refreshBtn.disabled = true;
+
+    refreshBtn.textContent =
+      "↻ 更新中…";
+
+    await loadData();
+
+    refreshBtn.disabled = false;
+
+    refreshBtn.textContent =
+      "↻ 重新整理資料";
+
+  };
+
+cleanupBtn.onclick =
+  cleanupOldReports;
+
+exportExcelBtn.onclick =
+  exportMonthlyExcel;
+
+closeQuickModal.onclick =
+  () =>
+    quickModal.classList.remove("show");
+
+quickModal.onclick =
+  e => {
+
+    if(e.target === quickModal)
+      quickModal.classList.remove("show");
+
+  };
+
+closeModal.onclick =
+  () =>
+    modal.classList.remove("show");
+
+modal.onclick =
+  e => {
+
+    if(e.target === modal)
+      modal.classList.remove("show");
+
+  };
+
+todayDate.textContent =
+  new Date().toLocaleDateString(
+    "zh-TW",
+    {
+      year:"numeric",
+      month:"long",
+      day:"numeric",
+      weekday:"long"
+    }
+  );
+
+const now = new Date();
+exportMonth.value =
+  `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+
+showAdminMode("home");
+
+</script>
+
+</body>
+</html>
