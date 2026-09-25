@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4f0e8">
 
-  <title>KFC｜T998 車輛管理</title>
+  <title>KFC｜台南-T998 車輛管理</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -744,6 +744,95 @@
 .date{margin-top:4px;font-size:14px}
 @media(max-width:700px){.title{font-size:26px}}
 
+
+/* 防禦駕駛月考 */
+.defensive-page .video-panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;text-align:left}
+.defensive-page .video-link{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border-radius:13px;background:var(--red);color:#fff;font-weight:800;text-decoration:none;text-align:center}
+.defensive-page .optional-link{display:block;margin-top:10px;color:var(--gray);text-align:center;font-size:14px}
+.defensive-page .question-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;text-align:left;margin-top:14px}
+.defensive-page .question-title{font-weight:800;line-height:1.6;margin-bottom:12px}
+.defensive-page .answer-option{display:block;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:8px;cursor:pointer}
+.defensive-page .answer-option input{margin-right:8px}
+.defensive-page .training-message{margin-top:12px;padding:12px;border-radius:12px;background:var(--linen);color:var(--gray);line-height:1.6}
+.defensive-page .training-message.success{background:var(--green-bg);color:var(--green)}
+
+/* 防禦駕駛新版視覺與姓名搜尋 */
+.defensive-page{padding-bottom:28px}
+.training-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.training-step-chip{padding:10px 6px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:800;color:var(--gray);line-height:1.35}
+.training-step-chip strong{display:block;color:var(--red);font-size:16px;margin-bottom:3px}
+.training-step-chip.active{border-color:#e5aab2;background:#fff7f8;color:var(--black)}
+.training-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;text-align:left;box-shadow:0 8px 24px rgba(55,45,35,.06);margin-bottom:14px}
+.training-card .section-number{margin-bottom:8px}
+.training-card-title{font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px}
+.training-card-subtitle{color:var(--gray);font-size:14px;line-height:1.6;margin-bottom:14px}
+.name-search-wrap{position:relative}
+.name-suggestions{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(40,30,20,.14);overflow:hidden;text-align:left}
+.name-suggestions.show{display:block}
+.name-suggestion{display:block;width:100%;padding:13px 15px;background:#fff;border:0;border-bottom:1px solid #eee8df;text-align:left;font-size:16px;cursor:pointer}
+.name-suggestion:last-child{border-bottom:0}
+.name-suggestion:hover{background:var(--linen)}
+.training-video-box{padding:16px;border-radius:16px;background:linear-gradient(135deg,#fff5f6,#f7f2eb);border:1px solid #f0d4d7}
+.training-video-box .video-link{background:var(--red);box-shadow:0 6px 14px rgba(200,16,46,.18)}
+.training-pdf-box{margin-top:12px;padding:13px;border-radius:14px;background:#faf9f6;border:1px solid var(--line)}
+.training-pdf-box .optional-link{display:flex;align-items:center;justify-content:center;margin-top:0;min-height:42px;padding:8px;border-radius:10px;background:#fff;color:var(--black);font-weight:800;text-decoration:none}
+.training-pdf-box.mandatory-pdf{background:#fff7e6;border:2px solid #d99a16;box-shadow:0 5px 14px rgba(170,110,0,.12)}
+.training-pdf-box.mandatory-pdf .training-card-subtitle{color:#9a5c00;font-weight:900}
+.training-pdf-box .mandatory-pdf-link{min-height:52px;background:#f59e0b;color:#fff;border:2px solid #c87800;font-size:16px;box-shadow:0 4px 10px rgba(190,115,0,.2)}
+.training-pdf-box .mandatory-pdf-link.opened{background:var(--green);border-color:#28563c}
+.training-question-header{font-size:20px;font-weight:900;margin:0 0 12px}
+.training-question-note{color:var(--gray);font-size:14px;line-height:1.6;margin-bottom:12px}
+@media(max-width:700px){.training-steps{grid-template-columns:repeat(2,1fr)}}
+
+/* 所有姓名與防禦駕駛文字統一置中 */
+#claimantName,#reporterName,#surveyRespondentName,#defensiveName{
+  text-align:center;
+}
+.name-search-wrap input{
+  text-align:center;
+}
+.name-search-wrap .name-suggestions{
+  text-align:left;
+}
+.defensive-page .training-card,
+.defensive-page .question-card,
+.defensive-page .training-card-title,
+.defensive-page .training-card-subtitle,
+.defensive-page .training-message,
+.defensive-page .training-question-header,
+.defensive-page .training-question-note,
+.defensive-page .training-video-box,
+.defensive-page .training-pdf-box,
+.defensive-page .question-title,
+.defensive-page .answer-option{
+  text-align:center;
+}
+
+/* 前台返回按鈕統一置頂、與後台一致 */
+.front-top-back{padding:14px 16px 0;text-align:center}
+.front-top-back .back-home-btn{width:100%;margin:0}
+.intro-back{padding:0 16px 14px}
+.intro-back .back-home-btn{display:block}
+/* 返回首頁上方縮小留白 */
+.intro{padding:10px 20px 16px}
+/* 防禦駕駛文字置中 */
+.defensive-page,.defensive-page .training-card,.defensive-page .training-card-title,.defensive-page .training-card-subtitle,.defensive-page .training-message,.defensive-page .training-question-header,.defensive-page .training-question-note,.defensive-page .question-card,.defensive-page .question-title,.defensive-page .answer-option{ text-align:center; }
+.defensive-page .label{display:block;text-align:center}
+.answer-option{
+  width:100%;
+  font:inherit;
+  color:var(--black);
+  background:#fff;
+  text-align:center;
+  cursor:pointer;
+}
+.answer-option.selected{
+  border-color:var(--red);
+  background:#fff1f3;
+  color:var(--red);
+  font-weight:800;
+}
+
 </style>
 </head>
 
@@ -763,6 +852,11 @@
   </header>
 
   <section class="intro">
+    <div id="claimBackTop" class="front-top-back intro-back" style="display:none"><button id="claimBackBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+    <div id="inspectionBackTop" class="front-top-back intro-back" style="display:none"><button id="inspectionBackBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+    <div id="batteryBackTop" class="front-top-back intro-back" style="display:none"><button id="batteryBackBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+    <div id="surveyBackTop" class="front-top-back intro-back" style="display:none"><button id="surveyBackBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+    <div id="defensiveBackTop" class="front-top-back intro-back" style="display:none"><button id="defensiveBackBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
     <h2 id="introTitle">上班領車・下班還車</h2>
     <p id="introText">完成領車、還車安全檢查與回饋。</p>
   </section>
@@ -788,9 +882,14 @@
       <span class="main">電池異常回饋</span>
     </button>
 
+    <button id="defensiveModeBtn" class="mode-btn" type="button">
+      <span class="icon">🛡️</span>
+      <span class="main">每月防禦駕駛</span>
+    </button>
+
     <button id="surveyModeBtn" class="mode-btn" type="button">
       <span class="icon">📋</span>
-      <span class="main">駕駛意向調查</span>
+      <span class="main">意向調查</span>
     </button>
 
   </div>
@@ -801,25 +900,23 @@
   ========================= -->
 
   <section id="claimPage" class="mode-page">
-
-    <div id="claimForm">
+<div id="claimForm">
 
       <section class="card">
         <div class="section-number">01・領車人</div>
 
         <label class="label">領車人</label>
 
-        <input
-          id="claimantName"
-          type="text"
-          maxlength="3"
-          placeholder="請輸入姓名"
-          autocomplete="name"
-        >
-
-        <div class="hint" style="padding:10px 0 0;">
-          限填 3 個中文字
+        <div class="name-search-wrap">
+          <input
+            id="claimantName"
+            type="text"
+            placeholder=""
+            autocomplete="off"
+          >
+          <div id="claimantNameSuggestions" class="name-suggestions"></div>
         </div>
+
       </section>
 
 
@@ -838,11 +935,11 @@
             <option>新竹新豐</option>
             <option>龍潭北龍</option>
             <option>楊梅中山</option>
-            <option>桃園大溪</option>
-            <option>桃園大竹</option>
-            <option>桃園大興西</option>
-            <option>桃園萬壽</option>
-            <option>桃園中山二</option>
+            <option>台南大溪</option>
+            <option>台南大竹</option>
+            <option>台南大興西</option>
+            <option>台南萬壽</option>
+            <option>台南中山二</option>
             <option>林口文化</option>
             <option>南崁中正</option>
             <option>中壢中正</option>
@@ -984,19 +1081,12 @@
       >
         送出領車紀錄
       </button>
-
-      <button
-        id="claimBackBtn"
-        class="back-home-btn"
-        type="button"
-      >
-        返回首頁
-      </button>
-
-    </div>
+</div>
 
 
     <div id="claimSuccess" class="success-panel">
+  <div class="front-top-back"><button id="claimSuccessHomeBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+
 
       <div class="success-icon">✓</div>
 
@@ -1015,16 +1105,7 @@
           確認車況後再出發，祝你一路平安。
         </span>
       </div>
-
-      <button
-        id="claimSuccessHomeBtn"
-        class="back-home-btn"
-        type="button"
-      >
-        返回首頁
-      </button>
-
-    </div>
+</div>
 
   </section>
 
@@ -1034,8 +1115,7 @@
   ========================= -->
 
   <section id="inspectionPage" class="mode-page">
-
-    <div id="inspectionForm">
+<div id="inspectionForm">
 
       <!-- =========================
            01 車輛
@@ -1174,17 +1254,16 @@
           巡檢人
         </label>
 
-        <input
-          id="reporterName"
-          type="text"
-          maxlength="3"
-          placeholder="請輸入姓名"
-          autocomplete="name"
-        >
-
-        <div class="hint" style="padding:10px 0 0;">
-          限填 3 個中文字
+        <div class="name-search-wrap">
+          <input
+            id="reporterName"
+            type="text"
+            placeholder=""
+            autocomplete="off"
+          >
+          <div id="reporterNameSuggestions" class="name-suggestions"></div>
         </div>
+
 
       </section>
 
@@ -1203,17 +1282,7 @@
 
 
       <!-- 新增：還車頁返回首頁 -->
-
-      <button
-        id="inspectionBackBtn"
-        class="back-home-btn"
-        type="button"
-      >
-        返回首頁
-      </button>
-
-
-      <div class="hint">
+<div class="hint">
         每次巡檢都會新增一筆紀錄，不會覆蓋過去資料。
       </div>
 
@@ -1224,6 +1293,8 @@
       id="inspectionSuccess"
       class="success-panel"
     >
+  <div class="front-top-back"><button id="inspectionSuccessHomeBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+
 
       <div class="success-icon">
         ✓
@@ -1244,16 +1315,7 @@
           謝謝你完成今日巡檢，辛苦了！
         </span>
       </div>
-
-      <button
-        id="inspectionSuccessHomeBtn"
-        class="back-home-btn"
-        type="button"
-      >
-        返回首頁
-      </button>
-
-    </div>
+</div>
 
   </section>
 
@@ -1263,8 +1325,7 @@
   ========================= -->
 
   <section id="batteryPage" class="mode-page battery-page">
-
-    <div id="batteryForm">
+<div id="batteryForm">
 
       <section class="card">
         <div class="section-number">01・電池</div>
@@ -1292,16 +1353,15 @@
       </section>
 
       <button id="batterySaveBtn" class="save-btn" type="button">送出電池異常回饋</button>
-      <button id="batteryBackBtn" class="back-home-btn" type="button">返回首頁</button>
-
-    </div>
+</div>
 
     <div id="batterySuccess" class="success-panel">
+  <div class="front-top-back"><button id="batterySuccessHomeBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+
       <div class="success-icon">✓</div>
       <div class="success-title">回饋已送出</div>
       <div id="batterySuccessData" class="success-data"></div>
-      <button id="batterySuccessHomeBtn" class="back-home-btn" type="button">返回首頁</button>
-    </div>
+</div>
 
   </section>
 
@@ -1311,8 +1371,7 @@
   ========================= -->
 
   <section id="surveyPage" class="mode-page survey-page">
-
-    <div id="surveyForm">
+<div id="surveyForm">
 
       <section class="card">
         <div class="section-number">STEP 1・違規記點</div>
@@ -1321,7 +1380,10 @@
         </div>
         <a class="save-btn" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:18px;" href="https://www.mvdis.gov.tw/" target="_blank" rel="noopener">查詢本人違規記點</a>
         <label class="label" for="surveyRespondentName" style="margin-top:24px;">填寫人姓名</label>
-        <input id="surveyRespondentName" type="text" maxlength="50" placeholder="請輸入姓名" autocomplete="name">
+        <div class="name-search-wrap">
+          <input id="surveyRespondentName" type="text" maxlength="50" placeholder="" autocomplete="off">
+          <div id="surveyRespondentNameSuggestions" class="name-suggestions"></div>
+        </div>
         <label class="label" for="violationPoints" style="margin-top:24px;">目前違規記點</label>
         <input id="violationPoints" type="number" min="0" step="1" inputmode="numeric" placeholder="請輸入點數">
         <div class="hint">只填寫查詢結果的點數，不要填寫身分證字號或生日。</div>
@@ -1355,18 +1417,73 @@
       </section>
 
       <button id="surveySaveBtn" class="save-btn" type="button">送出駕駛意向調查</button>
-      <button id="surveyBackBtn" class="back-home-btn" type="button">返回首頁</button>
-      <div class="hint">兩部分分開計算，不合併總分。</div>
+<div class="hint">兩部分分開計算，不合併總分。</div>
 
     </div>
 
     <div id="surveySuccess" class="success-panel">
+  <div class="front-top-back"><button id="surveySuccessHomeBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+
       <div class="success-icon">✓</div>
       <div class="success-title">調查已完成</div>
       <div id="surveySuccessData" class="success-data"></div>
-      <button id="surveySuccessHomeBtn" class="back-home-btn" type="button">返回首頁</button>
-    </div>
+</div>
 
+  </section>
+
+  <!-- =========================
+       防禦駕駛月考
+  ========================= -->
+
+  <section id="defensivePage" class="mode-page defensive-page">
+<div id="defensiveForm">
+      <section class="training-card">
+        <label class="label" for="defensiveName">填寫人姓名</label>
+        <div class="name-search-wrap">
+          <input id="defensiveName" type="text" maxlength="50" placeholder="" autocomplete="off">
+          <div id="defensiveNameSuggestions" class="name-suggestions"></div>
+        </div>
+        <label class="label" for="defensiveMonth" style="margin-top:18px;">選擇月份</label>
+        <select id="defensiveMonth">
+          <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option><option value="4">4 月</option>
+          <option value="5">5 月</option><option value="6">6 月</option><option value="7">7 月</option><option value="8">8 月</option>
+          <option value="9">9 月</option><option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+        </select>
+        <button id="defensiveLoadBtn" class="save-btn" type="button" style="margin-top:16px;">開始</button>
+        <div id="defensiveStatus" class="training-message" style="display:none;">請先輸入姓名並開始當月課程。</div>
+      </section>
+
+      <section id="defensiveLessonPanel" class="training-card" style="display:none;">
+        <div class="section-number">02・觀看影片</div>
+        <div id="defensiveLessonTitle" class="training-card-title"></div>
+        <div class="training-card-subtitle">請先開啟並觀看當月影片，再進入選擇題。</div>
+        <div class="training-video-box">
+          <a id="defensiveVideoLink" class="video-link" href="#" target="_blank" rel="noopener">▶ 開啟當月防禦駕駛影片</a>
+          <div id="defensiveVideoStatus" class="training-message">影片開啟後，選擇題會出現。</div>
+        </div>
+        <div class="training-pdf-box mandatory-pdf">
+          <div class="training-card-subtitle" style="margin-bottom:8px;">03・安全月曆 PDF（必看）</div>
+          <a id="defensivePdfLink" class="optional-link mandatory-pdf-link" href="#" target="_blank" rel="noopener" style="display:none;">📖 開啟安全月曆 PDF（必須點選）</a>
+        </div>
+      </section>
+
+      <section id="defensiveQuestions" class="training-card" style="display:none;">
+        <div class="section-number">04・選擇題</div>
+        <div class="training-question-header">完成兩題才算完成本月課程</div>
+        <div class="training-question-note">兩題都答對才會通過；答錯後必須重新觀看影片，再重新作答。</div>
+        <div id="defensiveQuestion1" class="question-card"></div>
+        <div id="defensiveQuestion2" class="question-card"></div>
+        <button id="defensiveSubmitBtn" class="save-btn" type="button">送出答案</button>
+      </section>
+</div>
+
+    <div id="defensiveSuccess" class="success-panel">
+  <div class="front-top-back"><button id="defensiveSuccessHomeBtn" class="back-home-btn" type="button">← 返回首頁</button></div>
+
+      <div class="success-icon">✓</div>
+      <div class="success-title">本月防禦駕駛已完成</div>
+      <div id="defensiveSuccessData" class="success-data"></div>
+</div>
   </section>
 
 </div>
@@ -1389,6 +1506,24 @@ const db =
     SUPABASE_URL,
     SUPABASE_KEY
   );
+
+const CURRENT_SURVEY_ROUND = "2027M1";
+
+// 台南 T998 安全月曆：與 index.html 同層的 pdf 資料夾
+const SAFETY_CALENDAR_PDFS = {
+  1: "pdf/safety-calendar-01.pdf",
+  2: "pdf/safety-calendar-02.pdf",
+  3: "pdf/safety-calendar-03.pdf",
+  4: "pdf/safety-calendar-04.pdf",
+  5: "pdf/safety-calendar-05.pdf",
+  6: "pdf/safety-calendar-06.pdf",
+  7: "pdf/safety-calendar-07.pdf",
+  8: "pdf/safety-calendar-08.pdf",
+  9: "pdf/safety-calendar-09.pdf",
+  10: "pdf/safety-calendar-10.pdf",
+  11: "pdf/safety-calendar-11.pdf",
+  12: "pdf/safety-calendar-12.pdf"
+};
 
 
 /* =====================================================
@@ -2359,6 +2494,33 @@ const batteryForm = document.getElementById("batteryForm");
 const batterySuccess = document.getElementById("batterySuccess");
 const surveyForm = document.getElementById("surveyForm");
 const surveySuccess = document.getElementById("surveySuccess");
+const defensivePage = document.getElementById("defensivePage");
+const defensiveForm = document.getElementById("defensiveForm");
+const defensiveSuccess = document.getElementById("defensiveSuccess");
+const defensiveNameInput = document.getElementById("defensiveName");
+const defensiveNameSuggestions = document.getElementById("defensiveNameSuggestions");
+const claimantNameSuggestions = document.getElementById("claimantNameSuggestions");
+const reporterNameSuggestions = document.getElementById("reporterNameSuggestions");
+const surveyRespondentNameSuggestions = document.getElementById("surveyRespondentNameSuggestions");
+const defensiveMonthSelect = document.getElementById("defensiveMonth");
+const defensiveLoadBtn = document.getElementById("defensiveLoadBtn");
+const defensiveStatus = document.getElementById("defensiveStatus");
+const defensiveLessonPanel = document.getElementById("defensiveLessonPanel");
+const defensiveLessonTitle = document.getElementById("defensiveLessonTitle");
+const defensiveVideoLink = document.getElementById("defensiveVideoLink");
+const defensivePdfLink = document.getElementById("defensivePdfLink");
+const defensiveVideoStatus = document.getElementById("defensiveVideoStatus");
+const defensiveQuestions = document.getElementById("defensiveQuestions");
+const defensiveQuestion1 = document.getElementById("defensiveQuestion1");
+const defensiveQuestion2 = document.getElementById("defensiveQuestion2");
+const defensiveSubmitBtn = document.getElementById("defensiveSubmitBtn");
+const defensiveSuccessData = document.getElementById("defensiveSuccessData");
+let defensiveLesson = null;
+let defensiveVideoOpenedAt = null;
+let defensivePdfOpenedAt = null;
+let defensiveExistingResponse = null;
+let defensiveTargetNames = [];
+let defensiveTargetNamesLoaded = false;
 
 
 const pageTitle =
@@ -2472,6 +2634,13 @@ function getClaimPlate4() {
    READ CLAIM VEHICLE
    ===================================================== */
 
+function isTodayLocal(value){
+  if(!value) return false;
+  const d = new Date(value);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
 async function loadClaimVehicle() {
 
   const plate4 =
@@ -2561,50 +2730,41 @@ async function loadClaimVehicle() {
       plate4;
 
 
-    claimVehicleInfo.innerHTML =
-      `車牌確認成功：${claimVehicle.full_plate || plate4}`;
+    const latest = await db
+      .from("claim_records")
+      .select("*")
+      .eq("vehicle_id", claimVehicle.id)
+      .order("claimed_at", {ascending:false})
+      .limit(1)
+      .maybeSingle();
 
+    const latestInspection = await db
+      .from("inspection_reports")
+      .select("*")
+      .eq("vehicle_id", claimVehicle.id)
+      .order("reported_at", {ascending:false})
+      .limit(1)
+      .maybeSingle();
 
-    const latest =
-      await db
-        .from("claim_records")
-        .select("*")
-        .eq(
-          "vehicle_id",
-          claimVehicle.id
-        )
-        .order(
-          "claimed_at",
-          {
-            ascending: false
-          }
-        )
-        .limit(1)
-        .maybeSingle();
+    const claim = latest.data;
+    const inspection = latestInspection.data;
+    const returnedToday = Boolean(claim && isTodayLocal(claim.claimed_at) && inspection && new Date(inspection.reported_at).getTime() >= new Date(claim.claimed_at).getTime());
+    const statusText = claim && isTodayLocal(claim.claimed_at)
+      ? (returnedToday ? "今日已還車" : "今日已領車｜尚未還車")
+      : "今日未領車";
+    const inspectionText = inspection
+      ? (inspection.overall_status === "abnormal" ? "最新巡檢：異常" : "最新巡檢：正常")
+      : "最新巡檢：尚無紀錄";
 
-
-    if (
-      latest.data
-    ) {
-
-      lastClaim.innerHTML = `
-
-        <div style="font-weight:700;">
-          上次領車人：${latest.data.claimant_name || ""}
-        </div>
-
-        <div style="color:#77736d;margin-top:4px;">
-          領車時間：
-          ${formatDateTime(latest.data.claimed_at)}
-        </div>
-
-      `;
-
-      lastClaim
-        .classList
-        .add("show");
-
-    }
+    claimVehicleInfo.innerHTML = `
+      <div style="font-weight:800;font-size:18px;">${escapeHtml(claimVehicle.full_plate || plate4)}</div>
+      <div style="margin-top:6px;">所在餐廳／CENTER：${escapeHtml(claimVehicle.center || "未設定")}</div>
+      <div style="margin-top:6px;font-weight:800;">目前狀態：${escapeHtml(statusText)}</div>
+      <div style="margin-top:6px;color:#77736d;">${escapeHtml(inspectionText)}</div>
+      ${claim ? `<div style="margin-top:6px;color:#77736d;">最新領車人：${escapeHtml(claim.claimant_name || "未填寫")}<br>領車時間：${escapeHtml(formatDateTime(claim.claimed_at))}</div>` : ""}
+    `;
+    claimVehicleInfo.classList.add("show");
+    lastClaim.classList.remove("show");
 
   } catch (error) {
 
@@ -2995,7 +3155,7 @@ function resetBatteryForm() {
    DRIVER SURVEY
    ===================================================== */
 
-// 桃園正式駕駛意向調查題目：第一部分 31 題、第二部分 16 題。
+// 台南正式駕駛意向調查題目：第一部分 31 題、第二部分 16 題。
 // 目前資料表未列獨立違規點數欄位，故與第一部分答案一併放在 part1_answers。
 const behaviorQuestions = [
   "未依規定任意變換車道",
@@ -3157,6 +3317,7 @@ async function saveSurvey() {
     const accident = document.querySelector('input[name="accidentWithinYear"]:checked');
     const result = await db.from("driver_survey_responses").insert({
       respondent_name: surveyRespondentNameInput.value.trim(),
+      survey_round: CURRENT_SURVEY_ROUND,
       part1_answers: {
         violation_points: Number(violationPointsInput.value),
         answers: surveyAnswers.behavior
@@ -3226,6 +3387,247 @@ renderSurvey();
 
 
 /* =====================================================
+   DEFENSIVE DRIVING MONTHLY TRAINING
+   ===================================================== */
+
+async function loadTargetNames(){
+  if(defensiveTargetNamesLoaded) return;
+  try{
+    const result = await db.from("driver_survey_targets").select("respondent_name");
+    if(result.error) throw result.error;
+    defensiveTargetNames = [...new Set((result.data || []).map(row => String(row.respondent_name || "").trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, "zh-Hant"));
+    defensiveTargetNamesLoaded = true;
+  }catch(e){
+    console.error("姓名名單讀取失敗", e);
+  }
+}
+
+function renderNameSuggestions(input, container){
+  const keyword = input.value.trim();
+  if(!keyword || !defensiveTargetNames.length){
+    container.classList.remove("show");
+    container.innerHTML = "";
+    return;
+  }
+  const matches = defensiveTargetNames.filter(name => name.startsWith(keyword)).slice(0, 8);
+  container.innerHTML = matches.map(name => `<button type="button" class="name-suggestion" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
+  container.classList.toggle("show", matches.length > 0);
+}
+
+function setupNameAutocomplete(input, container){
+  input.addEventListener("focus", async () => {
+    await loadTargetNames();
+    renderNameSuggestions(input, container);
+  });
+  input.addEventListener("input", async () => {
+    await loadTargetNames();
+    renderNameSuggestions(input, container);
+  });
+  container.addEventListener("click", event => {
+    const button = event.target.closest(".name-suggestion");
+    if(!button) return;
+    input.value = button.dataset.name;
+    container.classList.remove("show");
+  });
+}
+
+function closeAllNameSuggestions(){
+  [claimantNameSuggestions, reporterNameSuggestions, surveyRespondentNameSuggestions, defensiveNameSuggestions].forEach(item => {
+    item.classList.remove("show");
+  });
+}
+
+
+function currentTrainingYear(){
+  return new Date().getFullYear();
+}
+
+function selectedTrainingMonth(){
+  return Number(defensiveMonthSelect.value);
+}
+
+function renderDefensiveQuestion(container, number, question, optionA, optionB){
+  container.innerHTML = `
+    <div class="question-title">第 ${number} 題｜${escapeHtml(question || "")}</div>
+    <button type="button" class="answer-option" data-question="${number}" data-value="A">A. ${escapeHtml(optionA || "")}</button>
+    <button type="button" class="answer-option" data-question="${number}" data-value="B">B. ${escapeHtml(optionB || "")}</button>
+  `;
+  container.querySelectorAll(".answer-option").forEach(button => {
+    button.addEventListener("click", () => {
+      container.querySelectorAll(".answer-option").forEach(option => option.classList.remove("selected"));
+      button.classList.add("selected");
+    });
+  });
+}
+
+function resetDefensiveForm(){
+  defensiveLesson = null;
+  defensiveVideoOpenedAt = null;
+  defensivePdfOpenedAt = null;
+  defensivePdfLink.classList.remove("opened");
+  defensivePdfLink.textContent = "📖 開啟安全月曆 PDF（必須點選）";
+  defensiveExistingResponse = null;
+  defensiveNameInput.value = "";
+  defensiveNameSuggestions.classList.remove("show");
+  defensiveNameSuggestions.innerHTML = "";
+  defensiveMonthSelect.value = String(new Date().getMonth() + 1);
+  defensiveLessonPanel.style.display = "none";
+  defensiveQuestions.style.display = "none";
+  defensiveStatus.className = "training-message";
+  defensiveStatus.textContent = "請先輸入姓名並載入當月課程。";
+  defensiveStatus.style.display = "none";
+  defensiveSuccess.classList.remove("show");
+  defensiveForm.style.display = "block";
+}
+
+async function loadDefensiveLesson(){
+  const name = defensiveNameInput.value.trim();
+  const monthNo = selectedTrainingMonth();
+  if(!name){ alert("請輸入姓名。"); defensiveNameInput.focus(); return; }
+  defensiveLoadBtn.disabled = true;
+  defensiveLoadBtn.textContent = "載入中…";
+  defensiveStatus.style.display = "block";
+  try{
+    const targetResult = await db.from("driver_survey_targets").select("id").eq("respondent_name", name).limit(1);
+    if(targetResult.error) throw targetResult.error;
+    if(!targetResult.data?.length){
+      defensiveStatus.className = "training-message";
+      defensiveStatus.textContent = "查無此姓名，請先由後台加入應完成人員名單。";
+      return;
+    }
+    const lessonResult = await db.from("defensive_driving_lessons").select("*").eq("month_no", monthNo).maybeSingle();
+    if(lessonResult.error) throw lessonResult.error;
+    if(!lessonResult.data){
+      defensiveStatus.textContent = "查無本月份題庫資料。";
+      return;
+    }
+    defensiveLesson = lessonResult.data;
+    const existing = await db.from("defensive_driving_responses")
+      .select("*")
+      .eq("respondent_name", name)
+      .eq("training_year", currentTrainingYear())
+      .eq("month_no", monthNo)
+      .maybeSingle();
+    if(existing.error) throw existing.error;
+    defensiveExistingResponse = existing.data || null;
+    if(defensiveExistingResponse?.status === "completed"){
+      defensiveStatus.className = "training-message success";
+      defensiveStatus.textContent = "本月份已完成，不需要重複作答。";
+      defensiveLessonPanel.style.display = "none";
+      defensiveQuestions.style.display = "none";
+      return;
+    }
+    defensiveLessonTitle.textContent = `${monthNo} 月防禦駕駛影片與考題`;
+    defensiveVideoLink.href = defensiveLesson.video_url;
+    const safetyCalendarPdf = SAFETY_CALENDAR_PDFS[monthNo] || defensiveLesson.safety_calendar_pdf_url;
+    if(safetyCalendarPdf){
+      defensivePdfLink.href = safetyCalendarPdf;
+      defensivePdfLink.style.display = "flex";
+    }else{
+      defensivePdfLink.style.display = "none";
+    }
+    defensiveVideoOpenedAt = null;
+    defensivePdfOpenedAt = null;
+    defensivePdfLink.classList.remove("opened");
+    defensivePdfLink.textContent = "📖 開啟安全月曆 PDF（必須點選）";
+    defensiveVideoStatus.className = "training-message";
+    defensiveVideoStatus.textContent = "請先開啟影片，完成後再開始答題。";
+    defensiveQuestions.style.display = "none";
+    renderDefensiveQuestion(defensiveQuestion1, 1, defensiveLesson.question_1, defensiveLesson.question_1_option_a, defensiveLesson.question_1_option_b);
+    renderDefensiveQuestion(defensiveQuestion2, 2, defensiveLesson.question_2, defensiveLesson.question_2_option_a, defensiveLesson.question_2_option_b);
+    defensiveLessonPanel.style.display = "block";
+    defensiveStatus.className = "training-message success";
+    defensiveStatus.textContent = "已載入，請開啟影片後作答。";
+  }catch(e){
+    console.error(e);
+    defensiveStatus.className = "training-message";
+    defensiveStatus.textContent = `資料讀取失敗：${e.message || "請稍後再試"}`;
+  }finally{
+    defensiveLoadBtn.disabled = false;
+    defensiveLoadBtn.textContent = "開始";
+  }
+}
+
+defensiveVideoLink.addEventListener("click", () => {
+  defensiveVideoOpenedAt = new Date().toISOString();
+  defensiveQuestions.style.display = "block";
+  defensiveVideoStatus.className = "training-message success";
+  defensiveVideoStatus.textContent = "影片已開啟，請先點選安全月曆 PDF，再完成兩題後送出。";
+});
+
+defensivePdfLink.addEventListener("click", () => {
+  defensivePdfOpenedAt = new Date().toISOString();
+  defensivePdfLink.classList.add("opened");
+  defensivePdfLink.textContent = "✅ 已開啟安全月曆 PDF";
+});
+
+defensiveSubmitBtn.addEventListener("click", async () => {
+  const name = defensiveNameInput.value.trim();
+  const a1 = document.querySelector('.answer-option[data-question="1"].selected')?.dataset.value;
+  const a2 = document.querySelector('.answer-option[data-question="2"].selected')?.dataset.value;
+  if(!defensiveLesson || !name){ alert("請先載入當月課程。"); return; }
+  if(!defensiveVideoOpenedAt){ alert("請先開啟並觀看當月影片。"); return; }
+  if(!defensivePdfOpenedAt){ alert("請先開啟安全月曆 PDF。"); return; }
+  if(!a1 || !a2){ alert("兩題都必須作答。"); return; }
+  defensiveSubmitBtn.disabled = true;
+  defensiveSubmitBtn.textContent = "判定中…";
+  const isCorrect = a1 === defensiveLesson.question_1_answer && a2 === defensiveLesson.question_2_answer;
+  const now = new Date().toISOString();
+  const attempt = Number(defensiveExistingResponse?.attempt_count || 0) + 1;
+  try{
+    const payload = {
+      respondent_name: name,
+      training_year: currentTrainingYear(),
+      month_no: selectedTrainingMonth(),
+      question_1_answer: a1,
+      question_2_answer: a2,
+      attempt_count: attempt,
+      video_opened_at: defensiveVideoOpenedAt,
+      last_attempt_at: now,
+      completed_at: isCorrect ? now : null,
+      status: isCorrect ? "completed" : "incomplete"
+    };
+    const result = await db.from("defensive_driving_responses").upsert(payload, {onConflict:"respondent_name,training_year,month_no"});
+    if(result.error) throw result.error;
+    if(!isCorrect){
+      alert("本次答題未通過，請重新觀看影片後再回答兩題。\n目前仍未完成本月課程。");
+      defensiveExistingResponse = {...payload};
+      defensiveVideoOpenedAt = null;
+      defensivePdfOpenedAt = null;
+      defensivePdfLink.classList.remove("opened");
+      defensivePdfLink.textContent = "📖 開啟安全月曆 PDF（必須點選）";
+      defensiveQuestions.style.display = "none";
+      defensiveVideoStatus.className = "training-message";
+      defensiveVideoStatus.textContent = "答題未通過，請重新開啟影片後再作答。";
+      return;
+    }
+    defensiveSuccessData.textContent = `${currentTrainingYear()} 年 ${selectedTrainingMonth()} 月｜${name}｜兩題皆答對`;
+    defensiveForm.style.display = "none";
+    defensiveSuccess.classList.add("show");
+  }catch(e){
+    console.error(e);
+    alert(`送出失敗：${e.message || "請稍後再試"}`);
+  }finally{
+    defensiveSubmitBtn.disabled = false;
+    defensiveSubmitBtn.textContent = "送出答案";
+  }
+});
+
+setupNameAutocomplete(claimantName, claimantNameSuggestions);
+setupNameAutocomplete(reporterNameInput, reporterNameSuggestions);
+setupNameAutocomplete(surveyRespondentNameInput, surveyRespondentNameSuggestions);
+setupNameAutocomplete(defensiveNameInput, defensiveNameSuggestions);
+document.addEventListener("click", event => {
+  if(!event.target.closest(".name-search-wrap")) closeAllNameSuggestions();
+});
+
+defensiveLoadBtn.addEventListener("click", loadDefensiveLesson);
+document.getElementById("defensiveBackBtn").addEventListener("click", showHome);
+document.getElementById("defensiveSuccessHomeBtn").addEventListener("click", showHome);
+defensiveMonthSelect.value = String(new Date().getMonth() + 1);
+
+
+/* =====================================================
    MODE
    ===================================================== */
 
@@ -3235,34 +3637,51 @@ function showMode(mode) {
   inspectionPage.style.display = mode === "inspection" ? "block" : "none";
   batteryPage.style.display = mode === "battery" ? "block" : "none";
   surveyPage.style.display = mode === "survey" ? "block" : "none";
+  defensivePage.style.display = mode === "defensive" ? "block" : "none";
 
   introSection.style.display = "block";
   introText.classList.add("show");
+  introText.style.display = "block";
+  ["claimBackTop","inspectionBackTop","batteryBackTop","surveyBackTop","defensiveBackTop"].forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
 
   if (mode === "claim") {
+    document.getElementById("claimBackTop").style.display = "block";
     pageTitle.textContent = "台南-Rider Center";
     introTitle.textContent = "開始上班";
     introText.textContent = "完成領車確認，準備安全出勤。";
     claimForm.style.display = "block";
     claimSuccess.classList.remove("show");
   } else if (mode === "inspection") {
+    document.getElementById("inspectionBackTop").style.display = "block";
     pageTitle.textContent = "台南-Rider Center";
     introTitle.textContent = "下班前完成安全檢查";
     introText.textContent = "10 項安全檢查全部完成後，提交今日還車紀錄。";
     inspectionForm.style.display = "block";
     inspectionSuccess.classList.remove("show");
   } else if (mode === "battery") {
+    document.getElementById("batteryBackTop").style.display = "block";
     pageTitle.textContent = "台南-Rider Center";
     introTitle.textContent = "回報電池異常";
     introText.textContent = "此紀錄不綁定車牌，只使用電池編號與所在餐廳。";
     batteryForm.style.display = "block";
     batterySuccess.classList.remove("show");
   } else if (mode === "survey") {
+    document.getElementById("surveyBackTop").style.display = "block";
     pageTitle.textContent = "台南-Rider Center";
     introTitle.textContent = "完成駕駛安全調查";
     introText.textContent = "兩部分分開計算，請依實際情況作答。";
     surveyForm.style.display = "block";
     surveySuccess.classList.remove("show");
+  } else if (mode === "defensive") {
+    document.getElementById("defensiveBackTop").style.display = "block";
+    pageTitle.textContent = "台南-Rider Center";
+    introTitle.textContent = "每月防禦駕駛";
+    introText.textContent = "";
+    introText.style.display = "none";
+    resetDefensiveForm();
+    defensivePage.style.display = "block";
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3275,6 +3694,7 @@ function showHome() {
   inspectionPage.style.display = "none";
   batteryPage.style.display = "none";
   surveyPage.style.display = "none";
+  defensivePage.style.display = "none";
 
   claimForm.style.display = "block";
   claimSuccess.classList.remove("show");
@@ -3290,11 +3710,15 @@ function showHome() {
   introText.textContent = "";
   introSection.style.display = "none";
   introText.classList.remove("show");
+  ["claimBackTop","inspectionBackTop","batteryBackTop","surveyBackTop","defensiveBackTop"].forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
 
   resetClaimForm();
   resetInspectionForm();
   resetBatteryForm();
   resetSurveyForm();
+  resetDefensiveForm();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -3328,6 +3752,7 @@ document
 
 document.getElementById("batteryModeBtn").addEventListener("click", () => showMode("battery"));
 document.getElementById("surveyModeBtn").addEventListener("click", () => showMode("survey"));
+document.getElementById("defensiveModeBtn").addEventListener("click", () => showMode("defensive"));
 
 
 document
