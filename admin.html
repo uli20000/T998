@@ -1039,7 +1039,7 @@ button{cursor:pointer}
     </div>
   </section>
   <section class="section">
-    <div class="section-title">應完成人員名單（意向調查／防禦駕駛共用）</div>
+    <div class="section-title">目前在職名單（意向調查／防禦駕駛共用）</div>
     <div class="survey-admin-tools">
       <select id="surveyRoundSelect" class="search-input">
         <option value="2027M1">2027M1</option>
@@ -1236,6 +1236,8 @@ const newVehicleCenter = $("newVehicleCenter");
 const addVehicleBtn = $("addVehicleBtn");
 const addVehicleMessage = $("addVehicleMessage");
 const surveyRoundSelect = $("surveyRoundSelect");
+const SURVEY_ROUND_YEAR = 2027;
+surveyRoundSelect.value = `${SURVEY_ROUND_YEAR}M${new Date().getMonth() + 1 >= 7 ? 7 : 1}`;
 const surveyTargetNameInput = $("surveyTargetNameInput");
 const surveyTargetAddBtn = $("surveyTargetAddBtn");
 const surveyTargetMessage = $("surveyTargetMessage");
@@ -3351,10 +3353,16 @@ async function addSurveyTarget(){
   surveyTargetAddBtn.disabled = true;
   surveyTargetMessage.textContent = "新增中…";
   try{
+    const existing = await db.from("driver_survey_targets").select("id").eq("respondent_name",name).limit(1);
+    if(existing.error) throw existing.error;
+    if(existing.data?.length){
+      surveyTargetMessage.textContent = `此姓名已在目前在職名單：${name}`;
+      return;
+    }
     const result = await db.from("driver_survey_targets").insert({respondent_name:name, survey_round:round});
     if(result.error) throw result.error;
     surveyTargetNameInput.value = "";
-    surveyTargetMessage.textContent = `✅ 已加入 ${round} 應完成人員：${name}`;
+    surveyTargetMessage.textContent = `✅ 已加入目前在職名單：${name}`;
     await loadSurveyData();
   }catch(e){
     surveyTargetMessage.textContent = e.code === "23505" ? "此姓名已存在於此問卷批次。" : `新增失敗：${e.message || "請確認權限"}`;
@@ -3484,12 +3492,17 @@ async function loadSurveyData(){
   try{
     const round = surveyRoundSelect.value;
     const [targetResult, responseResult] = await Promise.all([
-      db.from("driver_survey_targets").select("*").eq("survey_round", round).order("created_at",{ascending:true}),
+      db.from("driver_survey_targets").select("*").order("created_at",{ascending:true}),
       db.from("driver_survey_responses").select("*").eq("survey_round", round).order("submitted_at",{ascending:false})
     ]);
     if(targetResult.error) throw targetResult.error;
     if(responseResult.error) throw responseResult.error;
-    surveyTargets = targetResult.data || [];
+    const targetMap = new Map();
+    (targetResult.data || []).forEach(row => {
+      const name = String(row.respondent_name || "").trim();
+      if(name && !targetMap.has(name)) targetMap.set(name, {...row, respondent_name:name});
+    });
+    surveyTargets = [...targetMap.values()];
     surveyResponses = responseResult.data || [];
     renderSurveySummary();
     renderSurveyRoster();
