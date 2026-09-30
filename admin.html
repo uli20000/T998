@@ -864,17 +864,21 @@ button{cursor:pointer}
     <span class="icon">🚗</span>
     車輛檢查
   </button>
-  <button id="surveyModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">📋</span>
-    意向調查
-  </button>
   <button id="batteryModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">🔋</span>
-    電池設備查看
+    電池設備
   </button>
   <button id="defensiveModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">🛡️</span>
     防禦駕駛
+  </button>
+  <button id="surveyModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">📋</span>
+    意向調查
+  </button>
+  <button id="rosterModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">👥</span>
+    在職名單
   </button>
 </div>
 
@@ -976,20 +980,16 @@ button{cursor:pointer}
 <section id="surveyModePage" class="admin-mode-page">
   <div class="mode-back-row"><button id="surveyBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
   <section class="section">
-    <div class="section-title">駕駛意向調查</div>
-    <div id="surveySummary" class="survey-summary"></div>
-    <div id="surveyStatusList" class="survey-status-list"></div>
+    <div class="section-title">意向調查</div>
     <div class="search-box">
-      <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋填寫人姓名">
+      <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋姓名">
       <div class="mode-tools">
         <button id="surveyExportBtn" class="action-btn" type="button">📊 匯出意向調查</button>
+        <button id="surveyRefreshBtn" class="action-btn" type="button">↻ 重新整理</button>
       </div>
     </div>
-  </section>
-
-  <section class="section" style="display:none;">
-    <div class="section-title">不合格名單</div>
-    <div id="surveyFailedList" class="roster-list"></div>
+    <div id="surveySummary" class="survey-summary" style="margin-top:14px;"></div>
+    <div id="surveyStatusList" class="survey-status-list"></div>
   </section>
 
   <section class="section">
@@ -1022,15 +1022,18 @@ button{cursor:pointer}
 <section id="defensiveModePage" class="admin-mode-page">
   <div class="mode-back-row"><button id="defensiveBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
   <section class="section">
-    <div class="section-title">防禦駕駛月考</div>
+    <div class="section-title">防禦駕駛</div>
     <div class="search-box">
       <select id="defensiveAdminMonth" class="search-input">
         <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option><option value="4">4 月</option>
         <option value="5">5 月</option><option value="6">6 月</option><option value="7">7 月</option><option value="8">8 月</option>
         <option value="9">9 月</option><option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
       </select>
-      <button id="defensiveRefreshBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">↻ 重新整理防禦駕駛</button>
-      <button id="defensiveExportBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">📊 匯出防禦駕駛 Excel</button>
+      <input id="defensiveSearchInput" class="search-input" type="text" placeholder="搜尋姓名" style="margin-top:12px">
+      <div class="mode-tools">
+        <button id="defensiveExportBtn" class="action-btn" type="button">📊 匯出本月防禦駕駛</button>
+        <button id="defensiveRefreshBtn" class="action-btn" type="button">↻ 重新整理</button>
+      </div>
     </div>
     <div id="defensiveSummary" class="survey-summary" style="margin-top:14px;"></div>
   </section>
@@ -1039,20 +1042,30 @@ button{cursor:pointer}
       <div class="loading">尚未載入防禦駕駛資料</div>
     </div>
   </section>
-  <section class="section">
-    <div class="section-title">目前在職名單（意向調查／防禦駕駛共用）</div>
-    <div class="survey-admin-tools">
-      <select id="surveyRoundSelect" class="search-input">
-        <option value="2027M1">2027M1</option>
-        <option value="2027M7">2027M7</option>
-      </select>
-      <input id="surveyTargetNameInput" class="search-input" type="text" placeholder="輸入新人姓名" autocomplete="name">
-      <button id="surveyTargetAddBtn" class="action-btn" type="button">＋ 新增應完成人員</button>
-    </div>
-    <div id="surveyTargetMessage" class="hint" style="margin-top:8px;"></div>
-    <div id="surveyIncompleteList" class="roster-panel" style="display:none;"></div>
-  </section>
+</section>
 
+<section id="rosterModePage" class="admin-mode-page">
+  <div class="mode-back-row"><button id="rosterBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+  <section class="section">
+    <div class="section-title">在職名單</div>
+    <div class="search-box">
+      <input id="surveyTargetNameInput" class="search-input" type="text" placeholder="輸入新人姓名" autocomplete="name">
+      <button id="surveyTargetAddBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">＋ 新增在職員工</button>
+      <div id="surveyTargetMessage" class="hint" style="margin-top:8px;"></div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="section-title">目前在職員工</div>
+    <div id="rosterList" class="roster-list">
+      <div class="loading">尚未載入在職名單</div>
+    </div>
+  </section>
+  <select id="surveyRoundSelect" style="display:none">
+    <option value="2027M1">2027M1</option>
+    <option value="2027M7">2027M7</option>
+  </select>
+  <div id="surveyIncompleteList" style="display:none"></div>
+  <div id="surveyFailedList" style="display:none"></div>
 </section>
 </div>
 
@@ -1213,6 +1226,7 @@ const vehicleBackBtn = $("vehicleBackBtn");
 const surveyBackBtn = $("surveyBackBtn");
 const surveySearchInput = $("surveySearchInput");
 const surveyExportBtn = $("surveyExportBtn");
+const surveyRefreshBtn = $("surveyRefreshBtn");
 const surveySummary = $("surveySummary");
 const surveyStatusList = $("surveyStatusList");
 const surveyResponseList = $("surveyResponseList");
@@ -1224,12 +1238,17 @@ const batteryExportBtn = $("batteryExportBtn");
 const batterySearchInput = $("batterySearchInput");
 const batterySummary = $("batterySummary");
 const batteryReportList = $("batteryReportList");
+const rosterModePage = $("rosterModePage");
+const rosterModeBtn = $("rosterModeBtn");
+const rosterBackBtn = $("rosterBackBtn");
+const rosterList = $("rosterList");
 const defensiveModePage = $("defensiveModePage");
 const defensiveModeBtn = $("defensiveModeBtn");
 const defensiveBackBtn = $("defensiveBackBtn");
 const defensiveAdminMonth = $("defensiveAdminMonth");
 const defensiveRefreshBtn = $("defensiveRefreshBtn");
 const defensiveExportBtn = $("defensiveExportBtn");
+const defensiveSearchInput = $("defensiveSearchInput");
 const defensiveSummary = $("defensiveSummary");
 const defensiveAdminList = $("defensiveAdminList");
 defensiveAdminMonth.value = String(new Date().getMonth() + 1);
@@ -3132,7 +3151,6 @@ function renderSurveyEmptySummary(message){
     <button type="button" class="summary-card clickable" data-survey-status="required"><div class="summary-label">應完成</div><div class="summary-number">0</div></button>
     <button type="button" class="summary-card abnormal clickable" data-survey-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">0</div></button>
     <button type="button" class="summary-card done clickable" data-survey-status="completed"><div class="summary-label">已完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card abnormal clickable" data-survey-status="failed"><div class="summary-label">不合格</div><div class="summary-number">0</div></button>
   `;
   surveyStatusList.innerHTML = `<div class="empty" style="grid-column:1/-1;">${esc(message || "目前沒有資料")}</div>`;
 }
@@ -3142,7 +3160,6 @@ function renderDefensiveEmptySummary(message){
     <button type="button" class="summary-card clickable" data-defensive-status="required"><div class="summary-label">應完成</div><div class="summary-number">0</div></button>
     <button type="button" class="summary-card abnormal clickable" data-defensive-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">0</div></button>
     <button type="button" class="summary-card done clickable" data-defensive-status="completed"><div class="summary-label">已完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card clickable" data-defensive-status="active"><div class="summary-label">在職名單</div></button>
   `;
   defensiveAdminList.className = "survey-status-list";
   defensiveAdminList.innerHTML = `<div class="empty" style="grid-column:1/-1;">${esc(message || "目前沒有資料")}</div>`;
@@ -3157,7 +3174,6 @@ function renderSurveySummary(){
     <button type="button" class="summary-card clickable" data-survey-status="required"><div class="summary-label">應完成</div><div class="summary-number">${surveyTargets.length}</div></button>
     <button type="button" class="summary-card abnormal clickable" data-survey-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">${incomplete}</div></button>
     <button type="button" class="summary-card done clickable" data-survey-status="completed"><div class="summary-label">已完成</div><div class="summary-number">${completedNames.size}</div></button>
-    <button type="button" class="summary-card abnormal clickable" data-survey-status="failed"><div class="summary-label">不合格</div><div class="summary-number">${failed}</div></button>
   `;
   surveySummary.querySelectorAll("[data-survey-status]").forEach(card => {
     card.classList.toggle("active", card.dataset.surveyStatus === activeSurveyStatus);
@@ -3178,10 +3194,11 @@ function latestSurveyResponseByName(){
 function renderSurveyStatusList(status){
   activeSurveyStatus = status || "required";
   const responseMap = latestSurveyResponseByName();
+  const keyword = surveySearchInput ? surveySearchInput.value.trim().toLowerCase() : "";
   const targetRows = surveyTargets.map(row => {
     const name = String(row.respondent_name || "").trim();
     return {name, round: row.survey_round || surveyRoundSelect.value, response: responseMap.get(name) || null};
-  }).filter(row => row.name);
+  }).filter(row => row.name && (!keyword || row.name.toLowerCase().includes(keyword)));
   let rows = targetRows;
   let title = "應完成名單";
   if(activeSurveyStatus === "incomplete"){
@@ -3344,6 +3361,7 @@ function renderSurveyRoster(){
   const completedNames = new Set(surveyResponses.map(row => String(row.respondent_name || "").trim()).filter(name => targetNameSet.has(name)));
   const failed = surveyResponses.filter(row => targetNameSet.has(String(row.respondent_name || "").trim()) && (row.part1_result === "不合格" || row.part2_result === "不合格"));
   const incomplete = surveyTargets.filter(row => !completedNames.has(String(row.respondent_name || "").trim()));
+  if(!surveyIncompleteList || !surveyFailedList) return;
   surveyIncompleteList.innerHTML = `
     <div class="roster-panel-title">${selectedRound} 未完成（${incomplete.length} 人）</div>
     <div class="roster-list">${incomplete.length ? incomplete.map(row => `
@@ -3371,7 +3389,7 @@ async function addSurveyTarget(){
     if(result.error) throw result.error;
     surveyTargetNameInput.value = "";
     surveyTargetMessage.textContent = `✅ 已加入目前在職名單：${name}`;
-    await loadSurveyData();
+    await loadRosterData();
   }catch(e){
     surveyTargetMessage.textContent = e.code === "23505" ? "此姓名已存在於此問卷批次。" : `新增失敗：${e.message || "請確認權限"}`;
   }finally{
@@ -3389,8 +3407,43 @@ async function deleteSurveyTarget(name, round){
     const targetDelete = await db.from("driver_survey_targets").delete().eq("respondent_name", name);
     if(targetDelete.error) throw targetDelete.error;
     alert("✅ 該姓名的名單、問卷與防禦駕駛紀錄已永久刪除。");
-    await loadSurveyData();
+    await loadRosterData();
   }catch(e){ alert(`刪除失敗：${e.message || "請確認 DELETE 權限"}`); }
+}
+
+function renderActiveRoster(){
+  const keyword = (rosterList.dataset.keyword || "").trim().toLowerCase();
+  const rows = (surveyTargets || []).filter(row => {
+    const name = String(row.respondent_name || "").trim();
+    return name && (!keyword || name.toLowerCase().includes(keyword));
+  });
+  if(!rows.length){
+    rosterList.innerHTML = '<div class="empty">目前沒有在職員工</div>';
+    return;
+  }
+  rosterList.innerHTML = rows.map(row => `
+    <div class="roster-item">
+      <span>${esc(row.respondent_name)}<small style="display:block;color:var(--gray);">意向調查／防禦駕駛共用</small></span>
+      <button type="button" class="survey-target-delete-btn" data-name="${esc(row.respondent_name)}" data-round="${esc(row.survey_round || surveyRoundSelect.value)}">永久刪除</button>
+    </div>
+  `).join('');
+}
+
+async function loadRosterData(){
+  rosterList.innerHTML = '<div class="loading">載入在職名單中…</div>';
+  try{
+    const result = await db.from("driver_survey_targets").select("*").order("created_at",{ascending:true});
+    if(result.error) throw result.error;
+    const map = new Map();
+    (result.data || []).forEach(row => {
+      const name = String(row.respondent_name || "").trim();
+      if(name && !map.has(name)) map.set(name, {...row, respondent_name:name});
+    });
+    surveyTargets = [...map.values()];
+    renderActiveRoster();
+  }catch(e){
+    rosterList.innerHTML = `<div class="empty">在職名單讀取失敗：${esc(e.message || "請確認權限")}</div>`;
+  }
 }
 
 function focusSurveyResponse(name){
@@ -3425,14 +3478,16 @@ function renderDefensiveSummary(uniqueNames, completed, incomplete){
 function renderDefensiveStatusList(status){
   activeDefensiveStatus = status || "required";
   const responseMap = latestDefensiveResponseByName();
+  const keyword = defensiveSearchInput ? defensiveSearchInput.value.trim().toLowerCase() : "";
   const allRows = defensiveTargets.map(name => ({name, response: responseMap.get(String(name).trim()) || null}));
-  let rows = allRows;
+  const filteredRows = allRows.filter(row => !keyword || row.name.toLowerCase().includes(keyword));
+  let rows = filteredRows;
   let title = "應完成名單";
   if(activeDefensiveStatus === "completed"){
-    rows = allRows.filter(row => row.response?.status === "completed");
+    rows = filteredRows.filter(row => row.response?.status === "completed");
     title = "已完成名單";
   }else if(activeDefensiveStatus === "incomplete"){
-    rows = allRows.filter(row => row.response?.status !== "completed");
+    rows = filteredRows.filter(row => row.response?.status !== "completed");
     title = "未完成名單";
   }else if(activeDefensiveStatus === "active"){
     title = "在職名單";
@@ -3668,10 +3723,12 @@ function showAdminMode(mode){
   surveyModePage.style.display = mode === "survey" ? "block" : "none";
   batteryModePage.style.display = mode === "battery" ? "block" : "none";
   defensiveModePage.style.display = mode === "defensive" ? "block" : "none";
+  rosterModePage.style.display = mode === "roster" ? "block" : "none";
   if(mode === "vehicle") loadData();
   if(mode === "survey") loadSurveyData();
   if(mode === "battery") loadBatteryData();
   if(mode === "defensive") loadDefensiveAdminData();
+  if(mode === "roster") loadRosterData();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -3688,6 +3745,9 @@ vehicleModeBtn.onclick =
 surveyModeBtn.onclick =
   () => showAdminMode("survey");
 
+rosterModeBtn.onclick =
+  () => showAdminMode("roster");
+
 batteryModeBtn.onclick =
   () => showAdminMode("battery");
 
@@ -3695,6 +3755,9 @@ vehicleBackBtn.onclick =
   () => showAdminMode("home");
 
 surveyBackBtn.onclick =
+  () => showAdminMode("home");
+
+rosterBackBtn.onclick =
   () => showAdminMode("home");
 
 batteryBackBtn.onclick =
@@ -3743,10 +3806,16 @@ defensiveAdminList.onclick = e => {
 };
 
 surveySearchInput.oninput =
-  renderSurveyResponses;
+  () => {
+    renderSurveyStatusList(activeSurveyStatus);
+    renderSurveyResponses();
+  };
 
 surveyExportBtn.onclick =
   exportSurveyResponses;
+
+surveyRefreshBtn.onclick =
+  loadSurveyData;
 
 surveyResponseList.onclick =
   e => {
@@ -3777,10 +3846,13 @@ defensiveBackBtn.onclick = () => showAdminMode("home");
 defensiveRefreshBtn.onclick = loadDefensiveAdminData;
 defensiveExportBtn.onclick = exportDefensiveResponses;
 defensiveAdminMonth.onchange = loadDefensiveAdminData;
-surveyIncompleteList.onclick = e => {
+defensiveSearchInput.oninput = () => renderDefensiveStatusList(activeDefensiveStatus);
+const rosterDeleteHandler = e => {
   const button = e.target.closest(".survey-target-delete-btn");
   if(button) deleteSurveyTarget(button.dataset.name, button.dataset.round);
 };
+rosterList.onclick = rosterDeleteHandler;
+surveyIncompleteList.onclick = rosterDeleteHandler;
 surveyFailedList.onclick = e => {
   const button = e.target.closest(".survey-failed-btn");
   if(button) focusSurveyResponse(button.dataset.name);
