@@ -742,6 +742,39 @@ button{cursor:pointer}
   margin-bottom:14px;
 }
 
+.summary-with-refresh{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+.summary-with-refresh .survey-summary{
+  display:contents;
+}
+
+.summary-refresh-btn{
+  width:100%;
+  min-height:92px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  color:var(--black);
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.summary-refresh-btn:hover{
+  border-color:#c9a99e;
+}
+
+@media(max-width:700px){
+  .summary-with-refresh{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
 .survey-card{
   background:#fff;
   border:1px solid var(--line);
@@ -985,10 +1018,12 @@ button{cursor:pointer}
       <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋姓名">
       <div class="mode-tools">
         <button id="surveyExportBtn" class="action-btn" type="button">📊 匯出意向調查</button>
-        <button id="surveyRefreshBtn" class="action-btn" type="button">↻ 重新整理</button>
       </div>
     </div>
-    <div id="surveySummary" class="survey-summary" style="margin-top:14px;"></div>
+    <div class="summary-with-refresh">
+      <div id="surveySummary" class="survey-summary"></div>
+      <button id="surveyRefreshBtn" class="summary-refresh-btn" type="button">↻ 重新整理</button>
+    </div>
     <div id="surveyStatusList" class="survey-status-list"></div>
   </section>
 
@@ -1032,10 +1067,12 @@ button{cursor:pointer}
       <input id="defensiveSearchInput" class="search-input" type="text" placeholder="搜尋姓名" style="margin-top:12px">
       <div class="mode-tools">
         <button id="defensiveExportBtn" class="action-btn" type="button">📊 匯出本月防禦駕駛</button>
-        <button id="defensiveRefreshBtn" class="action-btn" type="button">↻ 重新整理</button>
       </div>
     </div>
-    <div id="defensiveSummary" class="survey-summary" style="margin-top:14px;"></div>
+    <div class="summary-with-refresh">
+      <div id="defensiveSummary" class="survey-summary"></div>
+      <button id="defensiveRefreshBtn" class="summary-refresh-btn" type="button">↻ 重新整理</button>
+    </div>
   </section>
   <section class="section">
     <div id="defensiveAdminList" class="vehicle-list">
@@ -3467,7 +3504,6 @@ function renderDefensiveSummary(uniqueNames, completed, incomplete){
     <button type="button" class="summary-card clickable" data-defensive-status="required"><div class="summary-label">應完成</div><div class="summary-number">${uniqueNames.length}</div></button>
     <button type="button" class="summary-card abnormal clickable" data-defensive-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">${incomplete.length}</div></button>
     <button type="button" class="summary-card done clickable" data-defensive-status="completed"><div class="summary-label">已完成</div><div class="summary-number">${completed.size}</div></button>
-    <button type="button" class="summary-card clickable" data-defensive-status="active"><div class="summary-label">在職名單</div></button>
   `;
   defensiveSummary.querySelectorAll("[data-defensive-status]").forEach(card => {
     card.classList.toggle("active", card.dataset.defensiveStatus === activeDefensiveStatus);
