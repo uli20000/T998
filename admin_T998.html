@@ -1030,6 +1030,7 @@ button{cursor:pointer}
         <option value="9">9 月</option><option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
       </select>
       <button id="defensiveRefreshBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">↻ 重新整理防禦駕駛</button>
+      <button id="defensiveExportBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">📊 匯出防禦駕駛 Excel</button>
     </div>
     <div id="defensiveSummary" class="survey-summary" style="margin-top:14px;"></div>
   </section>
@@ -1228,6 +1229,7 @@ const defensiveModeBtn = $("defensiveModeBtn");
 const defensiveBackBtn = $("defensiveBackBtn");
 const defensiveAdminMonth = $("defensiveAdminMonth");
 const defensiveRefreshBtn = $("defensiveRefreshBtn");
+const defensiveExportBtn = $("defensiveExportBtn");
 const defensiveSummary = $("defensiveSummary");
 const defensiveAdminList = $("defensiveAdminList");
 defensiveAdminMonth.value = String(new Date().getMonth() + 1);
@@ -3493,6 +3495,44 @@ async function loadDefensiveAdminData(){
   }
 }
 
+function exportDefensiveResponses(){
+  const year = new Date().getFullYear();
+  const monthNo = Number(defensiveAdminMonth.value);
+  const names = [...new Set((defensiveTargets || []).map(name => String(name || "").trim()).filter(Boolean))];
+  if(!names.length){
+    alert("目前沒有可匯出的防禦駕駛名單。");
+    return;
+  }
+
+  const responseMap = new Map();
+  (defensiveResponses || []).forEach(row => {
+    const name = String(row.respondent_name || "").trim();
+    if(name && !responseMap.has(name)) responseMap.set(name, row);
+  });
+
+  const rows = names.map(name => {
+    const row = responseMap.get(name) || null;
+    const completed = row?.status === "completed";
+    return {
+      年度: year,
+      訓練月份: `${monthNo}月`,
+      員工姓名: name,
+      完成狀態: completed ? "已完成" : (row ? "作答未完成" : "尚未開始"),
+      答題次數: row?.attempt_count ?? 0,
+      第1題答案: row?.question_1_answer || "",
+      第2題答案: row?.question_2_answer || "",
+      最後作答時間: row?.last_attempt_at || "",
+      完成時間: row?.completed_at || "",
+      影片開啟時間: row?.video_opened_at || ""
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "防禦駕駛");
+  XLSX.writeFile(wb, `KFC_防禦駕駛_${year}-${String(monthNo).padStart(2,"0")}.xlsx`);
+}
+
 async function loadSurveyData(){
   surveyResponseList.innerHTML = '<div class="loading">載入問卷資料中…</div>';
   try{
@@ -3735,6 +3775,7 @@ surveyRoundSelect.onchange = loadSurveyData;
 defensiveModeBtn.onclick = () => showAdminMode("defensive");
 defensiveBackBtn.onclick = () => showAdminMode("home");
 defensiveRefreshBtn.onclick = loadDefensiveAdminData;
+defensiveExportBtn.onclick = exportDefensiveResponses;
 defensiveAdminMonth.onchange = loadDefensiveAdminData;
 surveyIncompleteList.onclick = e => {
   const button = e.target.closest(".survey-target-delete-btn");
