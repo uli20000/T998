@@ -793,6 +793,7 @@ button{cursor:pointer}
 .survey-name{font-size:18px;font-weight:800}
 .survey-time{color:var(--gray);font-size:12px}
 .survey-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:700px){.survey-grid{grid-template-columns:1fr}.survey-card-top{align-items:flex-start;flex-direction:column;gap:4px}.survey-name{font-size:17px}.record-actions{display:grid;grid-template-columns:1fr;gap:8px}.record-actions .action-btn{width:100%}}
 .survey-item{padding:9px;border-radius:10px;background:#faf9f6;color:var(--gray);font-size:13px;line-height:1.5}
 .survey-item strong{display:block;color:var(--black);font-size:15px}
 .survey-result-pass{color:var(--green)!important}
@@ -874,12 +875,82 @@ button{cursor:pointer}
 .survey-admin-tools .search-input{height:42px;padding:8px 10px;font-size:14px}
 .survey-admin-tools .action-btn{width:auto;min-height:42px;padding:8px 12px;white-space:nowrap;font-size:14px}
 @media(max-width:700px){.survey-admin-tools{grid-template-columns:1fr}.survey-admin-tools .action-btn{width:100%}}
+
+/* 管理員登入：手機優先、簡潔品牌卡片 */
+.auth-gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 18px;position:relative;overflow:hidden;background:#f4f0e8}
+.auth-gate::before,.auth-gate::after{content:"";position:absolute;border-radius:999px;pointer-events:none}
+.auth-gate::before{width:420px;height:420px;right:-180px;top:-170px;background:rgba(200,16,46,.08)}
+.auth-gate::after{width:340px;height:340px;left:-180px;bottom:-190px;background:rgba(200,16,46,.06)}
+.auth-card{width:min(100%,460px);position:relative;z-index:1;background:rgba(255,255,255,.96);border:1px solid rgba(36,36,36,.08);border-radius:30px;padding:28px 30px 26px;box-shadow:0 20px 60px rgba(36,36,36,.13);text-align:left}
+.auth-card::before{content:"";display:block;width:48px;height:5px;margin-bottom:26px;border-radius:999px;background:var(--red)}
+.auth-brand{display:flex;align-items:center;gap:9px;color:var(--gray);font-size:11px;font-weight:900;letter-spacing:2.4px;margin-bottom:18px}
+.auth-brand-kfc{color:var(--red);font-size:16px;letter-spacing:1px}
+.auth-brand-separator{color:#c7c0b6;font-size:16px}
+.auth-mark{width:72px;height:72px;margin:0 0 18px;border-radius:22px;background:var(--red);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:900;letter-spacing:1px;box-shadow:0 10px 20px rgba(200,16,46,.22)}
+.auth-mark span{display:block}
+.auth-card h1{margin:0;color:var(--black);font-size:30px;line-height:1.2;letter-spacing:.3px}
+.auth-heading{margin-top:7px;color:var(--black);font-size:18px;font-weight:800}
+.auth-subtitle{margin:10px 0 26px;color:var(--gray);font-size:14px;line-height:1.65}
+.auth-field{text-align:left;margin:16px 0}
+.auth-field label{display:block;margin:0 0 8px;font-size:14px;font-weight:900;color:var(--black)}
+.auth-input-wrap{position:relative}
+.auth-input{width:100%;height:54px;border:1px solid #d8d3ca;border-radius:15px;padding:0 15px;background:#fff;color:var(--black);font-size:16px;outline:none;transition:.2s}
+.auth-input::placeholder{color:#aaa}
+.auth-input:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(200,16,46,.10)}
+.auth-input.has-toggle{padding-right:68px}
+.auth-toggle{position:absolute;right:7px;top:7px;height:40px;border:0;border-left:1px solid var(--line);background:transparent;color:var(--red);font-size:13px;font-weight:900;padding:0 12px;cursor:pointer}
+.auth-submit{width:100%;height:56px;margin-top:12px;border:0;border-radius:15px;background:var(--red);color:#fff;font-size:17px;font-weight:900;letter-spacing:.5px;box-shadow:0 10px 22px rgba(200,16,46,.20);cursor:pointer}
+.auth-submit:hover{background:#ae0e28}
+.auth-submit:disabled{opacity:.6;cursor:wait}
+.auth-message{min-height:22px;margin-top:14px;color:var(--danger);font-size:14px;line-height:1.5}
+.auth-foot{margin-top:20px;padding-top:16px;border-top:1px solid #eee9e1;color:var(--gray);font-size:12px;line-height:1.5}
+.admin-session-bar{display:none;align-items:center;justify-content:center;gap:10px;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line);color:var(--gray);font-size:12px}
+.admin-session-bar button{border:1px solid #e2aaa4;background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:6px 10px;font-weight:800}
+@media(max-width:500px){.auth-gate{padding:18px 14px}.auth-card{padding:24px 20px 22px;border-radius:26px}.auth-card::before{margin-bottom:22px}.auth-card h1{font-size:27px}.auth-mark{width:66px;height:66px;border-radius:20px}.auth-subtitle{margin-bottom:22px}}
+
+
+/* 後台首頁與設備管理：手機優先 */
+.admin-mode-btn{min-height:84px;font-size:22px}
+.admin-mode-btn .icon{font-size:34px}
+.device-admin-type-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:620px;margin:0 auto}
+.device-admin-type-btn{min-height:58px;border:2px solid var(--line);border-radius:15px;background:#fff;color:var(--black);font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.device-admin-type-btn.active{border-color:var(--red);background:var(--danger-bg);color:var(--red);box-shadow:0 0 0 3px rgba(200,16,46,.08)}
+.device-admin-type-btn:focus-visible{outline:3px solid rgba(22,131,223,.35);outline-offset:2px}
+.device-add-panel{border-color:#e1c66e;background:#fffdf5}
+.device-add-intro{padding:12px;border-radius:12px;background:var(--yellow-bg);color:#765800;font-size:14px;line-height:1.6;text-align:left;margin-bottom:12px}
+@media(max-width:700px){.admin-mode-btn{min-height:82px;font-size:21px}.admin-mode-btn .icon{font-size:32px}}
 </style>
 </head>
 
 <body>
 
-<div class="page">
+<div id="authGate" class="auth-gate">
+  <form id="authForm" class="auth-card" autocomplete="on">
+    <div class="auth-brand"><span class="auth-brand-kfc">KFC</span><span class="auth-brand-separator">/</span><span>T998 RIDER CENTER</span></div>
+    <div class="auth-mark"><span>995</span></div>
+    <div class="auth-heading">管理後台</div>
+    <div class="auth-field">
+      <label for="authEmail">帳號</label>
+      <input id="authEmail" class="auth-input" type="email" autocomplete="username" placeholder="" required>
+    </div>
+    <div class="auth-field">
+      <label for="authPassword">密碼</label>
+      <div class="auth-input-wrap">
+        <input id="authPassword" class="auth-input has-toggle" type="password" autocomplete="current-password" placeholder="" required>
+        <button id="authPasswordToggle" class="auth-toggle" type="button">顯示</button>
+      </div>
+    </div>
+    <button id="authSubmit" class="auth-submit" type="submit">登入後台</button>
+    <div id="authMessage" class="auth-message" role="alert"></div>
+    <div class="auth-foot">請使用公司授權帳號登入</div>
+  </form>
+</div>
+<div id="adminSessionBar" class="admin-session-bar">
+  <span id="adminSessionEmail"></span>
+  <button id="authLogoutBtn" type="button">登出</button>
+</div>
+
+<div id="adminApp" class="page" style="display:none">
 
 <header class="header">
   <div class="eyebrow">KFC DELIVERY CENTER</div>
@@ -895,11 +966,11 @@ button{cursor:pointer}
 <div id="adminModeMenu" class="admin-menu">
   <button id="vehicleModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">🚗</span>
-    車輛檢查
+    車輛管理
   </button>
   <button id="batteryModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">🔋</span>
-    電池設備
+    設備管理
   </button>
   <button id="defensiveModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">🛡️</span>
@@ -1037,19 +1108,64 @@ button{cursor:pointer}
 <section id="batteryModePage" class="admin-mode-page">
   <div class="mode-back-row"><button id="batteryBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
   <section class="section">
-    <div class="section-title">電池設備查看</div>
-    <div id="batterySummary" class="survey-summary"></div>
+    <div class="section-title">設備管理</div>
+    <input id="deviceAdminType" type="hidden" value="battery">
+    <div class="device-admin-type-buttons" role="group" aria-label="設備類型">
+      <button id="deviceBatteryTypeBtn" class="device-admin-type-btn active" type="button" data-device-type="battery">🔋 電池</button>
+      <button id="deviceRecorderTypeBtn" class="device-admin-type-btn" type="button" data-device-type="recorder">📹 紀錄器</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-title" id="deviceSearchTitle">搜尋電池</div>
     <div class="search-box">
-      <input id="batterySearchInput" class="search-input" type="text" placeholder="搜尋電池編號或餐廳店號">
-      <div class="mode-tools">
-        <button id="batteryRefreshBtn" class="action-btn" type="button">↻ 重新整理電池紀錄</button>
-        <button id="batteryExportBtn" class="action-btn" type="button">📊 匯出電池異常</button>
-      </div>
+      <input id="batterySearchInput" class="search-input" type="text" placeholder="輸入電池編號後自動查詢" autocomplete="off">
+      <div id="deviceSearchMessage" class="hint" style="margin-top:8px">輸入編號後會自動開始查詢。</div>
+    </div>
+  </section>
+
+  <section id="deviceRegisterPanel" class="section" style="display:none">
+    <div class="section-title">新增正常設備</div>
+    <div class="search-box device-add-panel">
+      <div id="deviceRegisterIntro" class="device-add-intro">查無此設備，請補充資料後新增。新增的設備會直接設定為正常。</div>
+      <select id="deviceRegisterRestaurant" class="search-input">
+        <option value="">請選擇電池所在餐廳</option>
+        <option value="093">林口文化（093）</option><option value="018">林口復興（018）</option><option value="099">南崁中正（099）</option>
+            <option value="201">台南台茂（201）</option><option value="095">中壢環中東（095）</option><option value="209">中壢環中東二（209）</option>
+            <option value="137">台南大園（137）</option><option value="062">龍潭北龍（062）</option><option value="154">新竹清大（154）</option>
+            <option value="227">台南新屋（227）</option><option value="248">台南領航（248）</option><option value="041">楊梅中山（041）</option>
+            <option value="161">楊梅大成（161）</option><option value="516">中壢中正（516）</option><option value="544">中壢中和（544）</option>
+            <option value="084">中壢民族（084）</option><option value="242">中壢過嶺（242）</option><option value="580">苗栗頭份（580）</option>
+            <option value="133">新竹新豐（133）</option><option value="203">新竹湖口（203）</option><option value="562">新竹竹北（562）</option>
+            <option value="144">竹北自強（144）</option><option value="587">新竹民生（587）</option><option value="066">新竹竹東（066）</option>
+            <option value="214">新竹中正（214）</option><option value="594">新竹亞太（594）</option><option value="235">竹北中華（235）</option>
+            <option value="025">苗栗中正（025）</option><option value="173">苗栗竹南（173）</option><option value="142">台南桃營（142）</option>
+            <option value="182">台南萬壽（182）</option><option value="167">台南介壽（167）</option><option value="165">台南南平（165）</option>
+            <option value="179">台南大竹（179）</option><option value="190">台南大溪（190）</option><option value="098">台南大興西（098）</option>
+            <option value="183">台南中山二（183）</option><option value="013">新竹光復（013）</option>
+      </select>
+      <select id="deviceRegisterSize" class="search-input" style="margin-top:10px;display:none">
+        <option value="large">A10／大台</option>
+        <option value="small">C100／小台</option>
+      </select>
+      <button id="deviceRegisterBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">＋ 新增正常電池</button>
+      <div id="deviceRegisterMessage" class="hint" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-title" id="deviceInventoryTitle">目前電池設備</div>
+    <div class="search-box">
+      <button id="batteryExportBtn" class="action-btn" type="button" style="width:100%">📊 匯出目前設備</button>
+    </div>
+    <div class="summary-with-refresh">
+      <div id="batterySummary" class="survey-summary"></div>
+      <button id="batteryRefreshBtn" class="summary-refresh-btn" type="button">↻ 重新整理</button>
     </div>
   </section>
   <section class="section">
     <div id="batteryReportList" class="vehicle-list">
-      <div class="loading">尚未載入電池紀錄</div>
+      <div class="loading">尚未載入設備資料</div>
     </div>
   </section>
 </section>
@@ -1275,6 +1391,17 @@ const batteryExportBtn = $("batteryExportBtn");
 const batterySearchInput = $("batterySearchInput");
 const batterySummary = $("batterySummary");
 const batteryReportList = $("batteryReportList");
+const deviceAdminType = $("deviceAdminType");
+const deviceBatteryTypeBtn = $("deviceBatteryTypeBtn");
+const deviceRecorderTypeBtn = $("deviceRecorderTypeBtn");
+const deviceSearchTitle = $("deviceSearchTitle");
+const deviceSearchMessage = $("deviceSearchMessage");
+const deviceInventoryTitle = $("deviceInventoryTitle");
+const deviceRegisterPanel = $("deviceRegisterPanel");
+const deviceRegisterRestaurant = $("deviceRegisterRestaurant");
+const deviceRegisterSize = $("deviceRegisterSize");
+const deviceRegisterBtn = $("deviceRegisterBtn");
+const deviceRegisterMessage = $("deviceRegisterMessage");
 const rosterModePage = $("rosterModePage");
 const rosterModeBtn = $("rosterModeBtn");
 const rosterBackBtn = $("rosterBackBtn");
@@ -1305,6 +1432,9 @@ let surveyResponses = [];
 let surveyTargets = [];
 let activeSurveyStatus = "required";
 let batteryReports = [];
+let batteryInventory = [];
+let recorderReports = [];
+let recorderInventory = [];
 let defensiveResponses = [];
 let defensiveTargets = [];
 let activeDefensiveStatus = "required";
@@ -1412,11 +1542,10 @@ function isWithinFiveDays(v){
 ========================= */
 
 function todayReport(v){
-
-  return todayReports.find(
-    r => r.vehicle_id === v.id
-  ) || null;
-
+  const rows = todayReports
+    .filter(r => r.vehicle_id === v.id)
+    .sort((a,b) => new Date(b.reported_at || 0).getTime() - new Date(a.reported_at || 0).getTime());
+  return rows[0] || null;
 }
 
 /* =========================
@@ -1551,11 +1680,10 @@ function oilStatus(v){
 ========================= */
 
 function latestClaim(v){
-
-  return allClaims.find(
-    r => r.vehicle_id === v.id
-  ) || null;
-
+  const rows = allClaims
+    .filter(r => r.vehicle_id === v.id)
+    .sort((a,b) => new Date(b.claimed_at || 0).getTime() - new Date(a.claimed_at || 0).getTime());
+  return rows[0] || null;
 }
 
 function isClaimPending(v){
@@ -1589,7 +1717,11 @@ function isReturnedToday(v){
   const claim = latestClaim(v);
   const report = todayReport(v);
   if(!claim || !report || !isToday(claim.claimed_at)) return false;
-  return new Date(report.reported_at).getTime() >= new Date(claim.claimed_at).getTime();
+  const claimTime = new Date(claim.claimed_at || 0).getTime();
+  const reportTime = new Date(report.reported_at || 0).getTime();
+  if(!Number.isFinite(claimTime) || !Number.isFinite(reportTime)) return false;
+  // 只把最新一次領車之後的巡檢視為這次還車。
+  return reportTime > claimTime;
 }
 
 function priority(v){
@@ -1790,7 +1922,8 @@ function renderVehicles(){
       return [
         v.plate4,
         v.full_plate,
-        v.center
+        v.center,
+        v.employee_name
       ]
       .filter(Boolean)
       .some(x =>
@@ -1900,6 +2033,7 @@ function renderVehicles(){
         <div class="center">
           CENTER｜${esc(v.center || "未設定")}
         </div>
+        ${v.employee_name ? `<div class="center">員工｜${esc(v.employee_name)}</div>` : ""}
 
         <div class="status ${sc}">
           ${st}
@@ -2116,6 +2250,7 @@ function openQuickList(type){
         <div class="quick-center">
           CENTER｜${esc(v.center || "未設定")}
         </div>
+        ${v.employee_name ? `<div class="quick-center">員工｜${esc(v.employee_name)}</div>` : ""}
 
         <div class="quick-detail">
           ${detail}
@@ -3652,67 +3787,365 @@ async function loadSurveyData(){
   }
 }
 
+function batteryKey(value){
+  return String(value || "").trim().toLowerCase();
+}
+
+function batteryReportPending(row){
+  return row && row.resolution_status !== "resolved";
+}
+
+function batteryInventoryMap(){
+  return new Map((batteryInventory || []).map(row => [batteryKey(row.battery_number), row]));
+}
+
 function renderBatterySummary(){
-  const pending = batteryReports.filter(x => x.resolution_status !== "resolved").length;
-  const resolved = batteryReports.filter(x => x.resolution_status === "resolved").length;
+  const activeRows = (batteryInventory || []).filter(row => row.status === "active");
+  const activeKeys = new Set(activeRows.map(row => batteryKey(row.battery_number)).filter(Boolean));
+  const abnormalKeys = new Set([
+    ...activeRows.filter(row => row.health_status === "abnormal").map(row => batteryKey(row.battery_number)),
+    ...(batteryReports || [])
+      .filter(row => batteryReportPending(row) && activeKeys.has(batteryKey(row.battery_number)))
+      .map(row => batteryKey(row.battery_number))
+  ].filter(Boolean));
+  const total = activeRows.length;
+  const abnormal = abnormalKeys.size;
+  const normal = Math.max(total - abnormal, 0);
   batterySummary.innerHTML = `
-    <div class="summary-card"><div class="summary-label">回報總數</div><div class="summary-number">${batteryReports.length}</div></div>
-    <div class="summary-card abnormal"><div class="summary-label">待處理</div><div class="summary-number">${pending}</div></div>
-    <div class="summary-card done"><div class="summary-label">已處理</div><div class="summary-number">${resolved}</div></div>
+    <div class="summary-card"><div class="summary-label">總數量</div><div class="summary-number">${total}</div></div>
+    <div class="summary-card done"><div class="summary-label">正常</div><div class="summary-number">${normal}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">異常</div><div class="summary-number">${abnormal}</div></div>
   `;
+}
+
+function latestDeviceReport(reports, key, value){
+  const matches = (reports || []).filter(row => batteryKey(row[key]) === batteryKey(value));
+  return matches.sort((a,b) => String(b.reported_at || "").localeCompare(String(a.reported_at || "")))[0] || null;
 }
 
 function renderBatteryReports(){
   const keyword = batterySearchInput.value.trim().toLowerCase();
-  const rows = batteryReports.filter(x => {
+  const inventoryMap = batteryInventoryMap();
+  const inventoryRows = (batteryInventory || []).map(row => ({
+    kind: "inventory",
+    row,
+    report: latestDeviceReport(batteryReports, "battery_number", row.battery_number)
+  }));
+  const known = new Set((batteryInventory || []).map(row => batteryKey(row.battery_number)));
+  const reportOnlyRows = (batteryReports || [])
+    .filter(row => !known.has(batteryKey(row.battery_number)))
+    .map(row => ({kind:"report", row, report:row}));
+  const rows = [...inventoryRows, ...reportOnlyRows].filter(item => {
+    const row = item.row;
+    const report = item.report;
     if(!keyword) return true;
-    return [x.battery_number, x.restaurant_no, x.issue_description]
-      .filter(Boolean)
-      .some(value => String(value).toLowerCase().includes(keyword));
+    return [row.battery_number, row.restaurant_no, row.issue_description, report?.issue_description]
+      .filter(Boolean).some(value => String(value).toLowerCase().includes(keyword));
   });
 
   if(!rows.length){
-    batteryReportList.innerHTML = '<div class="empty">目前沒有電池異常回報</div>';
+    batteryReportList.innerHTML = '<div class="empty">目前沒有電池建檔資料或異常回報</div>';
     return;
   }
 
-  batteryReportList.innerHTML = rows.map(row => {
-    const resolved = row.resolution_status === "resolved";
+  batteryReportList.innerHTML = rows.map(item => {
+    const row = item.row;
+    const report = item.report;
+    const inventory = item.kind === "inventory" ? row : inventoryMap.get(batteryKey(row.battery_number));
+    const pending = report && batteryReportPending(report);
+    const scrapped = inventory?.status === "scrapped" || report?.resolution_note === "報廢";
+    const abnormal = inventory?.health_status === "abnormal";
+    const statusText = scrapped ? "已報廢" : pending ? "待處理" : abnormal ? "異常" : report ? "維修完成" : "正常";
+    const statusClass = scrapped || pending || abnormal ? "survey-result-fail" : "survey-result-pass";
+    const actions = pending ? `
+      <button class="action-btn battery-repair-btn" type="button" data-id="${esc(report.id)}">🔧 維修完成</button>
+      <button class="action-btn danger battery-scrap-btn" type="button" data-id="${esc(report.id)}">🗑 報廢</button>
+    ` : "";
+    const issueText = report?.issue_description || row.health_note || "目前沒有異常回報";
     return `
       <div class="survey-card">
         <div class="survey-card-top">
           <div class="survey-name">🔋 ${esc(row.battery_number || "未填編號")}</div>
-          <div class="survey-time">${esc(fmt(row.reported_at))}</div>
+          <div class="survey-time">建檔：${esc(fmt(inventory?.created_at))}</div>
         </div>
         <div class="survey-grid">
-          <div class="survey-item">所在餐廳<strong>${esc(row.restaurant_no || "未填寫")}</strong></div>
-          <div class="survey-item">處理狀態<strong class="${resolved ? "survey-result-pass" : "survey-result-fail"}">${resolved ? "已處理" : "待處理"}</strong></div>
+          <div class="survey-item">所在餐廳<strong>${esc(row.restaurant_no || inventory?.restaurant_no || "未填寫")}</strong></div>
+          <div class="survey-item">設備狀態<strong class="${statusClass}">${statusText}</strong></div>
         </div>
-        <div class="survey-detail"><strong>異常內容：</strong>${esc(row.issue_description || "未填寫")}</div>
-        ${row.resolution_note ? `<div class="survey-detail"><strong>處理備註：</strong>${esc(row.resolution_note)}</div>` : ""}
-        <div class="record-actions">
-          <button class="delete-btn battery-delete-btn" type="button" data-id="${esc(row.id)}">🗑 刪除這筆</button>
-        </div>
+        <div class="survey-detail"><strong>異常內容：</strong>${esc(issueText)}</div>
+        ${report ? `<div class="survey-detail"><strong>回報時間：</strong>${esc(fmt(report.reported_at))}</div>` : ""}
+        ${report?.resolution_note ? `<div class="survey-detail"><strong>處理備註：</strong>${esc(report.resolution_note)}</div>` : ""}
+        ${actions ? `<div class="record-actions">${actions}</div>` : ""}
       </div>
     `;
   }).join("");
 }
 
-async function loadBatteryData(){
-  batteryReportList.innerHTML = '<div class="loading">載入電池紀錄中…</div>';
+function recorderKey(value){
+  return String(value || "").trim().toLowerCase();
+}
+
+function recorderReportPending(row){
+  return row && row.resolution_status !== "resolved";
+}
+
+function renderRecorderSummary(){
+  const active = recorderInventory.filter(row => row.status === "active");
+  const activeKeys = new Set(active.map(row => recorderKey(row.recorder_number)).filter(Boolean));
+  const abnormalKeys = new Set([
+    ...active.filter(row => row.health_status === "abnormal").map(row => recorderKey(row.recorder_number)),
+    ...recorderReports.filter(row => recorderReportPending(row) && activeKeys.has(recorderKey(row.recorder_number))).map(row => recorderKey(row.recorder_number))
+  ].filter(Boolean));
+  const total = active.length;
+  const abnormal = abnormalKeys.size;
+  const normal = Math.max(total - abnormal, 0);
+  batterySummary.innerHTML = `
+    <div class="summary-card"><div class="summary-label">總數量</div><div class="summary-number">${total}</div></div>
+    <div class="summary-card done"><div class="summary-label">正常</div><div class="summary-number">${normal}</div></div>
+    <div class="summary-card abnormal"><div class="summary-label">異常</div><div class="summary-number">${abnormal}</div></div>`;
+}
+
+function renderRecorderReports(){
+  const keyword = batterySearchInput.value.trim().toLowerCase();
+  const inventoryRows = (recorderInventory || []).map(row => ({
+    kind: "inventory",
+    row,
+    report: latestDeviceReport(recorderReports, "recorder_number", row.recorder_number)
+  }));
+  const known = new Set((recorderInventory || []).map(row => recorderKey(row.recorder_number)));
+  const reportOnlyRows = (recorderReports || [])
+    .filter(row => !known.has(recorderKey(row.recorder_number)))
+    .map(row => ({kind:"report", row, report:row}));
+  const rows = [...inventoryRows, ...reportOnlyRows].filter(item => {
+    const row = item.row;
+    const report = item.report;
+    if(!keyword) return true;
+    return [row.recorder_number, row.recorder_size, row.issue_description, report?.issue_description]
+      .filter(Boolean).some(value => String(value).toLowerCase().includes(keyword));
+  });
+  if(!rows.length){ batteryReportList.innerHTML = '<div class="empty">目前沒有紀錄器建檔資料或異常回報</div>'; return; }
+  batteryReportList.innerHTML = rows.map(item => {
+    const row = item.row;
+    const report = item.report;
+    const inv = item.kind === "inventory" ? row : null;
+    const pending = report && recorderReportPending(report);
+    const scrapped = inv?.status === "scrapped" || report?.resolution_note === "報廢";
+    const abnormal = inv?.health_status === "abnormal";
+    const statusText = scrapped ? "已報廢" : pending ? "待處理" : abnormal ? "異常" : report ? "維修完成" : "正常";
+    const statusClass = scrapped || pending || abnormal ? "survey-result-fail" : "survey-result-pass";
+    const actions = pending ? `<button class="action-btn recorder-repair-btn" type="button" data-id="${esc(report.id)}">🔧 維修完成</button><button class="action-btn danger recorder-scrap-btn" type="button" data-id="${esc(report.id)}">🗑 報廢</button>` : "";
+    return `<div class="survey-card">
+      <div class="survey-card-top"><div class="survey-name">📹 ${esc(row.recorder_number || "未填編號")}</div><div class="survey-time">建檔：${esc(fmt(inv?.created_at))}</div></div>
+      <div class="survey-grid"><div class="survey-item">紀錄器類型<strong>${inv?.recorder_size === "large" ? "大台" : "小台"}</strong></div><div class="survey-item">設備狀態<strong class="${statusClass}">${statusText}</strong></div></div>
+      <div class="survey-detail"><strong>異常內容：</strong>${esc(report?.issue_description || row.health_note || "目前沒有異常回報")}</div>
+      ${report ? `<div class="survey-detail"><strong>回報時間：</strong>${esc(fmt(report.reported_at))}</div>` : ""}
+      ${report?.resolution_note ? `<div class="survey-detail"><strong>處理備註：</strong>${esc(report.resolution_note)}</div>` : ""}
+      ${actions ? `<div class="record-actions">${actions}</div>` : ""}</div>`;
+  }).join("");
+}
+
+async function loadRecorderData(){
+  batteryReportList.innerHTML = '<div class="loading">載入紀錄器資料中…</div>';
   try{
-    const result = await db
-      .from("battery_issue_reports")
-      .select("*")
-      .order("reported_at",{ascending:false});
-    if(result.error) throw result.error;
-    batteryReports = result.data || [];
+    const [ir,rr] = await Promise.all([db.from("recorders").select("*").order("created_at",{ascending:false}),db.from("recorder_issue_reports").select("*").order("reported_at",{ascending:false})]);
+    if(ir.error) throw ir.error; if(rr.error) throw rr.error;
+    recorderInventory = ir.data || []; recorderReports = rr.data || [];
+    renderRecorderSummary(); renderRecorderReports();
+  }catch(e){
+    recorderInventory=[]; recorderReports=[]; batterySummary.innerHTML=`<div class="empty" style="grid-column:1/-1">紀錄器資料讀取失敗：${esc(e.message || "請先執行 recorders 建表 SQL")}</div>`; batteryReportList.innerHTML=`<div class="empty">紀錄器資料讀取失敗：${esc(e.message || "請確認資料表與權限")}</div>`;
+  }
+}
+
+function currentDeviceLabel(){
+  return deviceAdminType.value === "recorder" ? "紀錄器" : "電池";
+}
+
+function currentDeviceTable(){
+  return deviceAdminType.value === "recorder" ? "recorders" : "batteries";
+}
+
+function currentDeviceInventory(){
+  return deviceAdminType.value === "recorder" ? (recorderInventory || []) : (batteryInventory || []);
+}
+
+function filteredCurrentDeviceInventory(){
+  const keyword = batterySearchInput.value.trim().toLowerCase();
+  return currentDeviceInventory().filter(row => {
+    if(!keyword) return true;
+    const values = deviceAdminType.value === "recorder"
+      ? [row.recorder_number, row.recorder_size, row.health_note]
+      : [row.battery_number, row.restaurant_no, row.health_note];
+    return values.filter(Boolean).some(value => String(value).toLowerCase().includes(keyword));
+  });
+}
+
+function updateDeviceRegisterFields(){
+  const recorder = deviceAdminType.value === "recorder";
+  deviceBatteryTypeBtn.classList.toggle("active", !recorder);
+  deviceRecorderTypeBtn.classList.toggle("active", recorder);
+  deviceBatteryTypeBtn.setAttribute("aria-pressed", recorder ? "false" : "true");
+  deviceRecorderTypeBtn.setAttribute("aria-pressed", recorder ? "true" : "false");
+  deviceSearchTitle.textContent = recorder ? "搜尋紀錄器" : "搜尋電池";
+  deviceInventoryTitle.textContent = recorder ? "目前紀錄器設備" : "目前電池設備";
+  batterySearchInput.placeholder = recorder ? "輸入紀錄器編號後自動查詢" : "輸入電池編號後自動查詢";
+  deviceRegisterRestaurant.style.display = recorder ? "none" : "block";
+  deviceRegisterSize.style.display = recorder ? "block" : "none";
+  deviceRegisterBtn.textContent = recorder ? "＋ 新增正常紀錄器" : "＋ 新增正常電池";
+}
+
+function syncDeviceSearchState(){
+  const keyword = batterySearchInput.value.trim();
+  if(!keyword){
+    deviceRegisterPanel.style.display = "none";
+    deviceSearchMessage.textContent = `目前顯示全部${currentDeviceLabel()}設備。`;
+    return;
+  }
+  const rows = filteredCurrentDeviceInventory();
+  if(rows.length){
+    deviceRegisterPanel.style.display = "none";
+    deviceSearchMessage.textContent = `已找到 ${rows.length} 筆${currentDeviceLabel()}設備。`;
+  }else{
+    deviceRegisterPanel.style.display = "block";
+    deviceRegisterMessage.textContent = `查無此${currentDeviceLabel()}，請確認編號後新增正常設備。`;
+    deviceSearchMessage.textContent = `查無此${currentDeviceLabel()}，可直接新增正常設備。`;
+  }
+}
+
+async function loadDeviceData(clearSearch=false){
+  if(clearSearch) batterySearchInput.value = "";
+  updateDeviceRegisterFields();
+  if(deviceAdminType.value === "recorder") await loadRecorderData(); else await loadBatteryData();
+  syncDeviceSearchState();
+}
+
+async function addDeviceFromAdmin(){
+  const type = deviceAdminType.value;
+  const number = batterySearchInput.value.trim();
+  if(!number){
+    deviceSearchMessage.textContent = `請先輸入${type === "recorder" ? "紀錄器" : "電池"}編號。`;
+    batterySearchInput.focus();
+    return;
+  }
+  if(type === "battery" && !deviceRegisterRestaurant.value){
+    deviceRegisterMessage.textContent = "請選擇電池所在餐廳。";
+    deviceRegisterRestaurant.focus();
+    return;
+  }
+  deviceRegisterBtn.disabled = true;
+  deviceRegisterMessage.textContent = "新增正常設備中…";
+  try{
+    const table = type === "battery" ? "batteries" : "recorders";
+    const payload = type === "battery"
+      ? {battery_number:number, restaurant_no:deviceRegisterRestaurant.value, status:"active", health_status:"normal", health_note:null}
+      : {recorder_number:number, recorder_size:deviceRegisterSize.value, status:"active", health_status:"normal", health_note:null};
+    const result = await db.from(table).insert(payload).select().single();
+    if(result.error){
+      if(result.error.code === "23505") throw new Error("此設備編號已完成建檔，請重新查詢。");
+      throw result.error;
+    }
+    deviceRegisterMessage.textContent = `✅ ${type === "battery" ? "電池" : "紀錄器"} ${number} 已新增為正常設備。`;
+    if(type === "battery") deviceRegisterRestaurant.value = "";
+    await loadDeviceData(false);
+  }catch(e){
+    deviceRegisterMessage.textContent = `新增失敗：${e.message || "請確認權限"}`;
+  }finally{
+    deviceRegisterBtn.disabled = false;
+  }
+}
+
+function exportCurrentDevices(){
+  const rows = filteredCurrentDeviceInventory();
+  if(!rows.length){ alert(`目前沒有可匯出的${currentDeviceLabel()}設備。`); return; }
+  const recorder = deviceAdminType.value === "recorder";
+  const exportRows = rows.map(row => recorder ? ({
+    紀錄器編號: row.recorder_number || "",
+    型號: row.recorder_size === "large" ? "A10／大台" : "C100／小台",
+    設備狀態: row.status === "scrapped" ? "已報廢" : row.health_status === "abnormal" ? "異常" : "正常",
+    異常說明: row.health_note || "",
+    建檔時間: row.created_at || ""
+  }) : ({
+    電池編號: row.battery_number || "",
+    所在餐廳: row.restaurant_no || "",
+    設備狀態: row.status === "scrapped" ? "已報廢" : row.health_status === "abnormal" ? "異常" : "正常",
+    異常說明: row.health_note || "",
+    建檔時間: row.created_at || ""
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportRows), recorder ? "目前紀錄器" : "目前電池");
+  XLSX.writeFile(wb, `KFC_目前${recorder ? "紀錄器" : "電池"}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function updateRecorderIssue(id, action){
+  const row = recorderReports.find(item => String(item.id) === String(id)); if(!row || !recorderReportPending(row)) return;
+  const scrap = action === "scrapped"; const label = scrap ? "報廢" : "維修完成";
+  if(!confirm(`確定要將紀錄器「${row.recorder_number || "未填編號"}」標記為「${label}」嗎？`)) return;
+  try{
+    const inv = recorderInventory.find(item => recorderKey(item.recorder_number) === recorderKey(row.recorder_number));
+    if(!inv) throw new Error("找不到此紀錄器建檔資料。");
+    const now = new Date().toISOString();
+    const ur = await db.from("recorders").update({status:scrap ? "scrapped" : "active",health_status:scrap ? "abnormal" : "normal",health_note:scrap ? "報廢" : null,...(scrap ? {scrapped_at:now,scrapped_note:"由異常回報標記報廢"} : {})}).eq("id",inv.id);
+    if(ur.error) throw ur.error;
+    const rr = await db.from("recorder_issue_reports").update({resolution_status:"resolved",resolved_at:now,resolution_note:label}).eq("recorder_number",row.recorder_number).neq("resolution_status","resolved");
+    if(rr.error) throw rr.error;
+    alert(`✅ 已完成：${label}`); await loadRecorderData();
+  }catch(e){ alert(`紀錄器處理失敗：${e.message || "未知錯誤"}`); }
+}
+
+function exportRecorderReports(){
+  if(!recorderReports.length){ alert("目前沒有可匯出的紀錄器異常資料。"); return; }
+  const map = new Map(recorderInventory.map(row => [recorderKey(row.recorder_number),row]));
+  const rows = recorderReports.map(row => ({紀錄器編號:row.recorder_number || "",類型:map.get(recorderKey(row.recorder_number))?.recorder_size === "large" ? "大台" : "小台",異常內容:row.issue_description || "",回報時間:row.reported_at || "",處理狀態:row.resolution_status === "resolved" ? (row.resolution_note === "報廢" ? "已報廢" : "維修完成") : "待處理",處理時間:row.resolved_at || "",處理備註:row.resolution_note || ""}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"紀錄器異常回報"); XLSX.writeFile(wb,`KFC_紀錄器異常_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function loadBatteryData(){
+  batteryReportList.innerHTML = '<div class="loading">載入電池資料中…</div>';
+  try{
+    const [inventoryResult, reportResult] = await Promise.all([
+      db.from("batteries").select("*").order("created_at",{ascending:false}),
+      db.from("battery_issue_reports").select("*").order("reported_at",{ascending:false})
+    ]);
+    if(inventoryResult.error) throw inventoryResult.error;
+    if(reportResult.error) throw reportResult.error;
+    batteryInventory = inventoryResult.data || [];
+    batteryReports = reportResult.data || [];
     renderBatterySummary();
     renderBatteryReports();
   }
   catch(e){
-    batterySummary.innerHTML = "";
-    batteryReportList.innerHTML = `<div class="empty">電池資料讀取失敗：${esc(e.message || "請確認 anon SELECT 權限")}</div>`;
+    batteryInventory = [];
+    batteryReports = [];
+    batterySummary.innerHTML = `
+      <div class="empty" style="grid-column:1/-1">電池建檔資料讀取失敗：${esc(e.message || "請先執行 batteries 建表 SQL")}</div>
+    `;
+    batteryReportList.innerHTML = `<div class="empty">電池資料讀取失敗：${esc(e.message || "請確認資料表與權限")}</div>`;
+  }
+}
+
+async function updateBatteryIssue(id, action){
+  const row = batteryReports.find(item => String(item.id || "") === String(id || ""));
+  if(!row || !batteryReportPending(row)) return;
+  const isScrap = action === "scrapped";
+  const label = isScrap ? "報廢" : "維修完成";
+  if(!confirm(`確定要將電池「${row.battery_number || "未填編號"}」標記為「${label}」嗎？`)) return;
+  try{
+    if(isScrap){
+      const inventory = batteryInventory.find(item => batteryKey(item.battery_number) === batteryKey(row.battery_number) && item.status === "active");
+      if(!inventory){
+        throw new Error("找不到此電池的使用中建檔資料，請先完成電池建檔。");
+      }
+      const inventoryResult = await db.from("batteries").update({status:"scrapped", scrapped_at:new Date().toISOString(), scrapped_note:"由異常回報標記報廢"}).eq("id", inventory.id);
+      if(inventoryResult.error) throw inventoryResult.error;
+    }
+    const reportResult = await db.from("battery_issue_reports").update({resolution_status:"resolved", resolved_at:new Date().toISOString(), resolution_note:label}).eq("battery_number", row.battery_number).neq("resolution_status","resolved");
+    if(!reportResult.error && !isScrap){
+      await db.from("batteries").update({health_status:"normal", health_note:null}).eq("battery_number", row.battery_number).eq("status","active");
+    }
+    if(reportResult.error) throw reportResult.error;
+    alert(`✅ 已完成：${label}`);
+    await loadBatteryData();
+  }catch(e){
+    alert(`電池處理失敗：${e.message || "未知錯誤"}`);
   }
 }
 
@@ -3762,7 +4195,7 @@ function showAdminMode(mode){
   rosterModePage.style.display = mode === "roster" ? "block" : "none";
   if(mode === "vehicle") loadData();
   if(mode === "survey") loadSurveyData();
-  if(mode === "battery") loadBatteryData();
+  if(mode === "battery") loadDeviceData(true);
   if(mode === "defensive") loadDefensiveAdminData();
   if(mode === "roster") loadRosterData();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -3800,10 +4233,68 @@ batteryBackBtn.onclick =
   () => showAdminMode("home");
 
 batteryRefreshBtn.onclick =
-  loadBatteryData;
+  () => loadDeviceData(false);
 
-batterySearchInput.oninput =
-  renderBatteryReports;
+document.querySelectorAll(".device-admin-type-btn").forEach(button => {
+  button.onclick = () => {
+    deviceAdminType.value = button.dataset.deviceType;
+    deviceRegisterMessage.textContent = "";
+    loadDeviceData(true);
+  };
+});
+deviceRegisterBtn.onclick = addDeviceFromAdmin;
+let deviceSearchTimer = null;
+let deviceSearchToken = 0;
+
+async function searchCurrentDeviceByNumber(){
+  const keyword = batterySearchInput.value.trim();
+  if(!keyword){
+    if(deviceAdminType.value === "recorder") renderRecorderReports(); else renderBatteryReports();
+    syncDeviceSearchState();
+    return;
+  }
+  const token = ++deviceSearchToken;
+  const recorder = deviceAdminType.value === "recorder";
+  const table = recorder ? "recorders" : "batteries";
+  const column = recorder ? "recorder_number" : "battery_number";
+  deviceRegisterPanel.style.display = "none";
+  deviceSearchMessage.textContent = `正在查詢${currentDeviceLabel()}…`;
+  try{
+    const result = await db.from(table).select("*").eq(column, keyword).maybeSingle();
+    if(token !== deviceSearchToken || keyword !== batterySearchInput.value.trim()) return;
+    if(result.error) throw result.error;
+    if(result.data){
+      if(recorder){
+        recorderInventory = [...recorderInventory.filter(row => String(row.id) !== String(result.data.id)), result.data];
+        renderRecorderReports();
+      }else{
+        batteryInventory = [...batteryInventory.filter(row => String(row.id) !== String(result.data.id)), result.data];
+        renderBatteryReports();
+      }
+      deviceRegisterPanel.style.display = "none";
+      deviceSearchMessage.textContent = `已找到 1 筆${currentDeviceLabel()}設備，已顯示設備小卡。`;
+      return;
+    }
+    if(recorder) renderRecorderReports(); else renderBatteryReports();
+    deviceRegisterPanel.style.display = "block";
+    deviceRegisterMessage.textContent = `查無此${currentDeviceLabel()}，請確認編號後新增正常設備。`;
+    deviceSearchMessage.textContent = `查無此${currentDeviceLabel()}，可直接新增正常設備。`;
+  }catch(error){
+    if(token !== deviceSearchToken) return;
+    console.error(error);
+    deviceSearchMessage.textContent = `設備查詢失敗：${error.message || "請稍後再試"}`;
+  }
+}
+
+batterySearchInput.oninput = () => {
+  clearTimeout(deviceSearchTimer);
+  deviceSearchMessage.textContent = "輸入完成後自動查詢…";
+  deviceSearchTimer = setTimeout(searchCurrentDeviceByNumber, 350);
+};
+batterySearchInput.onblur = () => {
+  clearTimeout(deviceSearchTimer);
+  searchCurrentDeviceByNumber();
+};
 
 surveySummary.onclick = e => {
   const card = e.target.closest("[data-survey-status]");
@@ -3861,12 +4352,20 @@ surveyResponseList.onclick =
 
 batteryReportList.onclick =
   e => {
-    const button = e.target.closest(".battery-delete-btn");
-    if(button) deleteBatteryReport(button.dataset.id);
+    if(deviceAdminType.value === "recorder") {
+      const repairButton = e.target.closest(".recorder-repair-btn");
+      if(repairButton){ updateRecorderIssue(repairButton.dataset.id, "repaired"); return; }
+      const scrapButton = e.target.closest(".recorder-scrap-btn");
+      if(scrapButton){ updateRecorderIssue(scrapButton.dataset.id, "scrapped"); return; }
+      return;
+    }
+    const repairButton = e.target.closest(".battery-repair-btn");
+    if(repairButton){ updateBatteryIssue(repairButton.dataset.id, "repaired"); return; }
+    const scrapButton = e.target.closest(".battery-scrap-btn");
+    if(scrapButton){ updateBatteryIssue(scrapButton.dataset.id, "scrapped"); return; }
   };
 
-batteryExportBtn.onclick =
-  exportBatteryReports;
+batteryExportBtn.onclick = exportCurrentDevices;
 
 claimedCard.onclick =
   () => openQuickList("claimed");
@@ -3957,6 +4456,99 @@ todayDate.textContent =
 const now = new Date();
 exportMonth.value =
   `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+
+/* =========================
+   管理員登入
+========================= */
+const authGate = document.getElementById("authGate");
+const authForm = document.getElementById("authForm");
+const authEmailInput = document.getElementById("authEmail");
+const authPasswordInput = document.getElementById("authPassword");
+const authPasswordToggle = document.getElementById("authPasswordToggle");
+const authSubmit = document.getElementById("authSubmit");
+const authMessage = document.getElementById("authMessage");
+const adminApp = document.getElementById("adminApp");
+const adminSessionBar = document.getElementById("adminSessionBar");
+const adminSessionEmail = document.getElementById("adminSessionEmail");
+const authLogoutBtn = document.getElementById("authLogoutBtn");
+let authBusy = false;
+
+function showAuthMessage(message, success=false){
+  authMessage.textContent = message || "";
+  authMessage.style.color = success ? "var(--green)" : "var(--danger)";
+}
+
+function lockAdmin(message=""){ 
+  authGate.style.display = "flex";
+  adminApp.style.display = "none";
+  adminSessionBar.style.display = "none";
+  showAuthMessage(message);
+}
+
+async function unlockAdmin(session){
+  if(!session?.user?.email){ lockAdmin(); return; }
+  const email = String(session.user.email).trim().toLowerCase();
+  const allow = await db.from("admin_allowlist").select("email").ilike("email", email).eq("active", true).maybeSingle();
+  if(allow.error){
+    await db.auth.signOut();
+    lockAdmin("管理員白名單尚未設定，請先執行 T998 管理員 SQL。");
+    return;
+  }
+  if(!allow.data){
+    await db.auth.signOut();
+    lockAdmin("此帳號尚未授權使用本區後台。");
+    return;
+  }
+  authGate.style.display = "none";
+  adminApp.style.display = "block";
+  adminSessionBar.style.display = "flex";
+  adminSessionEmail.textContent = `已登入：${email}`;
+  showAuthMessage("", true);
+  showAdminMode("home");
+}
+
+authPasswordToggle.onclick = () => {
+  const visible = authPasswordInput.type === "text";
+  authPasswordInput.type = visible ? "password" : "text";
+  authPasswordToggle.textContent = visible ? "顯示" : "隱藏";
+};
+
+authForm.onsubmit = async event => {
+  event.preventDefault();
+  if(authBusy) return;
+  authBusy = true;
+  authSubmit.disabled = true;
+  authSubmit.textContent = "登入中…";
+  showAuthMessage("");
+  try{
+    const result = await db.auth.signInWithPassword({email:authEmailInput.value.trim(),password:authPasswordInput.value});
+    if(result.error){
+      showAuthMessage("登入失敗，請確認帳號與密碼。", false);
+    }else{
+      await unlockAdmin(result.data.session);
+    }
+  }catch(error){
+    console.error(error);
+    showAuthMessage("登入服務暫時無法使用，請稍後再試。", false);
+  }finally{
+    authBusy = false;
+    authSubmit.disabled = false;
+    authSubmit.textContent = "登入後台";
+  }
+};
+
+authLogoutBtn.onclick = async () => {
+  await db.auth.signOut();
+  authPasswordInput.value = "";
+  lockAdmin("已安全登出。");
+};
+
+db.auth.onAuthStateChange((_event, session) => {
+  setTimeout(() => unlockAdmin(session).catch(() => lockAdmin("登入狀態檢查失敗，請重新登入。")), 0);
+});
+
+db.auth.getSession().then(({data}) => unlockAdmin(data.session)).catch(() => lockAdmin("登入狀態讀取失敗，請重新登入。"));
+
 
 showAdminMode("home");
 
