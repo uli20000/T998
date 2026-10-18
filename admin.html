@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- T998 V1 (aligned to T995 V8): multi-week opening + Taipei-week rollover refresh; confirmed UI unchanged. -->
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -919,6 +920,363 @@ button{cursor:pointer}
 .device-add-panel{border-color:#e1c66e;background:#fffdf5}
 .device-add-intro{padding:12px;border-radius:12px;background:var(--yellow-bg);color:#765800;font-size:14px;line-height:1.6;text-align:left;margin-bottom:12px}
 @media(max-width:700px){.admin-mode-btn{min-height:82px;font-size:21px}.admin-mode-btn .icon{font-size:32px}}
+.employee-area-card{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.employee-area-card select{min-height:42px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;font:inherit}
+.employee-badge{display:inline-block;border-radius:999px;padding:3px 9px;background:#f5eee2;color:#674b21;font-size:12px;font-weight:900;margin-left:6px}
+.employee-status{font-size:12px;color:var(--gray);margin-top:4px}
+.shift-admin-toolbar{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.shift-admin-toolbar select,.shift-admin-toolbar button{min-height:44px}
+.shift-admin-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:10px;text-align:left}
+.shift-admin-card h3{margin:0;font-size:17px;line-height:1.4}
+.shift-admin-card.is-missing{border-left:4px solid #d5803b}
+.shift-admin-card.is-empty{border-left:4px solid #77736d}
+.shift-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px}
+.shift-admin-day{background:#faf9f6;border-radius:9px;padding:8px;font-size:13px;min-height:54px}
+.shift-admin-day b{display:block;color:var(--gray);font-size:11px;margin-bottom:3px}
+.shift-admin-notes{margin-top:10px;color:var(--gray);font-size:13px;white-space:pre-wrap;line-height:1.5}
+.shift-admin-empty{padding:20px;text-align:center;color:var(--gray)}
+.shift-admin-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.employee-list .roster-item{align-items:flex-start}
+.staffing-panel{background:#faf9f6;border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;text-align:left}
+.staffing-panel h3{margin:0 0 8px;font-size:17px}
+.staffing-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.staffing-results{display:grid;gap:10px;margin-top:12px}
+.staffing-day-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;text-align:left}
+.staffing-day-card h3{margin:0 0 9px;font-size:16px}
+.staffing-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.staffing-metric{background:#f8f7f5;border-radius:9px;padding:9px;font-size:12px;color:var(--gray)}
+.staffing-metric strong{display:block;margin-top:3px;font-size:15px;color:var(--black)}
+.staffing-gap-bad{color:#b42318!important}.staffing-gap-good{color:#176b3a!important}
+.staffing-upload-preview{font-size:13px;line-height:1.55;margin-top:8px;white-space:pre-wrap}
+.device-delete-btn{border:1px solid #b42318!important;background:#fff0ee!important;color:#b42318!important}
+@media(min-width:700px){.shift-admin-toolbar{grid-template-columns:minmax(200px,1fr) minmax(150px,.7fr) auto auto}.shift-admin-grid{grid-template-columns:repeat(7,minmax(0,1fr))}.staffing-grid{grid-template-columns:1fr 1fr}.staffing-results{grid-template-columns:repeat(2,minmax(0,1fr))}.staffing-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+.employee-area-tabs{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px;margin:12px 0 7px}
+.employee-area-tab{min-width:0;min-height:40px;padding:5px 2px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font-weight:800;font-size:13px;cursor:pointer}
+.employee-area-tab.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.16)}
+.employee-directory-summary{min-height:20px;color:var(--gray);font-size:13px;margin:4px 0 8px}
+.employee-list .roster-item{align-items:center;flex-wrap:wrap}
+.employee-area-card{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.employee-area-card select{min-width:94px;max-width:130px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}
+.employee-area-card button{white-space:nowrap;padding:7px 8px;font-size:12px}
+.employee-area-card .permanent-delete-employee{border:1px solid #a5231e;background:#fff0ee;color:#a5231e;border-radius:9px;font-weight:800;cursor:pointer}
+@media(max-width:900px){.employee-area-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}}
+
+
+/* T998 v3 — protected modules and equal-height administrative cards */
+.protected-mode-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shift-test-toggle{display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#fff;text-align:left;cursor:pointer}
+.shift-test-toggle input{width:22px;height:22px;accent-color:var(--red);flex:none}
+.shift-test-toggle span{display:grid;gap:3px}.shift-test-toggle small{color:var(--gray);line-height:1.45}
+.admin-fixed-card{height:300px;min-height:300px;max-height:300px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;overflow:hidden;padding:14px;background:#fff;border:1px solid var(--line);border-radius:16px;text-align:left}
+.admin-fixed-card .admin-card-head{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden}
+.admin-fixed-card .admin-card-body{flex:1;min-height:0;overflow:hidden}
+.admin-fixed-card .admin-card-actions{min-height:44px;margin-top:auto;display:flex;align-items:flex-end;gap:8px}
+.employee-directory-card .employee-admin-name{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.employee-directory-card .employee-admin-body{display:flex;flex-direction:column;justify-content:center;gap:10px;color:var(--gray);font-size:13px}
+.employee-directory-card .employee-admin-body select{width:100%;height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;font:inherit;color:var(--black)}
+.employee-directory-card .permanent-delete-employee{width:100%;height:44px;border:1px solid #e2aaa4;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-size:13px;font-weight:800;cursor:pointer}
+.device-card-fixed{display:flex;flex-direction:column;text-align:left}
+.device-card-fixed .survey-card-top{min-width:0;min-height:38px;flex:0 0 38px;flex-direction:row;align-items:center;gap:8px;overflow:hidden}
+.device-card-fixed .survey-name{min-width:0;min-height:24px;line-height:24px;flex:1 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.device-card-fixed .survey-time{flex:none;white-space:nowrap}
+.device-card-fixed .survey-grid{grid-template-columns:1fr 1fr;overflow:visible}
+.device-card-fixed .survey-detail{display:block;flex:none;height:22px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;line-height:22px}
+.device-latest-claim{margin-top:auto;padding-top:6px;border-top:1px solid var(--line);color:var(--gray);font-size:12px;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.device-delete-btn{min-height:44px;border:1px solid #e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.vehicle-card.admin-fixed-card{cursor:pointer}
+.vehicle-card.admin-fixed-card .vehicle-top{max-height:155px;overflow:hidden}
+.vehicle-card.admin-fixed-card .vehicle-info{flex:1;min-height:0;overflow:hidden}
+.protected-password-overlay{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(25,25,25,.48)}
+.protected-password-card{width:min(100%,440px);padding:26px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,.16)}
+.protected-password-mark{display:grid;place-items:center;width:58px;height:58px;border-radius:16px;background:var(--red);color:#fff;font-size:17px;font-weight:900}
+.protected-password-card h2{margin:18px 0 6px;font-size:21px}.protected-password-card p{margin:0 0 18px;color:var(--gray);line-height:1.5}
+.protected-password-field{margin:12px 0;display:grid;gap:6px}.protected-password-field label{font-size:14px;font-weight:800}
+.protected-password-field input{width:100%;height:48px;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:11px;font:inherit}
+.protected-password-error{min-height:22px;color:var(--danger);font-size:13px;line-height:1.45}
+.protected-password-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.protected-password-primary{background:var(--red);border-color:var(--red);color:#fff}
+@media(max-width:700px){.protected-mode-actions{grid-template-columns:1fr}.admin-fixed-card{height:300px;min-height:300px;max-height:300px}.protected-password-card{padding:22px}}
+
+/* T998 v4 — compact, centered admin UI */
+.admin-mode-page{text-align:center}
+.admin-mode-page *{text-align:center}
+.admin-mode-page .mode-back-row{padding:16px 0 0;margin:0 auto 10px;width:100%}
+.admin-mode-page .mode-back-row .action-btn{width:100%}
+.admin-mode-page .protected-mode-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-mode-page .section-title{margin-bottom:12px}
+.admin-mode-page .hint{margin-left:auto;margin-right:auto}
+.admin-mode-page input,.admin-mode-page textarea,.admin-mode-page select{text-align:center}
+.admin-mode-page .search-box,.admin-mode-page .staffing-panel,.admin-mode-page .staffing-day-card,.admin-mode-page .vehicle-card,.admin-mode-page .survey-card,.admin-mode-page .admin-fixed-card,.admin-mode-page .claim-panel,.admin-mode-page .health-panel{text-align:center}
+.admin-mode-page .shift-data-table th,.admin-mode-page .shift-data-table td{text-align:center}
+.employee-add-panel{display:grid;grid-template-columns:minmax(170px,1fr) minmax(130px,.55fr) auto;gap:9px;align-items:center;max-width:760px;margin:12px auto 0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:15px}
+.employee-add-panel .employee-add-name,.employee-add-panel .employee-add-area{width:100%;height:46px;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--black)}
+.employee-add-panel .employee-add-btn{height:46px;min-width:164px;margin:0;white-space:nowrap}
+.employee-add-panel .employee-add-message{grid-column:1/-1;margin:0!important;min-height:0}
+.employee-area-tabs{margin:12px 0 7px}
+#employeeDirectoryList{display:grid;gap:7px}
+.employee-directory-card{height:68px;min-height:68px;max-height:68px;display:grid;grid-template-columns:minmax(0,1fr) 48px 82px 52px 52px;align-items:center;gap:5px;overflow:hidden;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:13px;text-align:center}
+.employee-directory-card .employee-admin-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:800}
+.employee-directory-card .employee-badge{margin:0;padding:4px 5px;font-size:11px;white-space:nowrap}
+.employee-directory-card select{width:100%;height:42px;min-width:0;padding:5px 3px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:13px;color:var(--black)}
+.employee-directory-card .employee-area-save-btn,.employee-directory-card .permanent-delete-employee{width:100%;height:42px;min-height:42px;padding:4px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font:inherit;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+.employee-directory-card .permanent-delete-employee,.vehicle-card-admin-actions .permanent-delete-vehicle,.device-delete-btn{border-color:#e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.employee-directory-card .employee-area-save-btn:focus-visible,.employee-directory-card .permanent-delete-employee:focus-visible{outline:3px solid rgba(200,16,46,.25);outline-offset:2px}
+.shift-test-toggle{display:inline-flex;align-items:center;gap:6px;min-height:32px;margin:7px 0 0;padding:4px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font-size:12px;font-weight:800;cursor:pointer}
+.shift-test-toggle input{width:16px;height:16px;margin:0;accent-color:var(--red)}
+.shift-admin-toolbar{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.shift-week-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-column:1/-1}
+.shift-week-btn,.shift-status-btn{min-width:0;min-height:42px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.shift-status-btn{height:48px;min-height:48px;align-self:start}
+.shift-week-btn.active,.shift-status-btn.active{border-color:var(--red);background:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.13)}
+.shift-status-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-self:start;align-items:start}
+.shift-admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.shift-admin-actions button{height:48px;min-height:48px;align-self:start;padding:7px 8px;font-size:13px}
+.shift-admin-scroll{max-width:100%;margin-top:12px;overflow:auto;border:1px solid var(--line);border-radius:11px;background:#fff}
+.shift-data-table{width:100%;min-width:840px;border-collapse:separate;border-spacing:0;text-align:center;font-size:12px}
+.shift-data-table th,.shift-data-table td{padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle}
+.shift-data-table thead th{position:sticky;top:0;background:#f7f5f1;color:#55514c;font-size:12px;white-space:nowrap;z-index:1}
+.shift-data-table tbody tr:last-child td{border-bottom:0}
+.shift-data-table .shift-person-cell{position:sticky;left:0;z-index:2;min-width:150px;background:#fff}
+.shift-data-table thead th:first-child{left:0;z-index:4;background:#f7f5f1}
+.shift-scroll-cue{display:none}
+.shift-data-table .shift-person-cell strong{display:block;font-size:13px;color:var(--black)}
+.shift-data-table .shift-person-meta{display:block;margin-top:2px;color:var(--gray);font-size:11px;line-height:1.35}
+.shift-data-table .shift-cell{min-width:78px;white-space:pre-wrap;line-height:1.35}
+.shift-data-table .is-missing .shift-person-cell{border-left:4px solid #d5803b}
+.shift-data-table .is-empty .shift-person-cell{border-left:4px solid #77736d}
+.shift-data-table .shift-notes-row td{background:#fbfaf8;color:var(--gray);white-space:pre-wrap;line-height:1.45}
+.vehicle-card-admin-actions{margin-top:auto;width:100%}
+.vehicle-card-admin-actions .permanent-delete-vehicle{width:100%;min-height:42px;border:1px solid #e2aaa4;border-radius:9px;background:var(--danger-bg);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer}
+.device-delete-btn{min-height:40px!important;padding:7px 10px!important;font-size:12px!important}
+@media(min-width:700px){
+ .shift-admin-toolbar{grid-template-columns:minmax(200px,1fr) minmax(240px,.8fr) auto}
+ .shift-week-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .shift-status-tabs{grid-column:2}
+ .shift-admin-actions{grid-column:3;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+}
+@media(max-width:699px){
+ .admin-mode-page .protected-mode-actions{grid-template-columns:1fr 1fr}
+ .employee-add-panel{grid-template-columns:1fr;padding:11px}
+ .employee-add-panel .employee-add-btn{width:100%;min-width:0}
+ .employee-add-panel .employee-add-message{grid-column:1}
+ .employee-directory-card{grid-template-columns:minmax(0,1fr) 46px 76px 48px 48px;gap:4px;padding:7px 8px}
+ .employee-directory-card .employee-admin-name{font-size:13px}
+ .employee-directory-card select,.employee-directory-card .employee-area-save-btn,.employee-directory-card .permanent-delete-employee{font-size:11px}
+ .shift-admin-actions{grid-template-columns:1fr 1fr}
+ #shiftAdminList .shift-scroll-cue{display:block!important;color:var(--gray);font-size:13px;line-height:16px;margin:2px 0;text-align:center}
+ .shift-data-table{min-width:900px}
+}
+.staffing-file-picker{position:relative;display:grid;place-items:center;min-height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font-size:14px;font-weight:700;overflow:hidden;cursor:pointer}
+.staffing-file-picker span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.staffing-file-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+/* Forecast view: explicit 20% uplift, aligned summary, and mobile card rhythm. */
+.forecast-formula{max-width:820px;margin:0 auto 8px!important;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#5f5a53;font-size:13px;line-height:1.55;text-align:center}
+.forecast-summary-grid{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.forecast-summary-grid .summary-card{min-width:0;min-height:88px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.forecast-summary-grid .summary-label{line-height:1.35;min-height:32px;display:flex;align-items:center;justify-content:center}
+.forecast-data-warning{margin:8px 0 0;padding:9px 11px;border:1px solid #e1c66e;border-radius:10px;background:var(--yellow-bg);color:#765800;font-size:12px;line-height:1.5;text-align:center}
+.forecast-data-warning[hidden]{display:none}
+.forecast-week-gap.is-warning{border-color:#e1c66e;background:var(--yellow-bg);color:#765800}
+.forecast-history-weeks{display:block;margin-top:2px;color:var(--gray);font-size:10px;line-height:1.2;font-weight:600}
+.forecast-day-total-card{min-height:62px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.forecast-area-table td:first-child strong{display:block}
+.forecast-area-table td:first-child .forecast-history-weeks{font-weight:600}
+/* Forecast view: weekly summary, weekday tabs, aligned area table/cards. */
+.staffing-results{display:block!important;margin-top:10px}
+.forecast-week-gap{margin-top:8px;padding:10px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;font-weight:800}
+.forecast-week-gap.is-short{border-color:#e2aaa4;background:var(--danger-bg);color:var(--danger)}
+.forecast-week-gap.is-surplus{border-color:#c9ddcf;background:var(--green-bg);color:var(--green)}
+.staffing-day-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.staffing-day-tab{min-width:0;min-height:46px;padding:6px 4px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.staffing-day-tab span,.staffing-day-tab small{display:block}
+.staffing-day-tab small{margin-top:2px;color:var(--gray);font-size:11px;font-weight:600}
+.staffing-day-tab.active{border-color:var(--red);background:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.13)}
+.staffing-day-tab.active small{color:#fff}
+.staffing-day-tab:focus-visible{outline:3px solid rgba(200,16,46,.25);outline-offset:2px}
+.forecast-day-panel{margin-top:9px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.forecast-day-heading{padding:11px 13px;background:#f7f5f1;border-bottom:1px solid var(--line);font-size:15px;font-weight:800}
+.forecast-area-table-wrap{overflow-x:auto}
+.forecast-area-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.forecast-area-table th,.forecast-area-table td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+.forecast-area-table th{background:#faf9f6;color:var(--gray);font-size:12px;font-weight:800}
+.forecast-area-table tr:last-child td{border-bottom:0}
+.forecast-area-table td:first-child{font-weight:800}
+.forecast-area-table .forecast-gap{font-weight:800;white-space:nowrap}
+.forecast-gap.is-short{color:var(--danger)}.forecast-gap.is-surplus{color:var(--green)}
+.forecast-area-cards{display:none}
+#staffingRecommendationSummary.summary{gap:7px;margin-top:7px}
+#staffingRecommendationSummary .summary-card{padding:11px 7px;border-radius:12px}
+#staffingRecommendationSummary .summary-label{font-size:12px;margin-bottom:3px}
+#staffingRecommendationSummary .summary-number{font-size:22px}
+.shift-week-btn span,.shift-week-btn small{display:block}
+.shift-week-btn small{margin-top:2px;color:var(--gray);font-size:11px;font-weight:600}
+.shift-week-btn.active small{color:#fff}
+.forecast-day-total-wrap{padding:8px;border-bottom:1px solid var(--line);background:#fff}
+.forecast-day-total-title{margin:0 0 7px;font-size:13px;font-weight:800;text-align:center}
+.forecast-day-total-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.forecast-day-total-card{min-width:0;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:#faf9f6;text-align:center}
+.forecast-day-total-card span{display:block;color:var(--gray);font-size:12px;line-height:1.3}
+.forecast-day-total-card strong{display:block;margin-top:3px;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.shift-test-delete-btn{border-color:#e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.shift-fold>summary{display:flex;align-items:center;justify-content:center;gap:9px;list-style:none;cursor:pointer}
+.shift-fold>summary::-webkit-details-marker{display:none}
+.shift-fold>summary::after{content:"＋";display:inline-grid;place-items:center;width:24px;height:24px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--gray);font-size:14px;line-height:1}
+.shift-fold[open]>summary::after{content:"−";color:var(--red);border-color:#e2aaa4;background:var(--danger-bg)}
+.shift-fold:not([open])>summary{margin-bottom:0}
+.shift-fold-content{padding-top:1px}
+@media(max-width:699px){
+ .staffing-day-tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .staffing-day-tab{min-height:44px;font-size:12px}
+ .forecast-day-heading{padding:10px 11px}
+ .forecast-area-table-wrap{display:none}
+ .forecast-area-cards{display:grid;gap:7px;padding:8px}
+ .forecast-area-card{padding:8px;background:#faf9f6;border:1px solid var(--line);border-radius:10px}
+ .forecast-area-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:13px;font-weight:800}
+ .forecast-area-card-head .forecast-gap{font-size:12px}
+ .forecast-area-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .forecast-area-stat{min-width:0;padding:6px;background:#fff;border-radius:8px;text-align:center}
+ .forecast-area-stat span{display:block;color:var(--gray);font-size:12px;line-height:1.3}
+ .forecast-area-stat strong{display:block;margin-top:2px;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
+ .forecast-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #staffingRecommendationSummary .summary-card{padding:9px 5px;border-radius:11px;min-height:78px}
+ #staffingRecommendationSummary .summary-label{font-size:11px;line-height:1.25;min-height:28px;margin-bottom:2px}
+ #staffingRecommendationSummary .summary-number{font-size:20px;overflow-wrap:anywhere}
+ .forecast-formula{font-size:12px;padding:8px 9px}
+ .forecast-day-total-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .forecast-day-total-card{padding:7px 5px;min-height:58px}
+ .forecast-day-total-card:last-child{grid-column:span 2}
+ .shift-admin-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shift-admin-actions button:last-child:nth-child(3){grid-column:1/-1}
+}
+
+/* T996 指休工具列：固定三列，各列格子等寬等高 */
+.shift-admin-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px!important;margin-top:10px!important;align-items:stretch}
+.shift-toolbar-week-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;min-width:0}
+.shift-week-buttons{display:grid;grid-column:span 4!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.shift-week-btn,.shift-toolbar-week-row>button,.shift-status-btn,.shift-name-search,.shift-toolbar-search-row>button,.shift-open-toggle,.shift-test-control{width:100%;min-width:0;height:44px;min-height:44px;box-sizing:border-box}
+.shift-week-btn{padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-toolbar-week-row>button{padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-toolbar-status-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.shift-status-tabs{display:grid;grid-column:span 3!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:stretch;min-width:0}
+.shift-status-btn{height:44px;min-height:44px;align-self:stretch;padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-open-toggle,.shift-test-toggle{display:flex;align-items:center;justify-content:center;gap:5px;height:44px;min-height:44px;box-sizing:border-box;margin:0;padding:4px 5px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+.shift-open-toggle input,.shift-test-toggle input{width:16px;height:16px;margin:0;accent-color:var(--red);flex:none}
+.shift-name-search{padding:0 9px;font-size:14px;text-align:center}
+.shift-toolbar-search-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:stretch;min-width:0}
+.shift-toolbar-search-row>button,.shift-open-toggle{height:48px;min-height:48px;box-sizing:border-box}
+.shift-toolbar-search-row>button{height:44px;min-height:44px;padding:4px 3px;font-size:12px;white-space:nowrap}
+.shift-test-control{display:grid;grid-template-rows:1fr 1fr;gap:2px;align-items:stretch;min-width:0;height:48px;min-height:48px;box-sizing:border-box}
+.shift-test-control .shift-test-toggle{width:100%;height:23px;min-height:23px;margin:0;padding:1px 3px;box-sizing:border-box}
+.shift-admin-toolbar .shift-mini-delete{position:static;width:100%;height:23px!important;min-height:23px!important;padding:1px 2px;border:1px solid #e2aaa4;border-radius:7px;background:var(--danger-bg);color:var(--danger);font-size:10px;line-height:1;white-space:nowrap;cursor:pointer}
+.shift-admin-toolbar .shift-mini-delete:disabled{opacity:.48;cursor:not-allowed}
+.shift-open-toggle.is-checked,.shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+.shift-open-toggle input,.shift-test-toggle input{accent-color:var(--red)}
+@media(max-width:699px){
+ .shift-toolbar-week-row,.shift-toolbar-status-row,.shift-toolbar-search-row{gap:4px}
+ .shift-week-buttons,.shift-status-tabs{gap:4px}
+ .shift-week-btn,.shift-toolbar-week-row>button{padding:4px 1px;font-size:9px;letter-spacing:-.2px}
+ .shift-status-btn,.shift-toolbar-search-row>button{padding:3px 1px;font-size:10px;letter-spacing:-.2px}
+ .shift-name-search{padding:0 3px;font-size:12px}
+ .shift-open-toggle,.shift-test-toggle{gap:3px;padding:3px 2px;font-size:10px}
+ .shift-open-toggle input,.shift-test-toggle input{width:14px;height:14px}
+ .shift-toolbar-search-row>button,.shift-open-toggle{height:48px;min-height:48px}
+ .shift-test-control{height:48px;min-height:48px}
+ .shift-test-control .shift-test-toggle{height:23px;min-height:23px;padding:1px 2px}
+ .shift-mini-delete{height:23px;min-height:23px;font-size:9px}
+}
+
+
+/* Verified T998/996 control grid: 3 compact rows, equal-width cells and equal heights. */
+#shiftModePage .shift-toolbar-week-row,
+#shiftModePage .shift-toolbar-status-row,
+#shiftModePage .shift-toolbar-search-row{width:100%;min-width:0;align-items:stretch}
+#shiftModePage .shift-toolbar-week-row>button,
+#shiftModePage .shift-week-btn,
+#shiftModePage .shift-status-btn,
+#shiftModePage .shift-name-search,
+#shiftModePage .shift-toolbar-search-row>button,
+#shiftModePage .shift-test-control,
+#shiftModePage .shift-open-toggle{height:48px!important;min-height:48px!important;box-sizing:border-box}
+#shiftModePage .shift-test-control{position:relative;display:flex;align-items:center;justify-content:center;min-width:0}
+#shiftModePage .shift-test-control .shift-test-toggle{width:100%;height:48px!important;min-height:48px!important;padding-right:31px;box-sizing:border-box}
+#shiftModePage .shift-mini-delete{position:absolute;right:3px;top:9px;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid #e2aaa4;border-radius:8px;background:var(--danger-bg);color:var(--danger);font-size:14px;cursor:pointer}
+#shiftModePage .shift-mini-delete[hidden]{display:none!important}
+#shiftModePage .shift-open-toggle.is-checked,
+#shiftModePage .shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+#shiftModePage .shift-open-toggle input,
+#shiftModePage .shift-test-toggle input{accent-color:var(--red)}
+@media(max-width:699px){
+  #shiftModePage .shift-toolbar-week-row,
+  #shiftModePage .shift-toolbar-status-row,
+  #shiftModePage .shift-toolbar-search-row{gap:4px}
+  #shiftModePage .shift-mini-delete{right:2px;width:25px;min-width:25px;height:26px;min-height:26px;font-size:12px}
+  #shiftModePage .shift-test-control .shift-test-toggle{padding-right:26px}
+}
+
+
+/* T998 V4：週次開放勾選，維持工具列欄位等寬並讓勾選狀態紅色可辨。 */
+.shift-week-option{display:grid;grid-template-rows:minmax(0,1fr) 22px;gap:2px;min-width:0;height:66px;box-sizing:border-box}
+.shift-week-option .shift-week-btn{width:100%;height:42px!important;min-height:42px!important;padding:4px 2px!important;font-size:10px!important;white-space:nowrap}
+.shift-week-open-toggle{display:flex;align-items:center;justify-content:center;gap:3px;width:100%;height:22px!important;min-height:22px!important;margin:0;padding:1px 2px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--black);font-size:10px;font-weight:800;line-height:1;white-space:nowrap;cursor:pointer;box-sizing:border-box}
+.shift-week-open-toggle input{width:14px;height:14px;margin:0;accent-color:var(--red);flex:none}
+.shift-week-open-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+#shiftModePage .shift-toolbar-week-row>button{height:66px!important;min-height:66px!important}
+#shiftModePage .shift-week-btn{height:42px!important;min-height:42px!important}
+.shift-week-open-hint{display:flex;align-items:center;justify-content:center;min-width:0;height:48px;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--gray);font-size:11px;font-weight:800;text-align:center;line-height:1.35}
+@media(max-width:699px){.shift-week-option{height:62px}.shift-week-option .shift-week-btn{height:39px!important;min-height:39px!important;font-size:9px!important;letter-spacing:-.25px}#shiftModePage .shift-toolbar-week-row>button{height:62px!important;min-height:62px!important}.shift-week-open-toggle{font-size:9px}}
+
+/* T998 V5：保持後台控制格尺寸，只略微提高字級及可讀性。 */
+.shift-week-option .shift-week-btn{font-size:12px!important}
+.shift-week-open-toggle{font-size:11px}
+.shift-status-btn,.shift-toolbar-search-row>button,.shift-toolbar-week-row>button{font-size:13px}
+.shift-test-toggle{font-size:13px}
+.shift-week-open-hint{font-size:12px}
+.shift-admin-toolbar .shift-mini-delete{font-size:11px}
+@media(max-width:699px){
+ .shift-week-option .shift-week-btn{font-size:10px!important;letter-spacing:-.15px}
+ .shift-week-open-toggle{font-size:10px}
+ .shift-status-btn,.shift-toolbar-search-row>button,.shift-toolbar-week-row>button{font-size:11px}
+ .shift-test-toggle{font-size:11px}
+ .shift-week-open-hint{font-size:10px}
+}
+
+/* T998 V6：逐週開放勾選整合於日期卡；工具列三列固定四欄。 */
+#shiftModePage .shift-heading-tools{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+#shiftModePage .shift-heading-tools>.hint{margin:0;padding:0;line-height:1.35}
+#shiftModePage .shift-heading-tools .shift-test-toggle{width:auto;height:32px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:12px}
+#shiftModePage .shift-heading-tools .shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+#shiftModePage .shift-heading-tools .shift-mini-delete[hidden]{display:none!important}
+#shiftModePage .shift-toolbar-week-row{display:block!important;grid-template-columns:none!important}
+#shiftModePage .shift-week-buttons{display:grid!important;grid-column:auto!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;width:100%;min-width:0}
+#shiftModePage .shift-week-option{display:grid;grid-template-rows:39px 24px;gap:0;height:64px!important;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#fff;box-sizing:border-box}
+#shiftModePage .shift-week-option .shift-week-btn{width:100%;height:39px!important;min-height:39px!important;margin:0;padding:3px 1px!important;border:0!important;border-radius:0!important;background:#fff;color:var(--black);box-shadow:none!important;font-size:11px!important;font-weight:800;white-space:nowrap;letter-spacing:-.2px}
+#shiftModePage .shift-week-option .shift-week-btn.active{background:var(--red)!important;color:#fff!important}
+#shiftModePage .shift-week-open-toggle{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:24px!important;min-height:24px!important;margin:0;padding:1px 2px;border:0!important;border-top:1px solid #eee8e0!important;border-radius:0!important;background:transparent!important;color:var(--black);font-size:11px!important;font-weight:700;line-height:1;white-space:nowrap;box-shadow:none!important;box-sizing:border-box}
+#shiftModePage .shift-week-open-toggle input{width:14px;height:14px;margin:0;accent-color:var(--red);flex:none}
+#shiftModePage .shift-week-open-toggle.is-checked{background:var(--danger-bg)!important;color:var(--danger)!important;border-top-color:#f1c4c1!important}
+#shiftModePage .shift-toolbar-status-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-status-tabs{display:grid!important;grid-column:span 3!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-status-btn,#shiftModePage .shift-name-search{width:100%;height:48px!important;min-height:48px!important;box-sizing:border-box}
+#shiftModePage .shift-toolbar-search-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-toolbar-search-row>button,#shiftModePage .shift-export-week{width:100%;height:48px!important;min-height:48px!important;min-width:0;box-sizing:border-box;padding:4px 3px;font-size:12px;font-weight:800;text-align:center}
+#shiftModePage .shift-export-week{appearance:auto;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--black);font-family:inherit;white-space:nowrap}
+#shiftModePage .shift-purge-old-btn{background:var(--danger-bg);border-color:#f2b6b0;color:var(--danger);font-size:10px!important;white-space:normal;line-height:1.15}
+#shiftModePage .shift-toolbar-search-row>button:disabled{opacity:.55;cursor:wait}
+@media(max-width:699px){
+ #shiftModePage .shift-week-buttons,#shiftModePage .shift-toolbar-status-row,#shiftModePage .shift-toolbar-search-row{gap:4px!important}
+ #shiftModePage .shift-week-option{height:62px!important;grid-template-rows:37px 23px}
+ #shiftModePage .shift-week-option .shift-week-btn{height:37px!important;min-height:37px!important;font-size:10px!important;letter-spacing:-.35px}
+ #shiftModePage .shift-week-open-toggle{height:23px!important;min-height:23px!important;font-size:10px!important;gap:3px}
+ #shiftModePage .shift-week-open-toggle input{width:13px;height:13px}
+ #shiftModePage .shift-status-btn,#shiftModePage .shift-toolbar-search-row>button,#shiftModePage .shift-export-week{height:46px!important;min-height:46px!important;padding:2px 1px;font-size:10px!important;letter-spacing:-.25px}
+ #shiftModePage .shift-name-search{height:46px!important;min-height:46px!important;padding:0 3px;font-size:12px;text-align:center}
+ #shiftModePage .shift-purge-old-btn{font-size:9px!important;letter-spacing:-.45px}
+ #shiftModePage .shift-heading-tools{gap:6px;margin-bottom:7px}
+ #shiftModePage .shift-heading-tools .shift-test-toggle{height:29px;min-height:29px;font-size:11px}
+}
+
 </style>
 </head>
 
@@ -927,7 +1285,7 @@ button{cursor:pointer}
 <div id="authGate" class="auth-gate">
   <form id="authForm" class="auth-card" autocomplete="on">
     <div class="auth-brand"><span class="auth-brand-kfc">KFC</span><span class="auth-brand-separator">/</span><span>T998 RIDER CENTER</span></div>
-    <div class="auth-mark"><span>998</span></div>
+    <div class="auth-mark"><span>995</span></div>
     <div class="auth-heading">管理後台</div>
     <div class="auth-field">
       <label for="authEmail">帳號</label>
@@ -983,6 +1341,10 @@ button{cursor:pointer}
   <button id="rosterModeBtn" class="admin-mode-btn" type="button">
     <span class="icon">👥</span>
     在職名單
+  </button>
+  <button id="shiftModeBtn" class="admin-mode-btn" type="button">
+    <span class="icon">🗓️</span>
+    指休管理
   </button>
 </div>
 
@@ -1078,15 +1440,19 @@ button{cursor:pointer}
     <button id="exportExcelBtn" class="action-btn" style="width:100%;margin-top:12px">📊 匯出 Excel</button>
   </div>
 </section>
-
-</div>
+</section>
 
 <section id="surveyModePage" class="admin-mode-page">
   <div class="mode-back-row"><button id="surveyBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
   <section class="section">
     <div class="section-title">意向調查</div>
     <div class="search-box">
-      <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋姓名">
+      <select id="surveyRoundSelect" class="search-input" aria-label="意向調查期別">
+        <option value="M1">M1（1–6月）</option>
+        <option value="M7">M7（7–12月）</option>
+      </select>
+      <div id="surveyPeriodLabel" class="hint" style="margin-top:8px" aria-live="polite"></div>
+      <input id="surveySearchInput" class="search-input" type="text" placeholder="搜尋姓名" style="margin-top:10px">
       <div class="mode-tools">
         <button id="surveyExportBtn" class="action-btn" type="button">📊 匯出意向調查</button>
       </div>
@@ -1198,28 +1564,105 @@ button{cursor:pointer}
 </section>
 
 <section id="rosterModePage" class="admin-mode-page">
-  <div class="mode-back-row"><button id="rosterBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+  <div class="mode-back-row protected-mode-actions"><button id="rosterBackBtn" class="action-btn" type="button">← 返回後台入口</button><button id="rosterPasswordChangeBtn" class="action-btn" type="button">變更共用密碼</button></div>
   <section class="section">
-    <div class="section-title">在職名單</div>
-    <div class="search-box">
-      <input id="surveyTargetNameInput" class="search-input" type="text" placeholder="輸入新人姓名" autocomplete="name">
-      <button id="surveyTargetAddBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">＋ 新增在職員工</button>
-      <div id="surveyTargetMessage" class="hint" style="margin-top:8px;"></div>
+    <div class="section-title">在職員工</div>
+    <div class="employee-add-panel">
+      <input id="employeeNameInput" class="employee-add-name" type="text" maxlength="60" placeholder="輸入姓名" autocomplete="name" aria-label="新員工姓名">
+      <select id="employeeAreaInput" class="employee-add-area" aria-label="新員工區域"><option value="">選擇區域</option>
+<option>A 區</option>
+<option>B 區</option>
+<option>C 區</option>
+<option>D 區</option>
+<option>E 區</option>
+<option>F 區</option>
+<option>G 區</option></select>
+      <button id="employeeAddBtn" class="action-btn employee-add-btn" type="button">＋ 新增</button>
+      <div id="employeeMessage" class="hint employee-add-message" role="status" aria-live="polite"></div>
     </div>
+    <div class="employee-area-tabs" id="employeeAreaTabs" role="tablist" aria-label="依區域篩選在職員工"></div>
+    <div id="employeeDirectorySummary" class="employee-directory-summary" aria-live="polite"></div>
+    <div id="employeeDirectoryList" class="roster-list employee-list" style="margin-top:12px"><div class="loading">載入員工資料中…</div></div>
   </section>
-  <section class="section">
-    <div class="section-title">目前在職員工</div>
-    <div id="rosterList" class="roster-list">
-      <div class="loading">尚未載入在職名單</div>
-    </div>
-  </section>
-  <select id="surveyRoundSelect" style="display:none">
-    <option value="2027M1">2027M1</option>
-    <option value="2027M7">2027M7</option>
-  </select>
+
+  <div id="legacySurveyRosterManagement" style="display:none">
+    <section class="section">
+      <div class="section-title">問卷／訓練名單</div>
+      <div class="search-box">
+        <input id="surveyTargetNameInput" class="search-input" type="text" placeholder="輸入新人姓名" autocomplete="name">
+        <button id="surveyTargetAddBtn" class="action-btn" type="button" style="width:100%;margin-top:12px">＋ 新增在職員工</button>
+        <div id="surveyTargetMessage" class="hint" style="margin-top:8px;"></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="section-title">目前問卷／訓練名單</div>
+      <div id="rosterList" class="roster-list">
+        <div class="loading">尚未載入在職名單</div>
+      </div>
+    </section>
+  </div>
   <div id="surveyIncompleteList" style="display:none"></div>
   <div id="surveyFailedList" style="display:none"></div>
 </section>
+<section id="shiftModePage" class="admin-mode-page">
+  <div class="mode-back-row protected-mode-actions"><button id="shiftBackBtn" class="action-btn" type="button">← 返回後台入口</button><button id="shiftPasswordChangeBtn" class="action-btn" type="button">變更共用密碼</button></div>
+  <section class="section">
+    <div class="section-title">指休管理</div>
+    <div class="shift-heading-tools">
+      <div class="hint">TPLH 2.5｜第三方 ≤20%</div>
+      <label class="shift-test-toggle"><input id="shiftTestModeToggle" type="checkbox" aria-label="測試模式"><span>測試</span></label>
+      <button id="shiftDeleteTestBtn" class="shift-mini-delete" type="button" hidden title="刪除所選週測試資料" aria-label="刪除所選週測試資料">🗑</button>
+    </div>
+    <div class="shift-admin-toolbar">
+      <select id="shiftWeekSelect" class="search-input" aria-label="選擇指休週次" hidden></select>
+      <div class="shift-toolbar-week-row">
+        <div id="shiftWeekButtons" class="shift-week-buttons" role="group" aria-label="選擇週次並設定開放"></div>
+      </div>
+      <div class="shift-toolbar-status-row">
+        <div id="shiftStatusTabs" class="shift-status-tabs" role="tablist" aria-label="指休提交狀態"></div>
+        <input id="shiftNameSearch" class="search-input shift-name-search" type="search" placeholder="搜尋姓名" autocomplete="off" aria-label="搜尋員工姓名">
+      </div>
+      <div class="shift-toolbar-search-row">
+        <button id="shiftRefreshBtn" class="action-btn" type="button">重新整理</button>
+        <select id="shiftExportWeekSelect" class="search-input shift-export-week" aria-label="選擇匯出週次"></select>
+        <button id="shiftExportBtn" class="action-btn" type="button">匯出</button>
+        <button id="shiftPurgeOldBtn" class="action-btn shift-purge-old-btn" type="button" title="刪除一個月前指休資料" aria-label="刪除一個月前指休資料">刪除一個月前</button>
+      </div>
+    </div>
+    <div id="shiftAdminSummary" class="hint" style="margin-top:10px"></div>
+  </section>
+  <section class="section">
+    <details class="shift-fold">
+      <summary class="section-title">下週人力建議</summary>
+      <div class="shift-fold-content">
+        <div class="hint forecast-formula">預估 TC＝前 8 週同星期「實際外送 TC」平均 × 1.2（各區無條件進位）｜需求工時＝預估 TC ÷ 2.5｜第三方提醒＝預估 TC × 20%</div>
+        <div id="staffingRecommendationSummary" class="summary forecast-summary-grid"></div>
+        <div id="staffingForecastDataWarning" class="forecast-data-warning" hidden role="status" aria-live="polite"></div>
+        <div id="staffingWeekGap" class="forecast-week-gap" hidden></div>
+        <div id="staffingDayTabs" class="staffing-day-tabs" role="tablist" aria-label="選擇預測日期"></div>
+        <div id="staffingRecommendationList" class="staffing-results"><div class="loading">載入歷史資料與指休資料中…</div></div>
+      </div>
+    </details>
+  </section>
+  <section class="section">
+    <details class="shift-fold">
+      <summary class="section-title">匯入歷史資料</summary>
+      <div class="shift-fold-content">
+        <div class="staffing-panel" style="width:100%">
+          <label class="staffing-file-picker" for="staffingImportFile"><span id="staffingImportFileLabel">選擇 Excel（可多選）</span><input id="staffingImportFile" type="file" accept=".xlsx,.xls" multiple aria-label="一次選取 TC 與中心實際資料 Excel"></label>
+          <button id="staffingImportBtn" class="action-btn" type="button" style="width:100%;margin-top:9px">分析並匯入</button>
+          <div id="staffingImportMessage" class="staffing-upload-preview" role="status" aria-live="polite"></div>
+        </div>
+        <div class="hint">空白／負數以 0 計</div>
+      </div>
+    </details>
+  </section>
+  <section class="section">
+    <div class="section-title">提交狀況</div>
+    <div id="shiftAdminList" class="vehicle-list"><div class="loading">載入在職員工與提交狀態中…</div></div>
+  </section>
+</section>
+
 </div>
 
 <!-- 快速清單 -->
@@ -1266,6 +1709,20 @@ button{cursor:pointer}
 
   </div>
 
+</div>
+
+<div id="t998ProtectedPasswordModal" class="protected-password-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="t998ProtectedPasswordTitle">
+  <form id="t998ProtectedPasswordForm" class="protected-password-card">
+    <div class="protected-password-mark">T998</div>
+    <h2 id="t998ProtectedPasswordTitle">管理區域驗證</h2>
+    <p id="t998ProtectedPasswordDescription">請輸入共用密碼以繼續。</p>
+    <div id="t998CurrentPasswordWrap" class="protected-password-field" style="display:none"><label for="t998CurrentPassword">目前共用密碼</label><input id="t998CurrentPassword" type="password" autocomplete="current-password"></div>
+    <div id="t998NewPasswordWrap" class="protected-password-field" style="display:none"><label for="t998NewPassword">新共用密碼（至少 8 碼）</label><input id="t998NewPassword" type="password" autocomplete="new-password"></div>
+    <div id="t998ConfirmPasswordWrap" class="protected-password-field" style="display:none"><label for="t998ConfirmPassword">再次輸入新密碼</label><input id="t998ConfirmPassword" type="password" autocomplete="new-password"></div>
+    <div id="t998UnlockPasswordWrap" class="protected-password-field" style="display:none"><label for="t998UnlockPassword">共用密碼</label><input id="t998UnlockPassword" type="password" autocomplete="current-password"></div>
+    <div id="t998PasswordError" class="protected-password-error" role="status"></div>
+    <div class="protected-password-actions"><button id="t998PasswordCancel" class="action-btn" type="button">取消</button><button id="t998PasswordSubmit" class="action-btn protected-password-primary" type="submit">驗證</button></div>
+  </form>
 </div>
 
 <script>
@@ -1415,14 +1872,37 @@ const defensiveExportBtn = $("defensiveExportBtn");
 const defensiveSearchInput = $("defensiveSearchInput");
 const defensiveSummary = $("defensiveSummary");
 const defensiveAdminList = $("defensiveAdminList");
-defensiveAdminMonth.value = String(new Date().getMonth() + 1);
+defensiveAdminMonth.value = String(trainingTaipeiParts().month);
 const newVehicleFullPlate = $("newVehicleFullPlate");
 const newVehicleCenter = $("newVehicleCenter");
 const addVehicleBtn = $("addVehicleBtn");
 const addVehicleMessage = $("addVehicleMessage");
 const surveyRoundSelect = $("surveyRoundSelect");
-const SURVEY_ROUND_YEAR = 2027;
-surveyRoundSelect.value = `${SURVEY_ROUND_YEAR}M${new Date().getMonth() + 1 >= 7 ? 7 : 1}`;
+const surveyPeriodLabel = $("surveyPeriodLabel");
+function trainingTaipeiParts(date = new Date()){
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "numeric", day: "numeric"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return {year:Number(values.year), month:Number(values.month), day:Number(values.day)};
+}
+function surveyRoundInfo(round, year = trainingTaipeiParts().year){
+  const isM7 = round === "M7";
+  return {
+    round: isM7 ? "M7" : "M1",
+    year,
+    start: isM7 ? `${year}-07-01T00:00:00+08:00` : `${year}-01-01T00:00:00+08:00`,
+    end: isM7 ? `${year + 1}-01-01T00:00:00+08:00` : `${year}-07-01T00:00:00+08:00`,
+    label: isM7 ? `${year}/07–12` : `${year}/01–06`
+  };
+}
+function updateSurveyPeriodLabel(){
+  if(!surveyPeriodLabel) return;
+  const info = surveyRoundInfo(surveyRoundSelect.value);
+  surveyPeriodLabel.textContent = `目前檢視：${info.label}（${info.round}）`;
+}
+surveyRoundSelect.value = trainingTaipeiParts().month >= 7 ? "M7" : "M1";
+updateSurveyPeriodLabel();
 const surveyTargetNameInput = $("surveyTargetNameInput");
 const surveyTargetAddBtn = $("surveyTargetAddBtn");
 const surveyTargetMessage = $("surveyTargetMessage");
@@ -1922,8 +2402,7 @@ function renderVehicles(){
       return [
         v.plate4,
         v.full_plate,
-        v.center,
-        v.employee_name
+        v.center
       ]
       .filter(Boolean)
       .some(x =>
@@ -2004,7 +2483,7 @@ function renderVehicles(){
 
     c.className =
       `
-      vehicle-card
+      vehicle-card admin-fixed-card
       ${u.length ? "has-unresolved" : ""}
       ${isClaimPending(v) ? "claim-pending" : ""}
       ${o.type === "warning" ? "oil-warning" : ""}
@@ -2033,7 +2512,6 @@ function renderVehicles(){
         <div class="center">
           CENTER｜${esc(v.center || "未設定")}
         </div>
-        ${v.employee_name ? `<div class="center">員工｜${esc(v.employee_name)}</div>` : ""}
 
         <div class="status ${sc}">
           ${st}
@@ -2088,6 +2566,7 @@ function renderVehicles(){
         </div>
 
       </div>
+      <div class="vehicle-card-admin-actions"><button type="button" class="permanent-delete-vehicle" data-t998-vehicle-delete="${esc(v.id)}" aria-label="永久刪除 ${esc(v.full_plate || v.plate4 || "車輛")} 及全部歷史">刪除</button></div>
 
       `;
 
@@ -2250,7 +2729,6 @@ function openQuickList(type){
         <div class="quick-center">
           CENTER｜${esc(v.center || "未設定")}
         </div>
-        ${v.employee_name ? `<div class="quick-center">員工｜${esc(v.employee_name)}</div>` : ""}
 
         <div class="quick-detail">
           ${detail}
@@ -3442,31 +3920,54 @@ function renderSurveyResponses(){
 }
 
 function exportSurveyResponses(){
-  if(!surveyResponses.length){
-    alert("目前沒有可匯出的意向調查資料。");
+  const period = surveyRoundInfo(surveyRoundSelect.value);
+  const responseMap = latestSurveyResponseByName();
+  const activeNames = new Set(
+    surveyTargets.map(row => String(row.respondent_name || "").trim()).filter(Boolean)
+  );
+  const exportRow = (name, row, employeeStatus) => {
+    const hasResponse = Boolean(row);
+    const p1 = hasResponse ? parseSurveyPart(row.part1_answers) : {};
+    return {
+      調查期別: period.label,
+      員工狀態: employeeStatus,
+      提交狀態: hasResponse ? "已提交" : "未完成",
+      填寫人姓名: name,
+      違規記點: hasResponse ? (p1.violation_points ?? "") : "",
+      第一部分答案: hasResponse ? JSON.stringify(row.part1_answers ?? "") : "",
+      第一部分總分: hasResponse ? (row.part1_total ?? "") : "",
+      第一部分結果: hasResponse ? (row.part1_result || "") : "",
+      第二部分答案: hasResponse ? JSON.stringify(row.part2_answers ?? "") : "",
+      第二部分總分: hasResponse ? (row.part2_total ?? "") : "",
+      第二部分結果: hasResponse ? (row.part2_result || "") : "",
+      一年內肇事: hasResponse ? (row.accident_within_one_year === true ? "有" : row.accident_within_one_year === false ? "沒有" : "") : "",
+      肇事說明: hasResponse ? (row.accident_description || "") : "",
+      填寫時間: hasResponse ? (row.submitted_at || "") : ""
+    };
+  };
+
+  // 以所選期別的在職名單為主表，未提交者也輸出一列，讓主管可直接追蹤缺漏。
+  const rows = surveyTargets
+    .map(target => String(target.respondent_name || "").trim())
+    .filter((name, index, names) => name && names.indexOf(name) === index)
+    .map(name => exportRow(name, responseMap.get(name) || null, "在職"));
+
+  // 保留已提交、但目前不在職名單中的紀錄，避免匯出時漏掉歷史提交者。
+  const exportedNames = new Set(rows.map(row => row.填寫人姓名));
+  responseMap.forEach((response, name) => {
+    if(name && !activeNames.has(name) && !exportedNames.has(name)){
+      rows.push(exportRow(name, response, "非目前在職名單"));
+    }
+  });
+
+  if(!rows.length){
+    alert("目前所選期別沒有在職名單或已提交紀錄，無資料可匯出。");
     return;
   }
-  const rows = surveyResponses.map(row => {
-    const p1 = parseSurveyPart(row.part1_answers);
-    return {
-      id: row.id || "",
-      填寫人姓名: row.respondent_name || "",
-      違規記點: p1.violation_points ?? "",
-      第一部分答案: JSON.stringify(row.part1_answers ?? ""),
-      第一部分總分: row.part1_total ?? "",
-      第一部分結果: row.part1_result || "",
-      第二部分答案: JSON.stringify(row.part2_answers ?? ""),
-      第二部分總分: row.part2_total ?? "",
-      第二部分結果: row.part2_result || "",
-      一年內肇事: row.accident_within_one_year === true ? "有" : "沒有",
-      肇事說明: row.accident_description || "",
-      填寫時間: row.submitted_at || ""
-    };
-  });
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "駕駛意向調查");
-  XLSX.writeFile(wb, `KFC_駕駛意向調查_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `KFC_駕駛意向調查_${period.year}_${period.round}_V2.xlsx`);
 }
 
 async function deleteSurveyResponse(id, name, submittedAt){
@@ -3537,7 +4038,7 @@ function renderSurveyRoster(){
   surveyIncompleteList.innerHTML = `
     <div class="roster-panel-title">${selectedRound} 未完成（${incomplete.length} 人）</div>
     <div class="roster-list">${incomplete.length ? incomplete.map(row => `
-      <div class="roster-item"><span>${esc(row.respondent_name)}<small style="display:block;color:var(--gray);">尚未提交問卷</small></span><button type="button" class="survey-target-delete-btn" data-name="${esc(row.respondent_name)}" data-round="${esc(row.survey_round)}">永久刪除</button></div>`).join("") : '<div class="empty">目前沒有未完成名單</div>'}</div>`;
+      <div class="roster-item"><span>${esc(row.respondent_name)}<small style="display:block;color:var(--gray);">尚未提交問卷</small></span></div>`).join("") : '<div class="empty">目前沒有未完成名單</div>'}</div>`;
   surveyFailedList.innerHTML = failed.length ? failed.map(row => `
     <button type="button" class="roster-item survey-failed-btn" data-name="${esc(row.respondent_name)}" style="width:100%;cursor:pointer;">
       <span>${esc(row.respondent_name || "未填姓名")}<small style="display:block;color:var(--danger);">第一部分：${esc(row.part1_result || "未判定")}｜第二部分：${esc(row.part2_result || "未判定")}</small></span><span>查看</span>
@@ -3545,42 +4046,11 @@ function renderSurveyRoster(){
 }
 
 async function addSurveyTarget(){
-  const name = surveyTargetNameInput.value.trim();
-  const round = surveyRoundSelect.value;
-  if(!name){ surveyTargetMessage.textContent = "請輸入姓名。"; return; }
-  surveyTargetAddBtn.disabled = true;
-  surveyTargetMessage.textContent = "新增中…";
-  try{
-    const existing = await db.from("driver_survey_targets").select("id").eq("respondent_name",name).limit(1);
-    if(existing.error) throw existing.error;
-    if(existing.data?.length){
-      surveyTargetMessage.textContent = `此姓名已在目前在職名單：${name}`;
-      return;
-    }
-    const result = await db.from("driver_survey_targets").insert({respondent_name:name, survey_round:round});
-    if(result.error) throw result.error;
-    surveyTargetNameInput.value = "";
-    surveyTargetMessage.textContent = `✅ 已加入目前在職名單：${name}`;
-    await loadRosterData();
-  }catch(e){
-    surveyTargetMessage.textContent = e.code === "23505" ? "此姓名已存在於此問卷批次。" : `新增失敗：${e.message || "請確認權限"}`;
-  }finally{
-    surveyTargetAddBtn.disabled = false;
-  }
+  if(surveyTargetMessage) surveyTargetMessage.textContent = "意向調查與防禦駕駛名單自動依目前在職員工，不需另行加入。";
 }
 
-async function deleteSurveyTarget(name, round){
-  if(!confirm(`確定要永久刪除「${name}」嗎？\n\n這會刪除該姓名的所有問卷名單、問卷紀錄與防禦駕駛紀錄，且無法復原。`)) return;
-  try{
-    const responseDelete = await db.from("driver_survey_responses").delete().eq("respondent_name", name);
-    if(responseDelete.error) throw responseDelete.error;
-    const defensiveDelete = await db.from("defensive_driving_responses").delete().eq("respondent_name", name);
-    if(defensiveDelete.error) throw defensiveDelete.error;
-    const targetDelete = await db.from("driver_survey_targets").delete().eq("respondent_name", name);
-    if(targetDelete.error) throw targetDelete.error;
-    alert("✅ 該姓名的名單、問卷與防禦駕駛紀錄已永久刪除。");
-    await loadRosterData();
-  }catch(e){ alert(`刪除失敗：${e.message || "請確認 DELETE 權限"}`); }
+async function deleteSurveyTarget(name){
+  alert(`「${name}」的調查／訓練資格由在職名單自動管理。請至在職員工區停用員工；既有紀錄依保留規則處理。`);
 }
 
 function renderActiveRoster(){
@@ -3595,26 +4065,26 @@ function renderActiveRoster(){
   }
   rosterList.innerHTML = rows.map(row => `
     <div class="roster-item">
-      <span>${esc(row.respondent_name)}<small style="display:block;color:var(--gray);">意向調查／防禦駕駛共用</small></span>
-      <button type="button" class="survey-target-delete-btn" data-name="${esc(row.respondent_name)}" data-round="${esc(row.survey_round || surveyRoundSelect.value)}">永久刪除</button>
+      <span>${esc(row.respondent_name)}<small style="display:block;color:var(--gray);">意向調查／防禦駕駛｜依在職名單</small></span>
     </div>
   `).join('');
 }
 
 async function loadRosterData(){
+  if(!rosterList) return;
   rosterList.innerHTML = '<div class="loading">載入在職名單中…</div>';
   try{
-    const result = await db.from("driver_survey_targets").select("*").order("created_at",{ascending:true});
+    const result = await db.from("employee_directory").select("full_name,is_active").eq("is_active",true).order("full_name",{ascending:true});
     if(result.error) throw result.error;
     const map = new Map();
     (result.data || []).forEach(row => {
-      const name = String(row.respondent_name || "").trim();
-      if(name && !map.has(name)) map.set(name, {...row, respondent_name:name});
+      const name = String(row.full_name || "").trim();
+      if(name && !map.has(name)) map.set(name, {respondent_name:name, survey_round:surveyRoundSelect.value});
     });
     surveyTargets = [...map.values()];
     renderActiveRoster();
   }catch(e){
-    rosterList.innerHTML = `<div class="empty">在職名單讀取失敗：${esc(e.message || "請確認權限")}</div>`;
+    rosterList.innerHTML = `<div class="empty">在職名單讀取失敗：${esc(e.message || "請確認員工名單權限")}</div>`;
   }
 }
 
@@ -3704,25 +4174,31 @@ async function deleteDefensiveResponse(name, monthNo, year){
 async function loadDefensiveAdminData(){
   defensiveAdminList.innerHTML = '<div class="loading">載入防禦駕駛資料中…</div>';
   const monthNo = Number(defensiveAdminMonth.value);
-  const year = new Date().getFullYear();
+  const year = trainingTaipeiParts().year;
   try{
-    const targetsResult = await db.from("driver_survey_targets").select("respondent_name");
-    if(targetsResult.error) throw targetsResult.error;
-    const uniqueNames = [...new Set((targetsResult.data || []).map(row => String(row.respondent_name || "").trim()).filter(Boolean))];
-    const responseResult = await db.from("defensive_driving_responses").select("*").eq("training_year", year).eq("month_no", monthNo);
+    const [employeeResult, responseResult] = await Promise.all([
+      db.from("employee_directory").select("full_name,is_active").eq("is_active",true).order("full_name",{ascending:true}),
+      db.from("defensive_driving_responses").select("*").eq("training_year", year).eq("month_no", monthNo)
+    ]);
+    if(employeeResult.error) throw employeeResult.error;
     if(responseResult.error) throw responseResult.error;
+    const uniqueNames = [...new Set((employeeResult.data || []).map(row => String(row.full_name || "").trim()).filter(Boolean))];
     defensiveTargets = uniqueNames;
     defensiveResponses = responseResult.data || [];
-    const completed = new Set(defensiveResponses.filter(row => row.status === "completed").map(row => row.respondent_name));
+    const activeNameSet = new Set(uniqueNames);
+    const completed = new Set(defensiveResponses
+      .filter(row => row.status === "completed")
+      .map(row => String(row.respondent_name || "").trim())
+      .filter(name => name && activeNameSet.has(name)));
     const incomplete = uniqueNames.filter(name => !completed.has(name));
     renderDefensiveSummary(uniqueNames, completed, incomplete);
   }catch(e){
-    renderDefensiveEmptySummary(`防禦駕駛資料讀取失敗：${e.message || "請確認資料表與權限"}`);
+    renderDefensiveEmptySummary(`防禦駕駛資料讀取失敗：${e.message || "請確認在職名單、資料表與權限"}`);
   }
 }
 
 function exportDefensiveResponses(){
-  const year = new Date().getFullYear();
+  const year = trainingTaipeiParts().year;
   const monthNo = Number(defensiveAdminMonth.value);
   const names = [...new Set((defensiveTargets || []).map(name => String(name || "").trim()).filter(Boolean))];
   if(!names.length){
@@ -3761,18 +4237,23 @@ function exportDefensiveResponses(){
 
 async function loadSurveyData(){
   surveyResponseList.innerHTML = '<div class="loading">載入問卷資料中…</div>';
+  updateSurveyPeriodLabel();
   try{
-    const round = surveyRoundSelect.value;
-    const [targetResult, responseResult] = await Promise.all([
-      db.from("driver_survey_targets").select("*").order("created_at",{ascending:true}),
-      db.from("driver_survey_responses").select("*").eq("survey_round", round).order("submitted_at",{ascending:false})
+    const info = surveyRoundInfo(surveyRoundSelect.value);
+    const [employeeResult, responseResult] = await Promise.all([
+      db.from("employee_directory").select("full_name,is_active").eq("is_active",true).order("full_name",{ascending:true}),
+      db.from("driver_survey_responses").select("*")
+        .eq("survey_round", info.round)
+        .gte("submitted_at", info.start)
+        .lt("submitted_at", info.end)
+        .order("submitted_at",{ascending:false})
     ]);
-    if(targetResult.error) throw targetResult.error;
+    if(employeeResult.error) throw employeeResult.error;
     if(responseResult.error) throw responseResult.error;
     const targetMap = new Map();
-    (targetResult.data || []).forEach(row => {
-      const name = String(row.respondent_name || "").trim();
-      if(name && !targetMap.has(name)) targetMap.set(name, {...row, respondent_name:name});
+    (employeeResult.data || []).forEach(row => {
+      const name = String(row.full_name || "").trim();
+      if(name && !targetMap.has(name)) targetMap.set(name, {respondent_name:name, survey_round:info.round});
     });
     surveyTargets = [...targetMap.values()];
     surveyResponses = responseResult.data || [];
@@ -3782,8 +4263,8 @@ async function loadSurveyData(){
   }catch(e){
     surveyIncompleteList.innerHTML = "";
     surveyFailedList.innerHTML = "";
-    renderSurveyEmptySummary(`問卷資料讀取失敗：${e.message || "請確認 anon SELECT 權限"}`);
-    surveyResponseList.innerHTML = `<div class="empty">問卷資料讀取失敗：${esc(e.message || "請確認 anon SELECT 權限")}</div>`;
+    renderSurveyEmptySummary(`問卷資料讀取失敗：${e.message || "請確認員工名單與問卷資料權限"}`);
+    surveyResponseList.innerHTML = `<div class="empty">問卷資料讀取失敗：${esc(e.message || "請確認員工名單與問卷資料權限")}</div>`;
   }
 }
 
@@ -4375,7 +4856,7 @@ returnedCard.onclick =
 
 addVehicleBtn.onclick = addVehicleFromAdmin;
 surveyTargetAddBtn.onclick = addSurveyTarget;
-surveyRoundSelect.onchange = loadSurveyData;
+surveyRoundSelect.onchange = () => { updateSurveyPeriodLabel(); loadSurveyData(); };
 defensiveModeBtn.onclick = () => showAdminMode("defensive");
 defensiveBackBtn.onclick = () => showAdminMode("home");
 defensiveRefreshBtn.onclick = loadDefensiveAdminData;
@@ -4552,7 +5033,907 @@ db.auth.getSession().then(({data}) => unlockAdmin(data.session)).catch(() => loc
 
 showAdminMode("home");
 
+/* =========================================================
+   T998 員工區域、指休管理、人力資料匯入與設備永久刪除
+========================================================= */
+const t998EmployeeNameInput=$("employeeNameInput");
+const t998EmployeeAreaInput=$("employeeAreaInput");
+const t998EmployeeAddBtn=$("employeeAddBtn");
+const t998EmployeeMessage=$("employeeMessage");
+const t998EmployeeDirectoryList=$("employeeDirectoryList");
+const t998EmployeeAreaTabs=$("employeeAreaTabs");
+const t998EmployeeDirectorySummary=$("employeeDirectorySummary");
+const t998ShiftModePage=$("shiftModePage");
+const t998ShiftModeBtn=$("shiftModeBtn");
+const t998ShiftBackBtn=$("shiftBackBtn");
+const t998ShiftWeekSelect=$("shiftWeekSelect");
+const t998ShiftWeekButtons=$("shiftWeekButtons");
+const t998ShiftNameSearch=$("shiftNameSearch");
+const t998ShiftStatusTabs=$("shiftStatusTabs");
+const t998ShiftRefreshBtn=$("shiftRefreshBtn");
+const t998ShiftExportBtn=$("shiftExportBtn");
+const t998ShiftDeleteTestBtn=$("shiftDeleteTestBtn");
+const t998ShiftPurgeOldBtn=$("shiftPurgeOldBtn");
+const t998ShiftSummary=$("shiftAdminSummary");
+const t998ShiftAdminList=$("shiftAdminList");
+const t998StaffingSummary=$("staffingRecommendationSummary");
+const t998StaffingList=$("staffingRecommendationList");
+const t998StaffingWeekGap=$("staffingWeekGap");
+const t998StaffingForecastDataWarning=$("staffingForecastDataWarning");
+const t998StaffingDayTabs=$("staffingDayTabs");
+let t998StaffingForecastData=[];
+let t998StaffingDayOffset=0;
+t998StaffingDayTabs.onclick=e=>{
+  const b=e.target.closest("[data-t998-forecast-day]");if(!b)return;
+  t998StaffingDayOffset=Number(b.dataset.t998ForecastDay)||0;
+  t998StaffingDayTabs.querySelectorAll("[data-t998-forecast-day]").forEach(tab=>{
+    const active=Number(tab.dataset.t998ForecastDay)===t998StaffingDayOffset;
+    tab.classList.toggle("active",active);tab.setAttribute("aria-selected",active?"true":"false");
+  });
+  t998RenderStaffingDay();
+};
+const t998TcFile=$("staffingImportFile");
+const t998TcImportBtn=$("staffingImportBtn");
+const t998TcImportMessage=$("staffingImportMessage");
+const t998ActualsFile=t998TcFile;
+const t998ActualsImportBtn=t998TcImportBtn;
+const t998ActualsImportMessage=t998TcImportMessage;
+let t998Employees=[];
+let t998EmployeeAreaFilter="ALL";
+let t998ShiftRows=[];
+let t998ShiftExportRows=[];
+let t998ShiftStatusFilter="all";
+let t998ShiftTestRecordCount=0;
+let t998ShiftOpenWeeks=new Set();
+let t998StaffingSettings={target_tplh:2.5,max_third_party_usage_pct:20,forecast_weeks:8,shift_test_mode:false};
+let t998AreaMap=new Map();
+let t998AreaMapLoaded=false;
+
+function t998RenderEmployeeDirectory(){
+  const areas=['A','B','C','D','E','F','G'];
+  const counts=Object.fromEntries(areas.map(a=>[a,t998Employees.filter(row=>row.area_code===a).length]));
+  const tabItems=[['ALL','ALL',t998Employees.length],...areas.map(a=>[a,`${a}區`,counts[a]])];
+  t998EmployeeAreaTabs.innerHTML=tabItems.map(([code,label,count])=>`<button type="button" class="employee-area-tab ${t998EmployeeAreaFilter===code?'active':''}" data-t998-area-filter="${code}" aria-pressed="${t998EmployeeAreaFilter===code?'true':'false'}">${label}<br><small>${count}</small></button>`).join('');
+  const areaOrder=Object.fromEntries(areas.map((a,i)=>[a,i]));
+  const sorted=[...t998Employees].sort((a,b)=>{const ai=areaOrder[a.area_code]??areas.length,bi=areaOrder[b.area_code]??areas.length;return ai-bi||String(a.full_name||'').localeCompare(String(b.full_name||''),'zh-Hant');});
+  const rows=t998EmployeeAreaFilter==='ALL'?sorted:sorted.filter(row=>row.area_code===t998EmployeeAreaFilter);
+  t998EmployeeDirectorySummary.textContent=`${rows.length} 人｜依 A–G 區排序`;
+  if(!rows.length){t998EmployeeDirectoryList.innerHTML='<div class="empty">目前沒有員工</div>';return;}
+  t998EmployeeDirectoryList.innerHTML=rows.map(row=>{
+    const options=['<option value="" '+(!row.area_code?'selected':'')+'>未設定</option>',...areas.map(x=>`<option value="${x}" ${row.area_code===x?'selected':''}>${x}區</option>`)].join('');
+    return `<article class="employee-directory-card">
+      <div class="employee-admin-name">${esc(row.full_name)}</div>
+      <span class="employee-badge">${esc(row.area_code?`${row.area_code}區`:'未分類')}</span>
+      <select id="employee-area-${esc(row.id)}" aria-label="${esc(row.full_name)} 區域" data-t998-employee-area="${esc(row.id)}">${options}</select>
+      <button type="button" class="employee-area-save-btn" data-t998-employee-area-save="${esc(row.id)}" aria-label="更換 ${esc(row.full_name)} 區域">換區</button>
+      <button type="button" class="permanent-delete-employee" data-t998-employee-delete="${esc(row.id)}" aria-label="刪除 ${esc(row.full_name)} 及相關紀錄">刪除</button>
+    </article>`;
+  }).join('');
+}
+async function t998LoadEmployees(){
+  t998EmployeeDirectoryList.innerHTML='<div class="loading">載入員工名單中…</div>';
+  try{
+    const r=await db.from("employee_directory").select("id,full_name,area_code,is_active,updated_at").eq("is_active",true).order("full_name",{ascending:true});
+    if(r.error)throw r.error;
+    t998Employees=r.data||[];
+    t998RenderEmployeeDirectory();
+    await loadRosterData();
+  }catch(e){t998EmployeeDirectoryList.innerHTML=`<div class="empty">員工名單讀取失敗：${esc(e.message||"請確認管理員權限與 SQL 更新")}</div>`;}
+}
+async function t998AddEmployee(){
+  const name=t998EmployeeNameInput.value.trim();const area=t998EmployeeAreaInput.value;
+  if(!name){t998EmployeeMessage.textContent="請輸入員工姓名。";t998EmployeeNameInput.focus();return;}
+  if(!area){t998EmployeeMessage.textContent="請選擇 A–G 區。";t998EmployeeAreaInput.focus();return;}
+  t998EmployeeAddBtn.disabled=true;t998EmployeeMessage.textContent="新增中…";
+  try{
+    const existing=await db.from("employee_directory").select("id,is_active,area_code").eq("full_name",name).maybeSingle();if(existing.error)throw existing.error;
+    if(existing.data){t998EmployeeMessage.textContent=`「${name}」已在職名單中，請在員工卡片修改區域。`;return;}
+    const r=await db.from("employee_directory").insert({full_name:name,area_code:area,is_active:true});if(r.error)throw r.error;
+    t998EmployeeNameInput.value="";t998EmployeeAreaInput.value="";t998EmployeeMessage.textContent=`✅ 已新增 ${name}｜${area} 區`;await t998LoadEmployees();
+  }catch(e){t998EmployeeMessage.textContent=`新增失敗：${e.message||"請確認管理員權限"}`;}
+  finally{t998EmployeeAddBtn.disabled=false;}
+}
+async function t998UpdateEmployeeArea(id,newArea,button){
+  const row=t998Employees.find(x=>String(x.id)===String(id));if(!row)return;
+  const next=newArea||null;if((row.area_code||null)===next){t998EmployeeMessage.textContent="區域未變更";return;}
+  const label=next?`${next}區`:"未分類";
+  if(!confirm(`將「${row.full_name}」改為${label}？`)){t998RenderEmployeeDirectory();return;}
+  if(button)button.disabled=true;
+  try{const r=await db.from("employee_directory").update({area_code:next,updated_at:new Date().toISOString()}).eq("id",id);if(r.error)throw r.error;t998EmployeeMessage.textContent="已更新";await t998LoadEmployees();}
+  catch(e){alert(`更新失敗：${e.message||"請確認管理員權限"}`);await t998LoadEmployees();}
+  finally{if(button)button.disabled=false;}
+}
+async function t998DeleteEmployeePermanently(id,button){
+  const row=t998Employees.find(x=>String(x.id)===String(id));if(!row)return;
+  const warning=`永久刪除「${row.full_name}」的全部員工紀錄？
+
+將刪除：員工主檔、意向調查名單與作答、防禦駕駛紀錄、指休資料、領還車紀錄及該員工提交的車輛檢查紀錄。
+
+車輛主檔本身不刪除；刪除領還車紀錄可能改變後台按最新領車資料顯示的狀態。此動作無法復原。`;
+  if(!confirm(warning))return;
+  const typed=prompt(`請輸入員工姓名「${row.full_name}」確認永久刪除：`);
+  if(typed!==row.full_name){if(typed!==null)alert("姓名不一致，已取消刪除。");return;}
+  if(button)button.disabled=true;
+  try{
+    const r=await db.rpc("admin_delete_employee_all_records",{p_employee_id:id});if(r.error)throw r.error;
+    t998Employees=t998Employees.filter(x=>String(x.id)!==String(id));
+    t998RenderEmployeeDirectory();
+    try{await loadRosterData();}catch(e){console.warn("員工刪除後舊名單更新失敗",e);}
+    alert(`✅「${row.full_name}」及其後台相關紀錄已永久刪除。`);
+  }catch(e){
+    alert(`永久刪除失敗：${e.message||"請確認已執行員工停用與永久刪除 SQL 增量更新，並使用管理員帳號登入。"}`);
+    if(button)button.disabled=false;
+  }
+}
+
+async function t998ToggleEmployeeActive(id,currentlyActive){
+  const row=t998Employees.find(x=>String(x.id)===String(id));if(!row)return;
+  const next=!currentlyActive;const text=next?`確定重新啟用「${row.full_name}」？重新啟用後可依名單規則填寫意向調查、防禦駕駛與指休表。`:`確定停用「${row.full_name}」？停用後無法填寫意向調查、防禦駕駛與指休表；已提交的歷史資料會保留。`;
+  if(!confirm(text))return;
+  try{const r=await db.from("employee_directory").update({is_active:next,updated_at:new Date().toISOString()}).eq("id",id);if(r.error)throw r.error;await t998LoadEmployees();}
+  catch(e){alert(`更新在職狀態失敗：${e.message||"請確認管理員權限"}`);}
+}
+
+function t998TaipeiNow(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const y=Number(p.year),m=Number(p.month),d=Number(p.day);return {y,m,d,dow:new Date(Date.UTC(y,m-1,d)).getUTCDay(),minute:Number(p.hour)*60+Number(p.minute)};
+}
+function t998DateISO(y,m,d){return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;}
+function t998DateAdd(iso,days){const [y,m,d]=iso.split("-").map(Number);const dt=new Date(Date.UTC(y,m-1,d+days));return t998DateISO(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());}
+function t998WeekChoices(){
+  const p=t998TaipeiNow();const monday=t998DateAdd(t998DateISO(p.y,p.m,p.d),-((p.dow+6)%7));
+  const shortDate=iso=>iso.slice(5).replace("-","/");
+  return [0,7,14,21].map(offset=>{const start=t998DateAdd(monday,offset);const dateLabel=`${shortDate(start)}-${shortDate(t998DateAdd(start,6))}`;return {start,dateLabel,label:dateLabel};});
+}
+function t998ParseRanges(value){
+  const s=String(value||"").trim();if(!s)return [];
+  const out=[];for(const part of s.split(/[，,、;；/\n]+/).map(x=>x.trim()).filter(Boolean)){
+    const m=part.match(/^(\d{1,2})(?::(\d{2}))?\s*[-~～至]\s*(\d{1,2})(?::(\d{2}))?$/);if(!m)return null;
+    const sh=+m[1],sm=+(m[2]||0),eh=+m[3],em=+(m[4]||0),a=sh*60+sm,b=eh*60+em;
+    if(sh>23||eh>24||sm>59||em>59||a>=b||b>1440)return null;out.push([a,b]);
+  }return out;
+}
+function t998RangeHours(ranges,start,end){return (ranges||[]).reduce((sum,[a,b])=>sum+Math.max(0,Math.min(b,end)-Math.max(a,start))/60,0);}
+function t998DayLabel(iso){const [y,m,d]=iso.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));return `${m}/${d} ${['日','一','二','三','四','五','六'][dt.getUTCDay()]}`;}
+function t998IsAllBlank(row){return ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].every(k=>!String(row[k]||'').trim());}
+function t998LatestShiftByEmployee(rows){const map=new Map();for(const r of [...(rows||[])].sort((a,b)=>String(b.submitted_at||'').localeCompare(String(a.submitted_at||''))))if(!map.has(String(r.employee_id)))map.set(String(r.employee_id),r);return map;}
+function t998RenderShiftWeekButtons(weeks){
+  const selected=t998ShiftWeekSelect.value;
+  t998ShiftWeekButtons.innerHTML=weeks.map(w=>{
+    const opened=t998ShiftOpenWeeks.has(w.start);
+    return `<div class="shift-week-option ${w.start===selected?'is-selected':''}">
+      <button type="button" class="shift-week-btn ${w.start===selected?'active':''}" data-t998-shift-week="${w.start}" aria-pressed="${w.start===selected?'true':'false'}">${w.dateLabel}</button>
+      <label class="shift-week-open-toggle ${opened?'is-checked':''}" title="${opened?'關閉':'開放'} ${w.dateLabel}">
+        <input type="checkbox" data-t998-open-week="${w.start}" aria-label="${opened?'關閉':'開放'}指休 ${w.dateLabel}" ${opened?'checked':''}>
+        <span>開放</span>
+      </label>
+    </div>`;
+  }).join('');
+}
+async function t998LoadShiftAdmin(){
+  const weeks=t998WeekChoices();const old=t998ShiftWeekSelect.value;const oldExport=document.getElementById("shiftExportWeekSelect")?.value;
+  t998ShiftWeekSelect.innerHTML=weeks.map(w=>`<option value="${w.start}">${w.label}</option>`).join('');if(weeks.some(w=>w.start===old))t998ShiftWeekSelect.value=old;
+  const exportSelect=document.getElementById("shiftExportWeekSelect");
+  if(exportSelect){exportSelect.innerHTML=weeks.map(w=>`<option value="${w.start}">${w.dateLabel}</option>`).join('');exportSelect.value=weeks.some(w=>w.start===oldExport)?oldExport:t998ShiftWeekSelect.value;}
+  t998ShiftAdminList.innerHTML='<div class="loading">載入中…</div>';t998ShiftSummary.textContent="";t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="loading">計算中…</div>';
+  try{
+    // 初始化不存在的週次為關閉；ignoreDuplicates 保留既有勾選狀態。
+    const seed=await db.from("weekly_shift_open_weeks").upsert(weeks.map(w=>({week_start:w.start,is_open:false})),{onConflict:"week_start",ignoreDuplicates:true});
+    if(seed.error)throw seed.error;
+    const [er,sr,settings,openWeeks]=await Promise.all([
+      db.from("employee_directory").select("id,full_name,area_code,is_active").eq("is_active",true).order("area_code",{ascending:true}).order("full_name",{ascending:true}),
+      db.from("weekly_shift_availability").select("id,employee_id,employee_name,employee_area_code,week_start,monday,tuesday,wednesday,thursday,friday,saturday,sunday,notes,submitted_at,is_test").eq("week_start",t998ShiftWeekSelect.value).order("submitted_at",{ascending:false}),
+      db.from("staffing_settings").select("target_tplh,max_third_party_usage_pct,forecast_weeks,shift_test_mode").eq("singleton",true).maybeSingle(),
+      db.from("weekly_shift_open_weeks").select("week_start,is_open").in("week_start",weeks.map(w=>w.start))
+    ]);
+    if(er.error)throw er.error;if(sr.error)throw sr.error;if(settings.error)throw settings.error;if(openWeeks.error)throw openWeeks.error;
+    t998Employees=er.data||[];if(settings.data)t998StaffingSettings=settings.data;
+    t998ShiftOpenWeeks=new Set((openWeeks.data||[]).filter(row=>row.is_open).map(row=>row.week_start));
+    t998RenderShiftWeekButtons(weeks);
+    const latest=t998LatestShiftByEmployee(sr.data||[]);t998ShiftTestRecordCount=(sr.data||[]).filter(r=>r.is_test).length;
+    t998ShiftRows=t998Employees.map(e=>({employee:e,shift:latest.get(String(e.id))||null}));
+    const forecastRows=t998Employees.map(e=>({employee:e,shift:latest.get(String(e.id))||null}));
+    const testToggle=document.getElementById("shiftTestModeToggle");if(testToggle){testToggle.checked=Boolean(t998StaffingSettings.shift_test_mode);t998SyncShiftToggleVisual(testToggle);}
+    t998RenderShiftAdmin();await t998RenderStaffingRecommendation(t998ShiftWeekSelect.value,forecastRows);
+  }catch(e){t998ShiftRows=[];t998ShiftAdminList.innerHTML=`<div class="empty">讀取失敗：${esc(e.message||"請確認權限")}</div>`;t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="empty">人力資料讀取失敗</div>';}
+}
+async function t998SetShiftWeekOpen(input){
+  if(!input)return;
+  const weekStart=input.dataset.t998OpenWeek;const requested=input.checked;const previous=!requested;
+  input.disabled=true;
+  try{
+    const r=await db.from("weekly_shift_open_weeks").upsert({week_start:weekStart,is_open:requested,updated_at:new Date().toISOString()},{onConflict:"week_start"});
+    if(r.error)throw r.error;
+    if(requested)t998ShiftOpenWeeks.add(weekStart);else t998ShiftOpenWeeks.delete(weekStart);
+    await t998LoadShiftAdmin();
+  }catch(e){
+    input.checked=previous;t998SyncShiftToggleVisual(input);
+    alert(`週次開放狀態更新失敗：${e.message||"請確認已部署995 V4逐週開放SQL，且管理區密碼已解鎖。"}`);
+  }finally{if(input.isConnected)input.disabled=false;}
+}
+function t998RenderShiftAdmin(){
+  const active=t998ShiftRows.length;const submitted=t998ShiftRows.filter(x=>x.shift).length;const missing=active-submitted;
+  if(t998ShiftDeleteTestBtn){
+    const count=Number(t998ShiftTestRecordCount||0);
+    t998ShiftDeleteTestBtn.hidden=true;
+    t998ShiftDeleteTestBtn.disabled=count===0;
+    t998ShiftDeleteTestBtn.title=count?`刪除所選週 ${count} 筆測試資料`:"所選週沒有測試資料";
+    t998ShiftDeleteTestBtn.setAttribute("aria-label",count?`刪除所選週 ${count} 筆測試資料`:"刪除所選週測試資料");
+  }
+  const choices=[['all',`全部 ${active}`],['submitted',`已提交 ${submitted}`],['missing',`未提交 ${missing}`]];
+  t998ShiftStatusTabs.innerHTML=choices.map(([key,label])=>`<button type="button" class="shift-status-btn ${t998ShiftStatusFilter===key?'active':''}" data-t998-shift-status="${key}" role="tab" aria-selected="${t998ShiftStatusFilter===key?'true':'false'}">${label}</button>`).join('');
+  const weekLabel=t998ShiftWeekSelect.options[t998ShiftWeekSelect.selectedIndex]?.text||"";const term=t998ShiftNameSearch.value.trim().toLocaleLowerCase('zh-Hant');
+  const rows=t998ShiftRows.filter(({employee,shift})=>{
+    if(t998ShiftStatusFilter==='submitted'&&!shift)return false;if(t998ShiftStatusFilter==='missing'&&shift)return false;
+    return !term||String(employee.full_name||'').toLocaleLowerCase('zh-Hant').includes(term);
+  });
+  t998ShiftSummary.textContent=`${weekLabel}｜在職 ${active}｜已提交 ${submitted}｜測試資料 ${t998ShiftTestRecordCount} 筆｜未提交 ${missing}｜顯示 ${rows.length}`;
+  if(!rows.length){t998ShiftAdminList.innerHTML='<div class="shift-admin-empty">沒有符合資料</div>';return;}
+  const days=[['週一','monday'],['週二','tuesday'],['週三','wednesday'],['週四','thursday'],['週五','friday'],['週六','saturday'],['週日','sunday']];
+  const body=rows.map(({employee:e,shift:r})=>{
+    const allBlank=r&&t998IsAllBlank(r);const cls=!r?'is-missing':allBlank?'is-empty':'';const status=!r?'未提交':r.is_test?'測試':allBlank?'七天留白':'已提交';
+    const submittedAt=r?.submitted_at?new Date(r.submitted_at).toLocaleString("zh-TW",{timeZone:"Asia/Taipei"}):"—";
+    const cells=days.map(([label,key])=>`<td class="shift-cell">${esc(r?.[key]||"—")}</td>`).join('');
+    return `<tr class="${cls}"><td class="shift-person-cell"><strong>${esc(e.full_name)}</strong><span class="shift-person-meta">${esc(e.area_code?`${e.area_code}區`:"未分類")}｜${status}</span><span class="shift-person-meta">${esc(submittedAt)}</span></td>${cells}</tr>${r?.notes?`<tr class="shift-notes-row"><td colspan="8">${esc(r.notes)}</td></tr>`:''}`;
+  }).join('');
+  t998ShiftAdminList.innerHTML=`<div class="shift-scroll-cue" aria-hidden="true">↔</div><div class="shift-admin-scroll" role="region" aria-label="指休資料，可左右滑動" tabindex="0"><table class="shift-data-table"><thead><tr><th>員工</th>${days.map(([label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function t998BuildShiftExportRows(week,shiftRows){
+  const days=[['週一','monday'],['週二','tuesday'],['週三','wednesday'],['週四','thursday'],['週五','friday'],['週六','saturday'],['週日','sunday']];
+  return shiftRows.map(({employee:e,shift:r})=>({週次:week,姓名:e.full_name,區域:e.area_code?`${e.area_code}區`:"未分類",資料類型:r?.is_test?"測試資料（納入人力建議）":"正式資料",提交狀態:!r?"未提交":r.is_test?"測試提交":t998IsAllBlank(r)?"已提交－七天皆空白":"已提交",...Object.fromEntries(days.map(([label,key])=>[label,r?.[key]||""])),備註:r?.notes||"",最後提交時間:r?.submitted_at||""}));
+}
+async function t998ExportShiftWeek(){
+  const week=document.getElementById("shiftExportWeekSelect")?.value||t998ShiftWeekSelect.value;
+  if(!week){alert("請先選擇匯出週次。");return;}
+  t998ShiftExportBtn.disabled=true;
+  try{
+    const result=await db.from("weekly_shift_availability").select("id,employee_id,employee_name,employee_area_code,week_start,monday,tuesday,wednesday,thursday,friday,saturday,sunday,notes,submitted_at,is_test").eq("week_start",week).order("submitted_at",{ascending:false});
+    if(result.error)throw result.error;
+    const latest=t998LatestShiftByEmployee(result.data||[]);
+    const rows=t998BuildShiftExportRows(week,t998Employees.map(employee=>({employee,shift:latest.get(String(employee.id))||null})));
+    if(!rows.length){alert("目前沒有在職員工資料可匯出。");return;}
+    const wb=XLSX.utils.book_new();const ws=XLSX.utils.json_to_sheet(rows);if(ws["!ref"])ws["!autofilter"]={ref:ws["!ref"]};XLSX.utils.book_append_sheet(wb,ws,"指休表");XLSX.writeFile(wb,`T998_指休_${week}.xlsx`);
+  }catch(e){alert(`指休匯出失敗：${e.message||"請確認資料庫權限"}`);}
+  finally{t998ShiftExportBtn.disabled=false;}
+}
+function t998TaipeiDateMonthsAgo(months=1){
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const values=Object.fromEntries(parts.filter(p=>p.type!=="literal").map(p=>[p.type,Number(p.value)]));
+  const monthIndex=values.month-1-months;const year=values.year+Math.floor(monthIndex/12);const month=((monthIndex%12)+12)%12;
+  const lastDay=new Date(Date.UTC(year,month+1,0)).getUTCDate();
+  return new Date(Date.UTC(year,month,Math.min(values.day,lastDay))).toISOString().slice(0,10);
+}
+async function t998PurgeOldShiftData(){
+  if(!t998ShiftPurgeOldBtn)return;
+  const cutoff=t998TaipeiDateMonthsAgo(1);t998ShiftPurgeOldBtn.disabled=true;
+  try{
+    const preview=await db.from("weekly_shift_availability").select("id",{count:"exact",head:true}).lt("week_start",cutoff);
+    if(preview.error)throw preview.error;const count=Number(preview.count||0);
+    if(!count){alert(`沒有早於 ${cutoff} 的指休資料。`);return;}
+    if(!confirm(`將永久刪除 ${count} 筆指休紀錄（週次早於 ${cutoff}）。正式與測試資料都會刪除；其他人力歷史資料不受影響。此操作無法復原。確定刪除？`))return;
+    const result=await db.from("weekly_shift_availability").delete().lt("week_start",cutoff).select("id");
+    if(result.error)throw result.error;
+    alert(`已刪除 ${(result.data||[]).length} 筆指休紀錄（週次早於 ${cutoff}）。`);
+    await t998LoadShiftAdmin();
+  }catch(e){alert(`刪除逾月指休資料失敗：${e.message||"請確認管理員權限"}`);}
+  finally{t998ShiftPurgeOldBtn.disabled=false;}
+}
+async function t998DeleteShiftTestData(){
+  const week=t998ShiftWeekSelect.value;const count=t998ShiftTestRecordCount;
+  if(!count){alert("本週沒有測試資料。");return;}
+  if(!confirm(`確定刪除本週 ${count} 筆測試指休資料？正式提交資料不會刪除。`))return;
+  t998ShiftDeleteTestBtn.disabled=true;
+  try{
+    const r=await db.from("weekly_shift_availability").delete().eq("week_start",week).eq("is_test",true).select("id");
+    if(r.error)throw r.error;
+    alert(`已刪除 ${(r.data||[]).length} 筆測試資料。`);
+    await t998LoadShiftAdmin();
+  }catch(e){alert(`刪除測試資料失敗：${e.message||"請確認管理員權限"}`);}
+  finally{t998ShiftDeleteTestBtn.disabled=false;}
+}
+async function t998LoadAllPaged(table,select,fromDate,toDate,periodCode,orderColumn="restaurant_name"){
+  const out=[];const pageSize=1000;for(let offset=0;;offset+=pageSize){
+    let q=db.from(table).select(select).gte("record_date",fromDate).lt("record_date",toDate).order("record_date",{ascending:true});
+    if(orderColumn)q=q.order(orderColumn,{ascending:true});
+    if(periodCode)q=q.eq("period_code",periodCode);q=q.range(offset,offset+pageSize-1);
+    const r=await q;if(r.error)throw r.error;out.push(...(r.data||[]));if(!r.data||r.data.length<pageSize)break;
+  }return out;
+}
+function t998MapAdd(map,key,value){map.set(key,(map.get(key)||0)+Number(value||0));}
+function t998SampleAverage(map,area,weekStart,dayOffset,weeks,expectedStores){
+  const vals=[];
+  for(let w=1;w<=weeks;w++){
+    const date=t998DateAdd(weekStart,dayOffset-7*w);
+    const cell=map.get(`${area}|${date}`);
+    if(!cell)continue;
+    // 僅採用當日該區所有有效餐廳均有資料的完整樣本，避免缺店資料拉低平均。
+    if(expectedStores>0&&cell.stores.size<expectedStores)continue;
+    if(Number.isFinite(cell.totalTc)&&cell.totalTc>=0)vals.push(cell.totalTc);
+  }
+  return {average:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null,sampleWeeks:vals.length};
+}
+function t998ForecastTcFromAverage(average,growthRate=0.20){
+  if(average===null||average===undefined||!Number.isFinite(Number(average)))return null;
+  return Math.ceil(Number(average)*(1+growthRate)-1e-9);
+}
+async function t998RenderStaffingRecommendation(weekStart,shiftRows){
+  if(!t998AreaMapLoaded)await t998LoadAreaMap();
+  const weeks=8;
+  const first=t998DateAdd(weekStart,-7*weeks);
+  const importedFullRows=await t998LoadAllPaged("staffing_tc_history","record_date,restaurant_name,area_code,total_tc,period_code",first,weekStart,"full_day");
+  const fullRows=importedFullRows.filter(r=>t998AreaMap.get(String(r.restaurant_name||"").trim())===r.area_code);
+  const areaOrder=['A','B','C','D','E','F','G'];
+  const mappedAreas=[...new Set(t998AreaMap.values())].sort((a,b)=>areaOrder.indexOf(a)-areaOrder.indexOf(b));
+  t998StaffingForecastData=[];
+  if(!mappedAreas.length){t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="shift-admin-empty">尚未設定台南餐廳區域對照表。</div>';return;}
+  if(!fullRows.length){t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="shift-admin-empty">尚未匯入實際外送 TC，無法預測。</div>';return;}
+  const fullByAreaDate=new Map();
+  for(const r of fullRows){
+    const date=String(r.record_date).slice(0,10),store=String(r.restaurant_name||"").trim(),key=`${r.area_code}|${date}`;
+    let cell=fullByAreaDate.get(key);if(!cell){cell={totalTc:0,stores:new Set()};fullByAreaDate.set(key,cell);}
+    // 同餐廳同日只計一次，避免重複資料意外放大預估。
+    if(!cell.stores.has(store)){cell.stores.add(store);const tc=Number(r.total_tc);cell.totalTc+=Number.isFinite(tc)&&tc>=0?tc:0;}
+  }
+  const expectedStoresByArea=new Map();
+  for(const area of t998AreaMap.values())expectedStoresByArea.set(area,(expectedStoresByArea.get(area)||0)+1);
+  const byArea=new Map();
+  for(const {employee,shift} of shiftRows){const area=employee.area_code;if(!area)continue;if(!byArea.has(area))byArea.set(area,[]);byArea.get(area).push({employee,shift});}
+  const areas=mappedAreas;
+  // 使用固定營運目標，確保畫面公式與工時計算一致。
+  const target=2.5;
+  const cap=20;
+  const growthRate=0.20;
+  const dayNames=['週一','週二','週三','週四','週五','週六','週日'];
+  const output=areas.map(area=>({area,days:dayNames.map((day,offset)=>{
+    const date=t998DateAdd(weekStart,offset);
+    const sample=t998SampleAverage(fullByAreaDate,area,weekStart,offset,weeks,expectedStoresByArea.get(area)||0);
+    const averageTc=sample.average;
+    // 順序固定：同星期歷史平均 → 成長 20% → 區域 TC 無條件進位 → 除以 TPLH 2.5。
+    const totalTc=t998ForecastTcFromAverage(averageTc,growthRate);
+    const recommended=totalTc===null?null:totalTc/target;
+    const thirdPartyCap=totalTc===null?null:totalTc*cap/100;
+    let availableHours=0,people=0;
+    for(const x of byArea.get(area)||[]){if(!x.shift)continue;const key=['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][offset];const intervals=t998ParseRanges(x.shift[key]);if(intervals===null||!intervals.length)continue;people++;availableHours+=intervals.reduce((sum,[a,b])=>sum+(b-a)/60,0);}
+    return {day,date,averageTc,totalTc,recommended,thirdPartyCap,availableHours,people,gap:recommended===null?null:availableHours-recommended,historyWeeks:sample.sampleWeeks,targetWeeks:weeks};
+  })}));
+  const allDays=output.flatMap(x=>x.days);
+  const missingForecasts=allDays.filter(d=>d.totalTc===null);
+  const partialHistory=allDays.filter(d=>d.historyWeeks<weeks);
+  const completeWeek=missingForecasts.length===0;
+  const weeklyTc=completeWeek?allDays.reduce((sum,d)=>sum+d.totalTc,0):null;
+  const weeklyNeeded=completeWeek?allDays.reduce((sum,d)=>sum+d.recommended,0):null;
+  const weeklyAvailable=allDays.reduce((sum,d)=>sum+d.availableHours,0);
+  const weeklyThirdParty=completeWeek?allDays.reduce((sum,d)=>sum+d.thirdPartyCap,0):null;
+  const weeklyGap=completeWeek?weeklyAvailable-weeklyNeeded:null;
+  const fmtTc=value=>value===null?'—':Number(value).toLocaleString('zh-TW',{maximumFractionDigits:1});
+  const fmtHours=value=>value===null?'—':Number(value).toLocaleString('zh-TW',{minimumFractionDigits:1,maximumFractionDigits:1});
+  t998StaffingSummary.innerHTML=`<div class="summary-card"><div class="summary-label">成長後預估整週 TC</div><div class="summary-number">${fmtTc(weeklyTc)}</div></div><div class="summary-card"><div class="summary-label">預估需求工時（÷2.5）</div><div class="summary-number">${fmtHours(weeklyNeeded)}</div></div><div class="summary-card"><div class="summary-label">可安排工時</div><div class="summary-number">${fmtHours(weeklyAvailable)}</div></div><div class="summary-card"><div class="summary-label">第三方 TC 提醒值（20%）</div><div class="summary-number">${fmtTc(weeklyThirdParty)}</div></div>`;
+  if(partialHistory.length){
+    const examples=partialHistory.slice(0,4).map(d=>`${d.day}${output.find(a=>a.days.includes(d))?.area||''}區 ${d.historyWeeks}/${weeks}週`).join('、');
+    const more=partialHistory.length>4?` 等 ${partialHistory.length} 組`:` 共 ${partialHistory.length} 組`;
+    t998StaffingForecastDataWarning.textContent=`歷史資料未滿 ${weeks} 週：${examples}${more}；按各區／星期可用完整週數平均。`;
+    t998StaffingForecastDataWarning.hidden=false;
+  }else{t998StaffingForecastDataWarning.textContent="";t998StaffingForecastDataWarning.hidden=true;}
+  if(completeWeek){
+    t998StaffingWeekGap.hidden=false;t998StaffingWeekGap.className=`forecast-week-gap ${weeklyGap<0?'is-short':'is-surplus'}`;
+    t998StaffingWeekGap.textContent=`整週工時差：${weeklyGap>=0?'+':''}${weeklyGap.toFixed(1)} 小時｜${weeklyGap<0?'人力不足':'人力有餘裕'}`;
+  }else{
+    t998StaffingWeekGap.hidden=false;t998StaffingWeekGap.className='forecast-week-gap is-warning';
+    t998StaffingWeekGap.textContent=`整週 TC／需求工時／工時差暫不加總：${missingForecasts.length} 組區域／日期沒有完整歷史樣本。`;
+  }
+  t998StaffingForecastData=output;
+  t998StaffingDayOffset=Math.max(0,Math.min(6,t998StaffingDayOffset));
+  t998StaffingDayTabs.innerHTML=dayNames.map((day,i)=>{const date=t998DateAdd(weekStart,i);return `<button type="button" class="staffing-day-tab ${i===t998StaffingDayOffset?'active':''}" data-t998-forecast-day="${i}" role="tab" aria-selected="${i===t998StaffingDayOffset?'true':'false'}"><span>${day}</span><small>${date.slice(5).replace('-','/')}</small></button>`;}).join('');
+  t998RenderStaffingDay();
+}
+function t998RenderStaffingDay(){
+  const areas=t998StaffingForecastData||[];if(!areas.length){t998StaffingList.innerHTML='<div class="shift-admin-empty">目前沒有可顯示的預測資料。</div>';return;}
+  const offset=t998StaffingDayOffset;const day=areas[0]?.days[offset];if(!day)return;
+  const gap=(value)=>value===null?{text:'—',cls:''}:{text:`${value>=0?'+':''}${value.toFixed(1)} 小時`,cls:value<0?'is-short':'is-surplus'};
+  const metric=(label,value)=>`<div class="forecast-area-stat"><span>${label}</span><strong>${value}</strong></div>`;
+  const fmtTc=value=>value===null?'—':Number(value).toLocaleString('zh-TW',{maximumFractionDigits:1});
+  const fmtHours=value=>value===null?'—':Number(value).toLocaleString('zh-TW',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const dayData=areas.map(x=>x.days[offset]);
+  const completeDay=dayData.every(d=>d.totalTc!==null);
+  const totalTc=completeDay?dayData.reduce((sum,d)=>sum+d.totalTc,0):null;
+  const totalNeeded=completeDay?dayData.reduce((sum,d)=>sum+d.recommended,0):null;
+  const totalThird=completeDay?dayData.reduce((sum,d)=>sum+d.thirdPartyCap,0):null;
+  const totalPeople=dayData.reduce((sum,d)=>sum+d.people,0);const totalAvailable=dayData.reduce((sum,d)=>sum+d.availableHours,0);
+  const totalGap=totalNeeded===null?null:totalAvailable-totalNeeded;const totalDelta=gap(totalGap);
+  const totalText=(value,digits=1)=>value===null?'—':Number(value).toLocaleString('zh-TW',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+  const totals=`<div class="forecast-day-total-wrap"><div class="forecast-day-total-title">${day.day} 預估合計｜各區前 8 週同星期實際外送 TC 平均 ×1.2 後無條件進位</div><div class="forecast-day-total-grid"><div class="forecast-day-total-card"><span>預估 TC</span><strong>${fmtTc(totalTc)}</strong></div><div class="forecast-day-total-card"><span>需求工時（÷2.5）</span><strong>${totalText(totalNeeded)}</strong></div><div class="forecast-day-total-card"><span>第三方 TC 提醒值（20%）</span><strong>${fmtTc(totalThird)}</strong></div><div class="forecast-day-total-card"><span>可排人數／工時</span><strong>${totalPeople} 人／${totalText(totalAvailable)} 小時</strong></div><div class="forecast-day-total-card"><span>工時差</span><strong class="forecast-gap ${totalDelta.cls}">${totalDelta.text}</strong></div></div></div>`;
+  const rows=areas.map(({area,days})=>{const d=days[offset];const delta=gap(d.gap);const tc=fmtTc(d.totalTc);const needed=fmtHours(d.recommended);const third=fmtTc(d.thirdPartyCap);const availability=`${d.people} 人／${d.availableHours.toFixed(1)} 小時`;const history=`${d.historyWeeks}/${d.targetWeeks}週`;
+    return {area,tc,needed,third,availability,delta,history};
+  });
+  t998StaffingList.innerHTML=`<div class="forecast-day-panel"><div class="forecast-day-heading">${day.day}｜${day.date}</div>${totals}<div class="forecast-area-table-wrap"><table class="forecast-area-table" aria-label="${day.day}各區人力預測"><thead><tr><th>區域／歷史週數</th><th>成長後預估 TC</th><th>需求工時</th><th>第三方 TC 20% 提醒</th><th>可排人數／工時</th><th>工時差</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${r.area} 區</strong><small class="forecast-history-weeks">${r.history}</small></td><td>${r.tc}</td><td>${r.needed}</td><td>${r.third}</td><td>${r.availability}</td><td class="forecast-gap ${r.delta.cls}">${r.delta.text}</td></tr>`).join('')}</tbody></table></div><div class="forecast-area-cards">${rows.map(r=>`<article class="forecast-area-card"><div class="forecast-area-card-head"><span>${r.area} 區 <small class="forecast-history-weeks">${r.history}</small></span><span class="forecast-gap ${r.delta.cls}">${r.delta.text}</span></div><div class="forecast-area-card-grid">${metric('成長後預估 TC',r.tc)}${metric('預估需求工時（÷2.5）',r.needed)}${metric('第三方 TC 20% 提醒值',r.third)}${metric('可排人數／工時',r.availability)}</div></article>`).join('')}</div></div>`;
+}
+function t998RenderShiftAndForecast(){t998RenderShiftAdmin();t998RenderStaffingFromCurrent();}
+
+function t998ExcelDateToISO(value){
+  if(value instanceof Date&&!Number.isNaN(value.getTime()))return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+  if(typeof value==='number'&&Number.isFinite(value)){const d=XLSX.SSF.parse_date_code(value);if(!d)return null;return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
+  const s=String(value??'').trim();if(!s)return null;
+  let m=s.match(/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);if(m)return `${m[1]}-${String(+m[2]).padStart(2,'0')}-${String(+m[3]).padStart(2,'0')}`;
+  const parsed=new Date(s);if(!Number.isNaN(parsed.getTime()))return `${parsed.getFullYear()}-${String(parsed.getMonth()+1).padStart(2,'0')}-${String(parsed.getDate()).padStart(2,'0')}`;return null;
+}
+function t998NumericZero(value,counter){
+  if(value===null||value===undefined||String(value).trim()===''){counter.count++;return 0;}
+  let n;if(typeof value==='number')n=value;else n=Number(String(value).replace(/,/g,'').replace(/%/g,'').trim());
+  if(!Number.isFinite(n)||n<0){counter.count++;return 0;}return n;
+}
+function t998PercentValue(value,counter){
+  if(value===null||value===undefined||String(value).trim()===''){counter.count++;return 0;}
+  const raw=String(value).trim();let n=typeof value==='number'?value:Number(raw.replace(/%/g,'').replace(/,/g,''));
+  if(!Number.isFinite(n)||n<0){counter.count++;return 0;}
+  if(typeof value==='number'&&n>0&&n<=1)n*=100;
+  else if(typeof value!=='number'&&raw.includes('%'))n=Number(raw.replace(/%/g,'').replace(/,/g,''));
+  else if(typeof value!=='number'&&n>0&&n<=1)n*=100;
+  return n;
+}
+function t998MinMaxDates(rows){const ds=rows.map(x=>x.record_date).filter(Boolean).sort();return {start:ds[0]||null,end:ds[ds.length-1]||null};}
+async function t998LoadAreaMap(){
+  const r=await db.from("tc_restaurant_area_map").select("restaurant_name,area_code").eq("is_active",true);if(r.error)throw r.error;t998AreaMap=new Map((r.data||[]).map(x=>[String(x.restaurant_name).trim(),x.area_code]));t998AreaMapLoaded=true;
+}
+function t998RowsFromSheet(workbook,sheetName,period,counter,unmapped){
+  const sheet=workbook.Sheets[sheetName];const rawRows=XLSX.utils.sheet_to_json(sheet,{defval:null,raw:true});const out=[];
+  rawRows.forEach((row,index)=>{
+    const store=String(row.STR_SN??row['餐廳']??'').trim();if(!store||store.toLowerCase()==='total')return;
+    const area=t998AreaMap.get(store);if(!area){unmapped.add(store);return;}
+    const date=t998ExcelDateToISO(row.DATE??row['日期']);if(!date){counter.badDates++;return;}
+    const priorDate=t998ExcelDateToISO(row['DATE PY']??row['去年日期']);
+    out.push({restaurant_name:store,area_code:area,record_date:date,prior_year_date:priorDate,period_code:period,prior_year_tc:t998NumericZero(row['去年單數']??row['去年TC'],counter),total_tc:t998NumericZero(row['實際外送TC']??row['今年TC']??row['TC(System)'],counter),tc_ex_third_party:t998NumericZero(row['扣除第三方TC'],counter),source_sheet:sheetName,source_row:index+2});
+  });return out;
+}
+async function t998CreateImportBatch(fileName,rows,note){
+  const dates=t998MinMaxDates(rows);const user=await db.auth.getUser();const email=user?.data?.user?.email||null;
+  const r=await db.from("staffing_import_batches").insert({file_name:fileName,period_start:dates.start,period_end:dates.end,imported_by:email,note}).select("id").single();if(r.error)throw r.error;return r.data.id;
+}
+async function t998UpsertChunks(table,rows,onConflict,messageNode){
+  const size=250;for(let i=0;i<rows.length;i+=size){const r=await db.from(table).upsert(rows.slice(i,i+size),{onConflict});if(r.error)throw r.error;if(messageNode)messageNode.textContent=`匯入中… ${Math.min(i+size,rows.length)} / ${rows.length}`;}
+}
+async function t998ImportTcWorkbook(){
+  const file=t998TcFile.files?.[0];if(!file){t998TcImportMessage.textContent="請先選擇 TC 活頁簿。";return;}
+  t998TcImportBtn.disabled=true;t998TcImportMessage.textContent="讀取分頁與檢查餐廳名稱中…";let batchId=null;
+  try{
+    if(!t998AreaMapLoaded)await t998LoadAreaMap();const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+    const fullSheet=workbook.SheetNames.find(n=>n.includes("整天"));const mealSheet=workbook.SheetNames.find(n=>n.includes("餐期"));
+    if(!fullSheet||!mealSheet)throw new Error("找不到「整天」及「餐期」分頁；請使用包含兩種資料的活頁簿。要求欄位：STR_SN、DATE、DATE PY、去年單數、實際外送TC、扣除第三方TC。");
+    const counter={count:0,badDates:0};const unmapped=new Set();
+    const rows=[...t998RowsFromSheet(workbook,fullSheet,"full_day",counter,unmapped),...t998RowsFromSheet(workbook,mealSheet,"meal_period",counter,unmapped)];
+    if(counter.badDates)throw new Error(`${counter.badDates} 列日期無法辨識，請檢查 DATE 欄。`);
+    if(unmapped.size)throw new Error(`以下店名不在 A–G 對照表，未匯入：${[...unmapped].slice(0,15).join("、")}${unmapped.size>15?"…":""}`);
+    if(!rows.length)throw new Error("沒有可匯入的餐廳資料列。請確認是否只有 Total 總計列。");
+    const unique=new Set(rows.map(r=>`${r.restaurant_name}|${r.record_date}|${r.period_code}`));if(unique.size!==rows.length)throw new Error("檔案內有重複餐廳／日期／整天或餐期資料；請先整理後再匯入。");
+    const dates=t998MinMaxDates(rows);t998TcImportMessage.textContent=`預覽完成：${rows.length} 列｜${dates.start} 至 ${dates.end}｜整天與餐期分開保存｜Total 列已略過｜空白／負數歸零 ${counter.count} 個欄位。重複的餐廳／日期／類型會更新。`;
+    if(!confirm(`即將匯入 ${rows.length} 列 TC 資料（${dates.start} 至 ${dates.end}）。重複資料將依餐廳＋日期＋類型更新。確定繼續？`))return;
+    batchId=await t998CreateImportBatch(file.name,rows,"TC Excel 上傳；整天與餐期分頁分開匯入；Total 彙總列略過");
+    rows.forEach(r=>r.import_batch_id=batchId);
+    await t998UpsertChunks("staffing_tc_history",rows,"restaurant_name,record_date,period_code",t998TcImportMessage);
+    t998TcImportMessage.textContent=`✅ 已匯入 ${rows.length} 列 TC 資料。空白／負數歸零 ${counter.count} 個欄位。`;
+    await t998LoadShiftAdmin();
+  }catch(e){t998TcImportMessage.textContent=`匯入失敗：${e.message||"請稍後重試"}${batchId?"；若部分批次已送出，請重新上傳同一完整檔案以覆寫補齊。":""}`;}
+  finally{t998TcImportBtn.disabled=false;}
+}
+function t998ActualField(row,names){for(const n of names)if(Object.prototype.hasOwnProperty.call(row,n))return row[n];return null;}
+async function t998ImportActualsWorkbook(){
+  const file=t998ActualsFile.files?.[0];if(!file){t998ActualsImportMessage.textContent="請先選擇工時／TPLH 活頁簿。";return;}
+  t998ActualsImportBtn.disabled=true;t998ActualsImportMessage.textContent="讀取並檢查餐廳名稱中…";let batchId=null;
+  try{
+    if(!t998AreaMapLoaded)await t998LoadAreaMap();const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});const name=workbook.SheetNames[0];if(!name)throw new Error("活頁簿沒有工作表。");
+    const rowsRaw=XLSX.utils.sheet_to_json(workbook.Sheets[name],{defval:null,raw:true});const counter={count:0,badDates:0};const unmapped=new Set();const rows=[];
+    rowsRaw.forEach((row,i)=>{
+      const store=String(t998ActualField(row,["STR_SN","餐廳","餐廳名稱"])??"").trim();if(!store||store.toLowerCase()==='total')return;
+      const area=t998AreaMap.get(store);if(!area){unmapped.add(store);return;}
+      const date=t998ExcelDateToISO(t998ActualField(row,["DATE","日期"]));if(!date){counter.badDates++;return;}
+      const rate=t998PercentValue(t998ActualField(row,["第三方使用率","第三方使用率%","FA使用率%","第三方率"]),counter);
+      if(rate>100)throw new Error(`第 ${i+2} 列第三方使用率超過 100%。`);
+      rows.push({restaurant_name:store,area_code:area,record_date:date,actual_work_hours:t998NumericZero(t998ActualField(row,["實際工時","實際安排工時","工時"]),counter),actual_tplh:t998NumericZero(t998ActualField(row,["實際TPLH","實際 TPLH","實際TPLH (FA)","實際 TPLH (FA)"]),counter),third_party_usage_pct:rate});
+    });
+    if(counter.badDates)throw new Error(`${counter.badDates} 列日期無法辨識，請檢查 DATE 欄。`);
+    if(unmapped.size)throw new Error(`以下店名不在 A–G 對照表：${[...unmapped].slice(0,15).join("、")}${unmapped.size>15?"…":""}`);
+    if(!rows.length)throw new Error("沒有可匯入的餐廳資料列。Total 列會略過。");
+    const keys=new Set(rows.map(r=>`${r.restaurant_name}|${r.record_date}`));if(keys.size!==rows.length)throw new Error("檔案內有重複餐廳／日期資料，請先整理。");
+    const dates=t998MinMaxDates(rows);t998ActualsImportMessage.textContent=`預覽完成：${rows.length} 列｜${dates.start} 至 ${dates.end}｜空白／負數歸零 ${counter.count} 個欄位。`;
+    if(!confirm(`即將匯入 ${rows.length} 列工時／TPLH／第三方資料（${dates.start} 至 ${dates.end}）。確定繼續？`))return;
+    batchId=await t998CreateImportBatch(file.name,rows,"每日實際工時、TPLH、第三方使用率上傳");rows.forEach(r=>r.import_batch_id=batchId);
+    await t998UpsertChunks("staffing_daily_actuals",rows,"restaurant_name,record_date",t998ActualsImportMessage);
+    t998ActualsImportMessage.textContent=`✅ 已匯入 ${rows.length} 列工時／TPLH／第三方資料。空白／負數歸零 ${counter.count} 個欄位。`;
+    await t998LoadShiftAdmin();
+  }catch(e){t998ActualsImportMessage.textContent=`匯入失敗：${e.message||"請稍後重試"}${batchId?"；若部分批次已送出，請重新上傳同一完整檔案以覆寫補齊。":""}`;}
+  finally{t998ActualsImportBtn.disabled=false;}
+}
+async function t998UnifiedImportWorkbook(){
+  const file=t998TcFile.files?.[0];
+  if(!file){t998TcImportMessage.textContent="請先選擇 Excel 活頁簿。";return;}
+  t998TcImportBtn.disabled=true;t998TcImportMessage.textContent="正在辨識活頁簿內容…";
+  try{
+    const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+    const fullSheet=workbook.SheetNames.find(n=>n.includes("整天"));
+    const mealSheet=workbook.SheetNames.find(n=>n.includes("餐期"));
+    if(fullSheet&&mealSheet){t998TcImportBtn.disabled=false;await t998ImportTcWorkbook();return;}
+    const firstName=workbook.SheetNames[0];
+    if(!firstName)throw new Error("活頁簿沒有工作表。");
+    const firstRow=XLSX.utils.sheet_to_json(workbook.Sheets[firstName],{defval:null,raw:true})[0]||{};
+    const headers=Object.keys(firstRow);
+    const hasStore=["STR_SN","餐廳","餐廳名稱"].some(k=>headers.includes(k));
+    const hasDate=["DATE","日期"].some(k=>headers.includes(k));
+    const hasActual=["實際工時","實際安排工時","工時","實際TPLH","實際 TPLH","實際TPLH (FA)","實際 TPLH (FA)","第三方使用率","第三方使用率%","FA使用率%","第三方率"].some(k=>headers.includes(k));
+    if(hasStore&&hasDate&&hasActual){t998TcImportBtn.disabled=false;await t998ImportActualsWorkbook();return;}
+    throw new Error("無法辨識檔案。請上傳你提供的含「整天／餐期」分頁 TC Excel，或含 STR_SN、DATE、實際工時／TPLH／第三方使用率欄位的實際資料 Excel。");
+  }catch(e){t998TcImportMessage.textContent=`檔案辨識失敗：${e.message||"請確認 Excel 格式"}`;}
+  finally{t998TcImportBtn.disabled=false;}
+}
+
+async function t998DeleteDeviceCard(type,id,number){
+  const label=type==="recorder"?"行車紀錄器":"電池";
+  if(!confirm(`確定永久刪除${label}小卡「${number}」？\n\n只有沒有任何異常回報歷史的設備可以刪除；此操作無法復原。`))return;
+  try{
+    const table=type==="recorder"?"recorders":"batteries";const r=await db.from(table).delete().eq("id",id);if(r.error)throw r.error;
+    if(type==="recorder"){recorderInventory=(recorderInventory||[]).filter(x=>String(x.id)!==String(id));renderRecorderSummary();renderRecorderReports();}
+    else{batteryInventory=(batteryInventory||[]).filter(x=>String(x.id)!==String(id));renderBatterySummary();renderBatteryReports();}
+    alert(`✅ ${label}小卡已永久刪除。`);
+  }catch(e){alert(`無法刪除${label}小卡：${e.message||"請確認權限或異常歷史"}\n\n若設備有任何異常回報，請使用報廢功能保留紀錄。`);}
+}
+function t998AttachDeviceDeleteButtons(type){
+  const isRecorder=type==="recorder";const list=batteryReportList;const inventory=isRecorder?(recorderInventory||[]):(batteryInventory||[]);const reports=isRecorder?(recorderReports||[]):(batteryReports||[]);const keyFn=isRecorder?recorderKey:batteryKey;const prop=isRecorder?"recorder_number":"battery_number";const icon=isRecorder?"📹":"🔋";
+  list.querySelectorAll(".survey-card").forEach(card=>{
+    const label=card.querySelector(".survey-name");if(!label)return;const number=label.textContent.replace(icon,"").trim();const row=inventory.find(x=>keyFn(x[prop])===keyFn(number));if(!row)return;
+    const hasHistory=reports.some(x=>keyFn(x[prop])===keyFn(number));let actions=card.querySelector(".record-actions");if(!actions){actions=document.createElement("div");actions.className="record-actions";card.appendChild(actions);}
+    if(hasHistory){const note=document.createElement("div");note.className="hint";note.textContent="已有異常回報歷史，保留歷史；如停用請使用報廢。";actions.appendChild(note);return;}
+    const button=document.createElement("button");button.type="button";button.className="action-btn device-delete-btn";button.dataset.t998DeviceDelete="true";button.dataset.deviceType=type;button.dataset.deviceId=row.id;button.dataset.deviceNumber=row[prop];button.textContent="🗑 永久刪除小卡";actions.appendChild(button);
+  });
+}
+const t998OriginalRenderBatteryReports=renderBatteryReports;
+renderBatteryReports=function(){t998OriginalRenderBatteryReports();t998AttachDeviceDeleteButtons("battery");};
+const t998OriginalRenderRecorderReports=renderRecorderReports;
+renderRecorderReports=function(){t998OriginalRenderRecorderReports();t998AttachDeviceDeleteButtons("recorder");};
+const t998OriginalShowAdminMode=showAdminMode;
+showAdminMode=function(mode){
+  t998OriginalShowAdminMode(mode);t998ShiftModePage.style.display=mode==="shift"?"block":"none";
+  if(mode==="roster")t998LoadEmployees();
+  if(mode==="shift")t998LoadShiftAdmin();
+};
+t998EmployeeAddBtn.onclick=t998AddEmployee;
+t998EmployeeDirectoryList.onclick=e=>{
+  const change=e.target.closest("[data-t998-employee-area-save]");
+  if(change){const id=change.dataset.t998EmployeeAreaSave;const select=document.getElementById(`employee-area-${id}`);t998UpdateEmployeeArea(id,select?.value,change);return;}
+  const del=e.target.closest("[data-t998-employee-delete]");if(del)t998DeleteEmployeePermanently(del.dataset.t998EmployeeDelete,del);
+};
+t998EmployeeAreaTabs.onclick=e=>{const b=e.target.closest("[data-t998-area-filter]");if(!b)return;t998EmployeeAreaFilter=b.dataset.t998AreaFilter;t998RenderEmployeeDirectory();};
+t998ShiftModeBtn.onclick=()=>showAdminMode("shift");
+t998ShiftBackBtn.onclick=()=>showAdminMode("home");
+t998ShiftWeekSelect.onchange=()=>t998LoadShiftAdmin();
+// Refresh the rolling four-week window when this admin tab crosses Taipei Monday.
+let t998ObservedShiftMonday=t998WeekChoices()[0]?.start||'';
+let t998RolloverRefreshBusy=false;
+async function t998RefreshShiftWindowAfterRollover(){
+  if(document.visibilityState==='hidden'||t998RolloverRefreshBusy||t998ShiftModePage.style.display==='none')return;
+  const currentMonday=t998WeekChoices()[0]?.start||'';
+  if(!currentMonday||currentMonday===t998ObservedShiftMonday)return;
+  t998RolloverRefreshBusy=true;
+  try{
+    await t998LoadShiftAdmin();
+    t998ObservedShiftMonday=currentMonday;
+  }catch(e){console.warn('指休週次更新失敗',e);}
+  finally{t998RolloverRefreshBusy=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')t998RefreshShiftWindowAfterRollover();});
+window.addEventListener('focus',t998RefreshShiftWindowAfterRollover);
+setInterval(t998RefreshShiftWindowAfterRollover,60000);
+
+t998ShiftWeekButtons.onclick=e=>{if(e.target.closest(".shift-week-open-toggle"))return;const b=e.target.closest("[data-t998-shift-week]");if(!b)return;t998ShiftWeekSelect.value=b.dataset.t998ShiftWeek;const exportSelect=document.getElementById("shiftExportWeekSelect");if(exportSelect)exportSelect.value=b.dataset.t998ShiftWeek;t998LoadShiftAdmin();};
+t998ShiftWeekButtons.onchange=e=>{const input=e.target.closest("[data-t998-open-week]");if(input)t998SetShiftWeekOpen(input);};
+t998ShiftNameSearch.oninput=()=>t998RenderShiftAdmin();
+t998ShiftStatusTabs.onclick=e=>{const b=e.target.closest("[data-t998-shift-status]");if(!b)return;t998ShiftStatusFilter=b.dataset.t998ShiftStatus;t998RenderShiftAdmin();};
+t998ShiftRefreshBtn.onclick=()=>t998LoadShiftAdmin();
+t998ShiftExportBtn.onclick=t998ExportShiftWeek;
+t998ShiftDeleteTestBtn.onclick=t998DeleteShiftTestData;
+t998ShiftPurgeOldBtn.onclick=t998PurgeOldShiftData;
+t998TcImportBtn.onclick=t998ImportCompleteWorkbookV4;
+t998TcFile.addEventListener("change",()=>{const label=document.getElementById("staffingImportFileLabel");if(label){const names=[...t998TcFile.files||[]].map(f=>f.name);label.textContent=names.length?names.join("、"):("選擇 Excel（可多選）");}});
+const t998OldDeviceCardClick=batteryReportList.onclick;
+batteryReportList.onclick=e=>{const b=e.target.closest("[data-t998-device-delete]");if(b){e.preventDefault();e.stopPropagation();t998DeleteDeviceCard(b.dataset.deviceType,b.dataset.deviceId,b.dataset.deviceNumber);return;}if(t998OldDeviceCardClick)t998OldDeviceCardClick(e);};
+
+
+
+async function t998ImportCompleteWorkbookV4(){
+  const files=Array.from(t998TcFile.files||[]);if(!files.length){t998TcImportMessage.textContent="請選擇 Excel";return;}if(files.length>2){t998TcImportMessage.textContent="一次最多選擇兩個 Excel 檔案";return;}
+  t998TcImportBtn.disabled=true;t998TcImportMessage.textContent="分析 Excel…";let batchId=null;
+  try{
+    if(!t998AreaMapLoaded)await t998LoadAreaMap();
+    const counter={count:0,badDates:0},unmapped=new Set(),tcMap=new Map(),actualMap=new Map(),centerMap=new Map(),actualConflicts=[];
+    const storeNames=["STR_SN","餐廳","餐廳名稱"],centerNames=["CenterName","中心名稱","中心"],dateNames=["DATE","日期","Date"];
+    const priorDateNames=["DATE PY","去年日期"],priorNames=["去年單數","去年TC","去年 TC"];
+    const totalNames=["實際外送TC","今年TC","今年 TC","TC(System)","TC (System)","總TC","T_C","TC"];
+    const excludedNames=["扣除第三方TC","扣除第三方 TC","扣除第三方"];
+    const uberNames=["UberDirect","Uber Direct","UberDirect TC","Uber TC"],pandaNames=["PandaGo","Panda Go","PandaGo TC","Panda TC"];
+    const hoursNames=["實際總工時","實際工時","實際安排工時","實際使用工時","使用工時","工時"];
+    const tplhNames=["實際TPLH","實際 TPLH","TPLH","實際TPLH (FA)","實際 TPLH (FA)"];
+    const exTplhNames=["實際TPLH(扣除第三方)","實際 TPLH(扣除第三方)","實際TPLH（扣除第三方）","扣除第三方TPLH","扣三方TPLH"];
+    const rateNames=["第三方使用率","第三方使用率%","第三方使用率 %","FA使用率%","第三方率"];
+    const field=(row,names)=>{for(const name of names)if(Object.prototype.hasOwnProperty.call(row,name))return {present:true,value:row[name],name};return {present:false,value:null,name:null};};
+    const add=(map,key,value)=>map.set(key,(map.get(key)||0)+value);
+    for(const file of files){
+      const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+      for(const sheetName of workbook.SheetNames){
+        const rawRows=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{defval:null,raw:true});if(!rawRows.length)continue;
+        const headers=Object.keys(rawRows[0]);const hasStore=headers.some(x=>storeNames.includes(x));const hasCenter=headers.some(x=>centerNames.includes(x));
+        if((!hasStore&&!hasCenter)||!headers.some(x=>dateNames.includes(x)))continue;
+        const isMeal=/餐期|11[-–]13|18[-–]20/.test(sheetName);const period=isMeal?"meal_period":"full_day";
+        const totalHeader=headers.some(x=>totalNames.includes(x));const excludedHeader=headers.some(x=>excludedNames.includes(x));
+        const uberHeader=headers.some(x=>uberNames.includes(x)),pandaHeader=headers.some(x=>pandaNames.includes(x));
+        const priorHeader=headers.some(x=>priorNames.includes(x)),priorDateHeader=headers.some(x=>priorDateNames.includes(x));
+        const hoursHeader=headers.some(x=>hoursNames.includes(x)),tplhHeader=headers.some(x=>tplhNames.includes(x)),exTplhHeader=headers.some(x=>exTplhNames.includes(x)),rateHeader=headers.some(x=>rateNames.includes(x));
+        const hasTc=totalHeader||excludedHeader||priorHeader;const hasStoreActual=hoursHeader||tplhHeader||rateHeader;
+        const hasCenterMetrics=hasCenter&&(totalHeader||excludedHeader||uberHeader||pandaHeader||hoursHeader||tplhHeader||exTplhHeader||rateHeader);
+        rawRows.forEach((row,index)=>{
+          const nameField=field(row,hasStore?storeNames:centerNames);const name=String(nameField.value??"").trim();
+          if(!name||/^total$/i.test(name)||/^grand\s*total$/i.test(name)||/套用的篩選|篩選條件/.test(name))return;
+          const date=t998ExcelDateToISO(field(row,dateNames).value);if(!date){counter.badDates++;return;}
+          if(hasCenterMetrics){
+            const totalField=field(row,totalNames),excludedField=field(row,excludedNames),uberField=field(row,uberNames),pandaField=field(row,pandaNames);
+            const total=totalField.present?t998NumericZero(totalField.value,counter):0;
+            let thirdParty=0;
+            if(uberHeader||pandaHeader){if(uberHeader)thirdParty+=t998NumericZero(uberField.value,counter);if(pandaHeader)thirdParty+=t998NumericZero(pandaField.value,counter);}
+            else if(excludedField.present)thirdParty=Math.max(0,total-t998NumericZero(excludedField.value,counter));
+            const excluded=Math.max(0,total-thirdParty);
+            const h=field(row,hoursNames),tplh=field(row,tplhNames),exTplh=field(row,exTplhNames),rate=field(row,rateNames);
+            const item={center_name:name,record_date:date,total_tc:total,third_party_tc:thirdParty,tc_ex_third_party:excluded,third_party_usage_pct:total?Math.min(100,thirdParty/total*100):0,actual_work_hours:h.present?t998NumericZero(h.value,counter):0,actual_tplh:tplh.present?t998NumericZero(tplh.value,counter):0,actual_tplh_ex_third_party:exTplh.present?t998NumericZero(exTplh.value,counter):0,source_sheet:sheetName,source_row:index+2};
+            if(rate.present)item.third_party_usage_pct=Math.min(100,t998PercentValue(rate.value,counter));
+            const key=`${name}|${date}`,old=centerMap.get(key);
+            if(old){for(const k of ["total_tc","third_party_tc","tc_ex_third_party","actual_work_hours","actual_tplh","actual_tplh_ex_third_party"]){if(Number(old[k])!==Number(item[k]))actualConflicts.push(`${name} ${date} ${k}`);}}
+            else centerMap.set(key,item);
+            return;
+          }
+          if(!hasStore) return;
+          const area=t998AreaMap.get(name);if(!area){unmapped.add(name);return;}
+          if(hasTc){
+            const prior=field(row,priorNames),total=field(row,totalNames),excluded=field(row,excludedNames),priorDate=field(row,priorDateNames);
+            const totalTc=total.present?t998NumericZero(total.value,counter):0;
+            let thirdParty=0;
+            if(uberHeader||pandaHeader){if(uberHeader)thirdParty+=t998NumericZero(field(row,uberNames).value,counter);if(pandaHeader)thirdParty+=t998NumericZero(field(row,pandaNames).value,counter);}
+            else if(excluded.present)thirdParty=Math.max(0,totalTc-t998NumericZero(excluded.value,counter));
+            const excludedTc=Math.max(0,totalTc-thirdParty);
+            const item={restaurant_name:name,area_code:area,record_date:date,period_code:period,source_sheet:sheetName,source_row:index+2,third_party_tc_import:thirdParty};
+            if(prior.present)item.prior_year_tc=t998NumericZero(prior.value,counter);
+            if(total.present)item.total_tc=totalTc;
+            if(total.present||excluded.present||uberHeader||pandaHeader)item.tc_ex_third_party=excludedTc;
+            if(priorDate.present)item.prior_year_date=t998ExcelDateToISO(priorDate.value);
+            const key=`${name}|${date}|${period}`,old=tcMap.get(key);
+            if(old){for(const keyName of ["prior_year_tc","total_tc","tc_ex_third_party","prior_year_date","third_party_tc_import"]){if(item[keyName]===undefined)continue;if(old[keyName]!==undefined&&String(old[keyName])!==String(item[keyName]))throw new Error(`${name} ${date} 在不同工作表的 TC 資料不一致`);old[keyName]=item[keyName];}}
+            else tcMap.set(key,item);
+          }
+          if(hasStoreActual){
+            const h=field(row,hoursNames),t=field(row,tplhNames),p=field(row,rateNames);const item={restaurant_name:name,area_code:area,record_date:date};
+            if(h.present)item.actual_work_hours=t998NumericZero(h.value,counter);if(t.present)item.actual_tplh=t998NumericZero(t.value,counter);
+            if(p.present){item.third_party_usage_pct=t998PercentValue(p.value,counter);if(item.third_party_usage_pct>100)throw new Error(`${sheetName} 第 ${index+2} 列第三方使用率超過 100%`);}
+            const key=`${name}|${date}`,old=actualMap.get(key);if(!old)actualMap.set(key,item);
+            else for(const k of ["actual_work_hours","actual_tplh","third_party_usage_pct"]){if(item[k]===undefined)continue;if(old[k]!==undefined&&Number(old[k])!==Number(item[k]))actualConflicts.push(`${name} ${date} ${k}`);else old[k]=item[k];}
+          }
+        });
+      }
+    }
+    if(!tcMap.size&&!actualMap.size&&!centerMap.size)throw new Error("找不到可辨識的逐日 TC 或中心實際資料分頁");
+    if(counter.badDates)throw new Error(`${counter.badDates} 列日期無法辨識`);
+    if(unmapped.size)throw new Error(`餐廳未設定 A–G 區：${[...unmapped].slice(0,12).join("、")}${unmapped.size>12?"…":""}`);
+    if(actualConflicts.length)throw new Error(`重複分頁的實際資料不一致：${[...new Set(actualConflicts)].slice(0,8).join("、")}`);
+    const parsedTcRows=[...tcMap.values()].map(x=>({prior_year_tc:0,total_tc:0,tc_ex_third_party:0,...x}));
+    const tcRows=parsedTcRows.map(({third_party_tc_import,...x})=>x);const actualRows=[...actualMap.values()];
+    const centerRows=[...centerMap.values()].map(({source_sheet,source_row,...x})=>x);
+    const all=[...tcRows,...actualRows,...centerRows];const dates=t998MinMaxDates(all);
+    const full=tcRows.filter(x=>x.period_code==="full_day").length,meal=tcRows.filter(x=>x.period_code==="meal_period").length;
+    const labels=[];if(full)labels.push(`餐廳整天 TC ${full}`);if(meal)labels.push(`餐廳餐期 TC ${meal}`);if(actualRows.length)labels.push(`餐廳實際 ${actualRows.length}`);if(centerRows.length)labels.push(`中心實際 ${centerRows.length}`);
+    const storeTotals=new Map();for(const r of parsedTcRows){if(r.period_code!=="full_day")continue;const x=storeTotals.get(r.record_date)||{tc:0,tp:0};x.tc+=Number(r.total_tc||0);x.tp+=Number(r.third_party_tc_import||0);storeTotals.set(r.record_date,x);}
+    const centerTotals=new Map();for(const r of centerRows){const x=centerTotals.get(r.record_date)||{tc:0,tp:0};x.tc+=Number(r.total_tc||0);x.tp+=Number(r.third_party_tc||0);centerTotals.set(r.record_date,x);}
+    let matched=0;const differences=[];for(const [date,sums] of storeTotals){const center=centerTotals.get(date);if(!center)continue;matched++;if(Math.abs(sums.tc-center.tc)>0.01||Math.abs(sums.tp-center.tp)>0.01)differences.push(date);}
+    const audit=matched?`｜兩檔對帳 ${matched} 日${differences.length?`（差異 ${differences.length} 日）`:"（TC／第三方 TC 相符）"}`:"";
+    t998TcImportMessage.textContent=`${labels.join("｜")}｜${dates.start}–${dates.end}${audit}｜空白／負數歸零 ${counter.count}`;
+    if(!confirm(`匯入 ${labels.join("、")} 共 ${all.length} 列？\n${dates.start} 至 ${dates.end}${audit}`))return;
+    batchId=await t998CreateImportBatch(files.map(f=>f.name).join(" + "),all,`雙檔歷史資料：${labels.join("；")}${audit}`);
+    tcRows.forEach(x=>x.import_batch_id=batchId);actualRows.forEach(x=>x.import_batch_id=batchId);centerRows.forEach(x=>x.import_batch_id=batchId);
+    if(tcRows.length)await t998UpsertChunks("staffing_tc_history",tcRows,"restaurant_name,record_date,period_code",t998TcImportMessage);
+    if(actualRows.length)await t998UpsertChunks("staffing_daily_actuals",actualRows,"restaurant_name,record_date",t998TcImportMessage);
+    if(centerRows.length)await t998UpsertChunks("staffing_center_daily_actuals",centerRows,"center_name,record_date",t998TcImportMessage);
+    t998TcImportMessage.textContent=`已匯入｜${labels.join("｜")}｜${dates.start}–${dates.end}${audit}`;await t998LoadShiftAdmin();
+  }catch(e){t998TcImportMessage.textContent=`匯入失敗：${e.message||"請檢查 Excel"}${batchId?"｜可重傳同檔補齊":""}`;}
+  finally{t998TcImportBtn.disabled=false;}
+}
+/* T998 v3: guarded employee/shift modules, test-mode control and full device purge. */
+const t998ProtectedModal=document.getElementById("t998ProtectedPasswordModal");
+const t998ProtectedForm=document.getElementById("t998ProtectedPasswordForm");
+const t998PasswordTitle=document.getElementById("t998ProtectedPasswordTitle");
+const t998PasswordDescription=document.getElementById("t998ProtectedPasswordDescription");
+const t998PasswordError=document.getElementById("t998PasswordError");
+const t998PasswordSubmit=document.getElementById("t998PasswordSubmit");
+const t998CurrentWrap=document.getElementById("t998CurrentPasswordWrap");
+const t998NewWrap=document.getElementById("t998NewPasswordWrap");
+const t998ConfirmWrap=document.getElementById("t998ConfirmPasswordWrap");
+const t998UnlockWrap=document.getElementById("t998UnlockPasswordWrap");
+const t998CurrentInput=document.getElementById("t998CurrentPassword");
+const t998NewInput=document.getElementById("t998NewPassword");
+const t998ConfirmInput=document.getElementById("t998ConfirmPassword");
+const t998UnlockInput=document.getElementById("t998UnlockPassword");
+const t998PasswordCancel=document.getElementById("t998PasswordCancel");
+let t998PasswordDialogMode="unlock";
+let t998ProtectedTargetMode=null;
+let t998DeviceClaimRecords=[];
+let t998DeviceClaimFetchError="";
+const t998ShiftTestModeToggle=document.getElementById("shiftTestModeToggle");
+function t998SyncShiftToggleVisual(input){const label=input?.closest("label");if(label)label.classList.toggle("is-checked",Boolean(input.checked));}
+
+function t998ClearPasswordDialog(){
+  [t998CurrentInput,t998NewInput,t998ConfirmInput,t998UnlockInput].forEach(input=>input.value="");
+  t998PasswordError.textContent="";
+}
+function t998OpenPasswordDialog(mode,targetMode){
+  t998PasswordDialogMode=mode;t998ProtectedTargetMode=targetMode||t998ProtectedTargetMode;
+  t998ClearPasswordDialog();
+  t998CurrentWrap.style.display=mode==="change"?"grid":"none";
+  t998NewWrap.style.display=(mode==="setup"||mode==="change")?"grid":"none";
+  t998ConfirmWrap.style.display=(mode==="setup"||mode==="change")?"grid":"none";
+  t998UnlockWrap.style.display=mode==="unlock"?"grid":"none";
+  if(mode==="setup"){
+    t998PasswordTitle.textContent="設定管理區共用密碼";
+    t998PasswordDescription.textContent="首次使用請先設定一組至少 8 碼的共用密碼，之後兩個入口都使用這組密碼。";
+    t998PasswordSubmit.textContent="設定並進入";
+  }else if(mode==="change"){
+    t998PasswordTitle.textContent="變更管理區共用密碼";
+    t998PasswordDescription.textContent="新密碼設定後，在職名單與指休管理會共用新密碼。";
+    t998PasswordSubmit.textContent="變更並重新解鎖";
+  }else{
+    t998PasswordTitle.textContent="管理區域驗證";
+    t998PasswordDescription.textContent="請輸入共用密碼以進入在職名單或指休管理。";
+    t998PasswordSubmit.textContent="驗證並進入";
+  }
+  t998ProtectedModal.style.display="flex";
+  setTimeout(()=>((mode==="setup"||mode==="change")?t998NewInput:t998UnlockInput).focus(),0);
+}
+function t998ClosePasswordDialog(){
+  t998ProtectedModal.style.display="none";t998ClearPasswordDialog();t998ProtectedTargetMode=null;
+}
+async function t998EnterProtectedModule(mode){
+  try{
+    const status=await db.rpc("employee_shift_gate_status");if(status.error)throw status.error;
+    const state=status.data||{};
+    if(!state.configured){t998OpenPasswordDialog("setup",mode);return;}
+    if(state.unlocked){showAdminMode(mode);return;}
+    t998OpenPasswordDialog("unlock",mode);
+  }catch(e){alert(`無法開啟保護功能：${e.message||"請先執行 T998 v3 增量 SQL，並確認管理員登入狀態。"}`);}
+}
+async function t998SubmitPasswordDialog(event){
+  event.preventDefault();t998PasswordSubmit.disabled=true;t998PasswordError.textContent="驗證中…";
+  try{
+    let password="";
+    if(t998PasswordDialogMode==="setup"||t998PasswordDialogMode==="change"){
+      password=t998NewInput.value;
+      if(password.length<8)throw new Error("共用密碼至少需要 8 個字元。");
+      if(password!==t998ConfirmInput.value)throw new Error("兩次輸入的新密碼不一致。");
+      const configured=await db.rpc("set_employee_shift_shared_password",{
+        p_new_password:password,
+        p_current_password:t998PasswordDialogMode==="change"?t998CurrentInput.value:null
+      });
+      if(configured.error)throw configured.error;
+    }else{
+      password=t998UnlockInput.value;
+      if(!password)throw new Error("請輸入共用密碼。");
+    }
+    const unlocked=await db.rpc("unlock_employee_shift_modules",{p_password:password});
+    if(unlocked.error)throw unlocked.error;
+    const target=t998ProtectedTargetMode;t998ClosePasswordDialog();
+    if(target)showAdminMode(target);
+  }catch(e){t998PasswordError.textContent=e.message||"操作失敗，請稍後重試。";}
+  finally{t998PasswordSubmit.disabled=false;}
+}
+t998ProtectedForm.addEventListener("submit",t998SubmitPasswordDialog);
+t998PasswordCancel.onclick=()=>{t998ClosePasswordDialog();showAdminMode("home");};
+t998ProtectedModal.addEventListener("click",event=>{if(event.target===t998ProtectedModal){t998ClosePasswordDialog();showAdminMode("home");}});
+rosterModeBtn.onclick=()=>t998EnterProtectedModule("roster");
+t998ShiftModeBtn.onclick=()=>t998EnterProtectedModule("shift");
+rosterBackBtn.onclick=()=>showAdminMode("home");
+t998ShiftBackBtn.onclick=()=>showAdminMode("home");
+document.getElementById("rosterPasswordChangeBtn").onclick=()=>t998OpenPasswordDialog("change","roster");
+document.getElementById("shiftPasswordChangeBtn").onclick=()=>t998OpenPasswordDialog("change","shift");
+
+if(t998ShiftTestModeToggle){
+  t998ShiftTestModeToggle.addEventListener("change",async()=>{
+    const requested=t998ShiftTestModeToggle.checked;t998SyncShiftToggleVisual(t998ShiftTestModeToggle);t998ShiftTestModeToggle.disabled=true;
+    try{
+      const r=await db.from("staffing_settings").update({shift_test_mode:requested,updated_at:new Date().toISOString()}).eq("singleton",true);
+      if(r.error)throw r.error;
+      t998StaffingSettings={...t998StaffingSettings,shift_test_mode:requested};
+      alert(requested?"測試模式已開啟；測試提交會標記為測試資料。":"測試模式已關閉；提交將列為正式資料。");
+      await t998LoadShiftAdmin();
+    }catch(e){t998ShiftTestModeToggle.checked=!requested;t998SyncShiftToggleVisual(t998ShiftTestModeToggle);alert(`更新測試模式失敗：${e.message||"請確認管理員權限。"}`);}
+    finally{t998ShiftTestModeToggle.disabled=false;}
+  });
+}
+
+function t998LatestClaimForDevice(type,number){
+  const key=type==="recorder"?recorderKey:batteryKey;
+  const field=type==="recorder"?"recorder_number":"battery_number";
+  return t998DeviceClaimRecords.find(row=>key(row[field])===key(number))||null;
+}
+async function t998LoadDeviceClaims(){
+  t998DeviceClaimFetchError="";const rows=[];const pageSize=1000;
+  try{
+    for(let offset=0;;offset+=pageSize){
+      const r=await db.from("claim_records").select("battery_number,recorder_number,claimant_name,claimed_at,claim_point").order("claimed_at",{ascending:false}).range(offset,offset+pageSize-1);
+      if(r.error)throw r.error;rows.push(...(r.data||[]));if(!r.data||r.data.length<pageSize)break;
+    }
+    t998DeviceClaimRecords=rows;
+  }catch(e){t998DeviceClaimRecords=[];t998DeviceClaimFetchError=e.message||"請確認已執行 v3 增量 SQL。";}
+}
+function t998AttachDeviceDeleteButtons(type){
+  const isRecorder=type==="recorder";const list=batteryReportList;
+  const keyFn=isRecorder?recorderKey:batteryKey;const prop=isRecorder?"recorder_number":"battery_number";const icon=isRecorder?"📹":"🔋";
+  const inventory=isRecorder?(recorderInventory||[]):(batteryInventory||[]);
+  list.querySelectorAll(".survey-card").forEach(card=>{
+    card.classList.add("admin-fixed-card","device-card-fixed");
+    const label=card.querySelector(".survey-name");if(!label)return;
+    const number=label.textContent.replace(icon,"").trim();if(!number)return;
+    const latest=t998LatestClaimForDevice(type,number);
+    let usage=card.querySelector(".device-latest-claim");
+    if(!usage){usage=document.createElement("div");usage.className="device-latest-claim";const actions=card.querySelector(".record-actions");if(actions)card.insertBefore(usage,actions);else card.appendChild(usage);}
+    usage.textContent=latest?`最新領用：${latest.claimant_name||"未填姓名"}｜${fmt(latest.claimed_at)}${latest.claim_point?`｜${latest.claim_point}`:""}`:t998DeviceClaimFetchError?`最新領用：無法讀取（${t998DeviceClaimFetchError}）`:"最新領用：尚無領用紀錄";
+    let actions=card.querySelector(".record-actions");if(!actions){actions=document.createElement("div");actions.className="record-actions";card.appendChild(actions);}
+    let button=actions.querySelector("[data-t998-device-delete]");
+    if(!button){button=document.createElement("button");button.type="button";button.className="action-btn device-delete-btn";button.dataset.t998DeviceDelete="true";actions.appendChild(button);}
+    const inv=inventory.find(row=>keyFn(row[prop])===keyFn(number));
+    button.dataset.deviceType=type;button.dataset.deviceId=inv?.id||"";button.dataset.deviceNumber=inv?.[prop]||number;
+    button.textContent="刪除";
+    button.setAttribute("aria-label",`永久刪除${isRecorder?"紀錄器":"電池"} ${number} 及全部歷史`);
+  });
+}
+const t998OriginalRenderBatteryReportsV3=renderBatteryReports;
+renderBatteryReports=function(){t998OriginalRenderBatteryReportsV3();t998AttachDeviceDeleteButtons("battery");};
+const t998OriginalRenderRecorderReportsV3=renderRecorderReports;
+renderRecorderReports=function(){t998OriginalRenderRecorderReportsV3();t998AttachDeviceDeleteButtons("recorder");};
+const t998OriginalLoadBatteryDataV3=loadBatteryData;
+loadBatteryData=async function(){await t998OriginalLoadBatteryDataV3();await t998LoadDeviceClaims();renderBatteryReports();};
+const t998OriginalLoadRecorderDataV3=loadRecorderData;
+loadRecorderData=async function(){await t998OriginalLoadRecorderDataV3();await t998LoadDeviceClaims();renderRecorderReports();};
+async function t998DeleteDeviceCard(type,id,number){
+  const label=type==="recorder"?"行車紀錄器":"電池";
+  if(!confirm(`刪除${label}「${number}」及異常／維修紀錄？不可復原。車輛領用紀錄保留。`))return;
+  try{
+    const r=await db.rpc("admin_delete_device_all_records",{p_device_type:type,p_device_number:number});if(r.error)throw r.error;
+    const keyFn=type==="recorder"?recorderKey:batteryKey;const prop=type==="recorder"?"recorder_number":"battery_number";
+    t998DeviceClaimRecords=t998DeviceClaimRecords.filter(row=>keyFn(row[prop])!==keyFn(number));
+    if(type==="recorder"){
+      recorderInventory=(recorderInventory||[]).filter(row=>keyFn(row[prop])!==keyFn(number));
+      recorderReports=(recorderReports||[]).filter(row=>keyFn(row[prop])!==keyFn(number));renderRecorderSummary();renderRecorderReports();
+    }else{
+      batteryInventory=(batteryInventory||[]).filter(row=>keyFn(row[prop])!==keyFn(number));
+      batteryReports=(batteryReports||[]).filter(row=>keyFn(row[prop])!==keyFn(number));renderBatterySummary();renderBatteryReports();
+    }
+    alert(`✅ ${label}與相關異常／維修歷史已完整刪除。`);
+  }catch(e){alert(`永久刪除失敗：${e.message||"請確認已執行 v3 增量 SQL，並以管理員帳號操作。"}`);}
+}
+const t998PreviousDeviceListClick=batteryReportList.onclick;
+batteryReportList.onclick=event=>{
+  const button=event.target.closest("[data-t998-device-delete]");
+  if(button){event.preventDefault();event.stopPropagation();t998DeleteDeviceCard(button.dataset.deviceType,button.dataset.deviceId,button.dataset.deviceNumber);return;}
+  if(t998PreviousDeviceListClick)t998PreviousDeviceListClick(event);
+};
+async function t998DeleteVehiclePermanently(id,button){
+  const row=vehicles.find(v=>String(v.id)===String(id));if(!row)return;const plate=String(row.full_plate||row.plate4||"");
+  if(!confirm(`刪除「${plate}」及領車、巡檢、換油全部歷史？此操作無法復原。`))return;
+  const typed=prompt(`輸入車牌「${plate}」確認刪除`);if(String(typed||"").trim().toUpperCase()!==plate.toUpperCase()){if(typed!==null)alert("車牌不符，已取消");return;}
+  if(button)button.disabled=true;
+  try{
+    const r=await db.rpc("admin_delete_vehicle_all_records",{p_vehicle_id:id});if(r.error)throw r.error;
+    vehicles=vehicles.filter(v=>String(v.id)!==String(id));allReports=(allReports||[]).filter(x=>String(x.vehicle_id)!==String(id));todayReports=(todayReports||[]).filter(x=>String(x.vehicle_id)!==String(id));latestReports=(latestReports||[]).filter(x=>String(x.vehicle_id)!==String(id));unresolvedReports=(unresolvedReports||[]).filter(x=>String(x.vehicle_id)!==String(id));allClaims=(allClaims||[]).filter(x=>String(x.vehicle_id)!==String(id));updateSummary();renderVehicles();
+  }catch(e){alert(`刪除失敗：${e.message||"請先執行 v4 SQL"}`);if(button)button.disabled=false;}
+}
+vehicleList.addEventListener("click",event=>{
+  const button=event.target.closest("[data-t998-vehicle-delete]");if(!button)return;
+  event.preventDefault();event.stopPropagation();t998DeleteVehiclePermanently(button.dataset.t998VehicleDelete,button);
+},true);
+
 </script>
+
+
+
 
 </body>
 </html>
