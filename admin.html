@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- T998 V1 (aligned to T995 V8): multi-week opening + Taipei-week rollover refresh; confirmed UI unchanged. -->
+<!-- T998 V2: T998 branding; center closed-day zero rows; strict third-party validation; aligned with T995 V8 UI. -->
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -1285,7 +1285,7 @@ button{cursor:pointer}
 <div id="authGate" class="auth-gate">
   <form id="authForm" class="auth-card" autocomplete="on">
     <div class="auth-brand"><span class="auth-brand-kfc">KFC</span><span class="auth-brand-separator">/</span><span>T998 RIDER CENTER</span></div>
-    <div class="auth-mark"><span>995</span></div>
+    <div class="auth-mark"><span>998</span></div>
     <div class="auth-heading">管理後台</div>
     <div class="auth-field">
       <label for="authEmail">帳號</label>
@@ -5676,10 +5676,11 @@ async function t998ImportCompleteWorkbookV4(){
             let thirdParty=0;
             if(uberHeader||pandaHeader){if(uberHeader)thirdParty+=t998NumericZero(uberField.value,counter);if(pandaHeader)thirdParty+=t998NumericZero(pandaField.value,counter);}
             else if(excludedField.present)thirdParty=Math.max(0,total-t998NumericZero(excludedField.value,counter));
+            if(thirdParty>total+0.01)throw new Error(`${sheetName} 第 ${index+2} 列第三方 TC 合計大於實際外送 TC`);
             const excluded=Math.max(0,total-thirdParty);
             const h=field(row,hoursNames),tplh=field(row,tplhNames),exTplh=field(row,exTplhNames),rate=field(row,rateNames);
-            const item={center_name:name,record_date:date,total_tc:total,third_party_tc:thirdParty,tc_ex_third_party:excluded,third_party_usage_pct:total?Math.min(100,thirdParty/total*100):0,actual_work_hours:h.present?t998NumericZero(h.value,counter):0,actual_tplh:tplh.present?t998NumericZero(tplh.value,counter):0,actual_tplh_ex_third_party:exTplh.present?t998NumericZero(exTplh.value,counter):0,source_sheet:sheetName,source_row:index+2};
-            if(rate.present)item.third_party_usage_pct=Math.min(100,t998PercentValue(rate.value,counter));
+            const item={center_name:name,record_date:date,total_tc:total,third_party_tc:thirdParty,tc_ex_third_party:excluded,third_party_usage_pct:total?thirdParty/total*100:0,actual_work_hours:h.present?t998NumericZero(h.value,counter):0,actual_tplh:tplh.present?t998NumericZero(tplh.value,counter):0,actual_tplh_ex_third_party:exTplh.present?t998NumericZero(exTplh.value,counter):0,source_sheet:sheetName,source_row:index+2};
+            if(rate.present){item.third_party_usage_pct=t998PercentValue(rate.value,counter);if(item.third_party_usage_pct>100)throw new Error(`${sheetName} 第 ${index+2} 列第三方使用率超過 100%`);}
             const key=`${name}|${date}`,old=centerMap.get(key);
             if(old){for(const k of ["total_tc","third_party_tc","tc_ex_third_party","actual_work_hours","actual_tplh","actual_tplh_ex_third_party"]){if(Number(old[k])!==Number(item[k]))actualConflicts.push(`${name} ${date} ${k}`);}}
             else centerMap.set(key,item);
@@ -5693,6 +5694,7 @@ async function t998ImportCompleteWorkbookV4(){
             let thirdParty=0;
             if(uberHeader||pandaHeader){if(uberHeader)thirdParty+=t998NumericZero(field(row,uberNames).value,counter);if(pandaHeader)thirdParty+=t998NumericZero(field(row,pandaNames).value,counter);}
             else if(excluded.present)thirdParty=Math.max(0,totalTc-t998NumericZero(excluded.value,counter));
+            if(thirdParty>totalTc+0.01)throw new Error(`${sheetName} 第 ${index+2} 列第三方 TC 合計大於實際外送 TC`);
             const excludedTc=Math.max(0,totalTc-thirdParty);
             const item={restaurant_name:name,area_code:area,record_date:date,period_code:period,source_sheet:sheetName,source_row:index+2,third_party_tc_import:thirdParty};
             if(prior.present)item.prior_year_tc=t998NumericZero(prior.value,counter);
@@ -5717,19 +5719,31 @@ async function t998ImportCompleteWorkbookV4(){
     if(counter.badDates)throw new Error(`${counter.badDates} 列日期無法辨識`);
     if(unmapped.size)throw new Error(`餐廳未設定 A–G 區：${[...unmapped].slice(0,12).join("、")}${unmapped.size>12?"…":""}`);
     if(actualConflicts.length)throw new Error(`重複分頁的實際資料不一致：${[...new Set(actualConflicts)].slice(0,8).join("、")}`);
+    const centerClosedDays=[];
+    const centerDateGroups=new Map();
+    for(const row of centerMap.values()){if(!centerDateGroups.has(row.center_name))centerDateGroups.set(row.center_name,[]);centerDateGroups.get(row.center_name).push(row.record_date);}
+    for(const [centerName,centerDates] of centerDateGroups){
+      const first=centerDates.reduce((a,b)=>a<b?a:b),last=centerDates.reduce((a,b)=>a>b?a:b);
+      for(let cursor=Date.parse(`${first}T00:00:00Z`),end=Date.parse(`${last}T00:00:00Z`);cursor<=end;cursor+=86400000){
+        const date=new Date(cursor).toISOString().slice(0,10),key=`${centerName}|${date}`;
+        if(!centerMap.has(key)){centerMap.set(key,{center_name:centerName,record_date:date,total_tc:0,third_party_tc:0,tc_ex_third_party:0,third_party_usage_pct:0,actual_work_hours:0,actual_tplh:0,actual_tplh_ex_third_party:0,source_sheet:"自動補登停業日",source_row:null});centerClosedDays.push(`${centerName} ${date}`);}
+      }
+    }
     const parsedTcRows=[...tcMap.values()].map(x=>({prior_year_tc:0,total_tc:0,tc_ex_third_party:0,...x}));
     const tcRows=parsedTcRows.map(({third_party_tc_import,...x})=>x);const actualRows=[...actualMap.values()];
     const centerRows=[...centerMap.values()].map(({source_sheet,source_row,...x})=>x);
     const all=[...tcRows,...actualRows,...centerRows];const dates=t998MinMaxDates(all);
     const full=tcRows.filter(x=>x.period_code==="full_day").length,meal=tcRows.filter(x=>x.period_code==="meal_period").length;
-    const labels=[];if(full)labels.push(`餐廳整天 TC ${full}`);if(meal)labels.push(`餐廳餐期 TC ${meal}`);if(actualRows.length)labels.push(`餐廳實際 ${actualRows.length}`);if(centerRows.length)labels.push(`中心實際 ${centerRows.length}`);
+    const labels=[];if(full)labels.push(`餐廳整天 TC ${full}`);if(meal)labels.push(`餐廳餐期 TC ${meal}`);if(actualRows.length)labels.push(`餐廳實際 ${actualRows.length}`);if(centerRows.length)labels.push(`中心實際 ${centerRows.length}`);if(centerClosedDays.length)labels.push(`停業日補零 ${centerClosedDays.length}`);
     const storeTotals=new Map();for(const r of parsedTcRows){if(r.period_code!=="full_day")continue;const x=storeTotals.get(r.record_date)||{tc:0,tp:0};x.tc+=Number(r.total_tc||0);x.tp+=Number(r.third_party_tc_import||0);storeTotals.set(r.record_date,x);}
     const centerTotals=new Map();for(const r of centerRows){const x=centerTotals.get(r.record_date)||{tc:0,tp:0};x.tc+=Number(r.total_tc||0);x.tp+=Number(r.third_party_tc||0);centerTotals.set(r.record_date,x);}
     let matched=0;const differences=[];for(const [date,sums] of storeTotals){const center=centerTotals.get(date);if(!center)continue;matched++;if(Math.abs(sums.tc-center.tc)>0.01||Math.abs(sums.tp-center.tp)>0.01)differences.push(date);}
-    const audit=matched?`｜兩檔對帳 ${matched} 日${differences.length?`（差異 ${differences.length} 日）`:"（TC／第三方 TC 相符）"}`:"";
-    t998TcImportMessage.textContent=`${labels.join("｜")}｜${dates.start}–${dates.end}${audit}｜空白／負數歸零 ${counter.count}`;
-    if(!confirm(`匯入 ${labels.join("、")} 共 ${all.length} 列？\n${dates.start} 至 ${dates.end}${audit}`))return;
-    batchId=await t998CreateImportBatch(files.map(f=>f.name).join(" + "),all,`雙檔歷史資料：${labels.join("；")}${audit}`);
+    const mismatchDates=differences.length?`；差異日期：${differences.slice(0,8).join("、")}${differences.length>8?"…":""}`:"";
+    const audit=matched?`｜兩檔對帳 ${matched} 日${differences.length?`（差異 ${differences.length} 日${mismatchDates}）`:"（TC／第三方 TC 相符）"}`:"";
+    const closedText=centerClosedDays.length?`｜依規則補入停業零值：${centerClosedDays.join("、")}`:"";
+    t998TcImportMessage.textContent=`${labels.join("｜")}｜${dates.start}–${dates.end}${audit}${closedText}｜空白／負數歸零 ${counter.count}`;
+    if(!confirm(`匯入 ${labels.join("、")} 共 ${all.length} 列？\n${dates.start} 至 ${dates.end}${audit}${closedText}`))return;
+    batchId=await t998CreateImportBatch(files.map(f=>f.name).join(" + "),all,`雙檔歷史資料：${labels.join("；")}${audit}${closedText}`);
     tcRows.forEach(x=>x.import_batch_id=batchId);actualRows.forEach(x=>x.import_batch_id=batchId);centerRows.forEach(x=>x.import_batch_id=batchId);
     if(tcRows.length)await t998UpsertChunks("staffing_tc_history",tcRows,"restaurant_name,record_date,period_code",t998TcImportMessage);
     if(actualRows.length)await t998UpsertChunks("staffing_daily_actuals",actualRows,"restaurant_name,record_date",t998TcImportMessage);
