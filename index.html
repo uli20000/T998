@@ -3846,10 +3846,8 @@ async function saveSurvey() {
   surveySaveBtn.textContent = "送出中…";
 
   try {
+    // 在職資格由 SECURITY DEFINER RPC 在資料庫端驗證，前台不直接查詢員工資料。
     const respondentName = surveyRespondentNameInput.value.trim();
-    const employeeCheck = await db.from("employee_directory").select("id").eq("full_name", respondentName).eq("is_active", true).maybeSingle();
-    if(employeeCheck.error) throw employeeCheck.error;
-    if(!employeeCheck.data){alert("目前查無在職名單或員工已停用，無法填寫意向調查，請找店長確認。");return;}
     const behaviorScore = Object.values(surveyAnswers.behavior).reduce((sum, value) => sum + value, 0);
     const attitudeScore = Object.values(surveyAnswers.attitude).reduce((sum, value) => sum + value, 0);
     const accident = document.querySelector('input[name="accidentWithinYear"]:checked');
