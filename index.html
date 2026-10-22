@@ -3870,7 +3870,7 @@ async function saveSurvey() {
 
     if (result.error) {
       console.error(result.error);
-      alert("駕駛意向調查儲存失敗，請確認資料庫欄位是否完整。");
+      alert(`駕駛意向調查儲存失敗${result.error.code ? `（${result.error.code}）` : ""}，請稍後重試並回報管理員。`);
       return;
     }
 
@@ -4050,13 +4050,7 @@ async function loadDefensiveLesson(){
       defensiveQuestions.style.display = "none";
       return;
     }
-    const targetResult = await db.from("driver_survey_targets").select("id").eq("respondent_name", name).limit(1);
-    if(targetResult.error) throw targetResult.error;
-    if(!targetResult.data?.length){
-      defensiveStatus.className = "training-message";
-      defensiveStatus.textContent = "查無此姓名，請先由後台加入應完成人員名單。";
-      return;
-    }
+    // 防禦駕駛資格依 employee_directory 在職狀態判斷，不依賴意向調查目標名單。
     const lessonResult = await db.from("defensive_driving_lessons").select("*").eq("month_no", monthNo).maybeSingle();
     if(lessonResult.error) throw lessonResult.error;
     if(!lessonResult.data){
@@ -4149,7 +4143,7 @@ defensiveSubmitBtn.addEventListener("click", async () => {
       completed_at: isCorrect ? now : null,
       status: isCorrect ? "completed" : "incomplete"
     };
-    const result = await db.from("defensive_driving_responses").upsert(payload, {onConflict:"respondent_name,month_no"});
+    const result = await db.from("defensive_driving_responses").upsert(payload, {onConflict:"respondent_name,training_year,month_no"});
     if(result.error) throw result.error;
     if(!isCorrect){
       alert("本次答題未通過，請重新觀看影片後再回答兩題。\n目前仍未完成本月課程。");
