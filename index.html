@@ -9,8 +9,8 @@
   <title>KFC｜台南-T998 車輛管理</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<script src="center-config.js?rev=county-20261031"></script>
+<style>
     :root {
       --red: #c8102e;
       --black: #242424;
@@ -926,6 +926,7 @@
  .shift-add-slot,.shift-slot-remove,.shift-unavailable{width:100%;min-width:0;height:40px;min-height:40px;padding:4px 5px;font-size:12px}
 }
 </style>
+<style>body,button,input,select,textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans-serif}button,[role="button"],a{font-weight:800!important}.title{font-weight:900!important}.kfc{font-weight:900!important}.admin-mode-btn,.home-menu-btn{font-weight:800!important}</style>
 </head>
 
 <body>
@@ -1427,22 +1428,7 @@
           <div class="device-register-note">查無此設備，請先補充資料建立小卡，建立後再填寫異常原因。</div>
           <div id="batteryRegisterFields">
             <label class="label" for="batteryRestaurant">電池所在餐廳</label>
-            <select id="batteryRestaurant">
-              <option value="">請選擇餐廳名稱</option>
-              <option value="093">林口文化（093）</option><option value="018">林口復興（018）</option><option value="099">南崁中正（099）</option>
-              <option value="201">台南台茂（201）</option><option value="095">中壢環中東（095）</option><option value="209">中壢環中東二（209）</option>
-              <option value="137">台南大園（137）</option><option value="062">龍潭北龍（062）</option><option value="154">新竹清大（154）</option>
-              <option value="227">台南新屋（227）</option><option value="248">台南領航（248）</option><option value="041">楊梅中山（041）</option>
-              <option value="161">楊梅大成（161）</option><option value="516">中壢中正（516）</option><option value="544">中壢中和（544）</option>
-              <option value="084">中壢民族（084）</option><option value="242">中壢過嶺（242）</option><option value="580">苗栗頭份（580）</option>
-              <option value="133">新竹新豐（133）</option><option value="203">新竹湖口（203）</option><option value="562">新竹竹北（562）</option>
-              <option value="144">竹北自強（144）</option><option value="587">新竹民生（587）</option><option value="066">新竹竹東（066）</option>
-              <option value="214">新竹中正（214）</option><option value="594">新竹亞太（594）</option><option value="235">竹北中華（235）</option>
-              <option value="025">苗栗中正（025）</option><option value="173">苗栗竹南（173）</option><option value="142">台南桃營（142）</option>
-              <option value="182">台南萬壽（182）</option><option value="167">台南介壽（167）</option><option value="165">台南南平（165）</option>
-              <option value="179">台南大竹（179）</option><option value="190">台南大溪（190）</option><option value="098">台南大興西（098）</option>
-              <option value="183">台南中山二（183）</option><option value="013">新竹光復（013）</option>
-            </select>
+            <select id="batteryRestaurant"><option value="">請選擇餐廳</option><option value="012">台南中華（012）</option><option value="239">台南仁德（239）</option><option value="207">台南大灣（207）</option><option value="556">台南崇明（556）</option><option value="150">台南成大（150）</option><option value="081">台南東門（081）</option><option value="570">台南永康（570）</option><option value="047">台南中華西（047）</option><option value="241">台南安和（241）</option><option value="208">台南民族（208）</option><option value="143">台南海佃（143）</option><option value="100">台南西門二（100）</option><option value="158">台南金華（158）</option><option value="597">新營中正（597）</option><option value="221">新營復興（221）</option><option value="054">嘉義中興（054）</option><option value="550">嘉義垂楊（550）</option><option value="036">嘉義忠孝（036）</option><option value="225">台南佳里（225）</option><option value="139">台南善化（139）</option><option value="243">台南新市（243）</option><option value="245">台南麻豆（245）</option><option value="127">斗六民生（127）</option><option value="232">斗六民生二（232）</option><option value="236">嘉義朴子（236）</option><option value="189">嘉義民雄（189）</option><option value="204">雲林北港（204）</option><option value="582">雲林虎尾（582）</option></select>
           </div>
           <div id="recorderRegisterFields" style="display:none">
             <label class="label" for="recorderRegisterSize">紀錄器型號</label>
@@ -1489,16 +1475,7 @@
       <section class="card">
         <div class="section-number">02・餐廳</div>
         <label class="label" for="batteryRegisterRestaurant">電池所在餐廳</label>
-        <select id="batteryRegisterRestaurant">
-          <option value="">請選擇店號</option>
-          <option>013</option><option>018</option><option>025</option><option>041</option><option>062</option><option>066</option>
-          <option>084</option><option>093</option><option>095</option><option>098</option><option>099</option><option>133</option>
-          <option>137</option><option>142</option><option>144</option><option>154</option><option>161</option><option>165</option>
-          <option>167</option><option>173</option><option>179</option><option>182</option><option>183</option><option>190</option>
-          <option>201</option><option>203</option><option>209</option><option>214</option><option>227</option><option>235</option>
-          <option>242</option><option>248</option><option>516</option><option>544</option><option>562</option><option>580</option>
-          <option>587</option><option>594</option>
-        </select>
+        <select id="batteryRegisterRestaurant"><option value="">請選擇餐廳</option><option value="012">台南中華（012）</option><option value="239">台南仁德（239）</option><option value="207">台南大灣（207）</option><option value="556">台南崇明（556）</option><option value="150">台南成大（150）</option><option value="081">台南東門（081）</option><option value="570">台南永康（570）</option><option value="047">台南中華西（047）</option><option value="241">台南安和（241）</option><option value="208">台南民族（208）</option><option value="143">台南海佃（143）</option><option value="100">台南西門二（100）</option><option value="158">台南金華（158）</option><option value="597">新營中正（597）</option><option value="221">新營復興（221）</option><option value="054">嘉義中興（054）</option><option value="550">嘉義垂楊（550）</option><option value="036">嘉義忠孝（036）</option><option value="225">台南佳里（225）</option><option value="139">台南善化（139）</option><option value="243">台南新市（243）</option><option value="245">台南麻豆（245）</option><option value="127">斗六民生（127）</option><option value="232">斗六民生二（232）</option><option value="236">嘉義朴子（236）</option><option value="189">嘉義民雄（189）</option><option value="204">雲林北港（204）</option><option value="582">雲林虎尾（582）</option></select>
       </section>
 
       <button id="batteryRegisterSaveBtn" class="save-btn" type="button">新增電池建檔</button>

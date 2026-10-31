@@ -8,6 +8,7 @@
 <title>KFC｜台南-T998 巡檢後台</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="center-config.js?rev=county-20261031"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
@@ -1278,6 +1279,1285 @@ button{cursor:pointer}
 }
 
 </style>
+<style>
+:root{
+  --red:#c8102e;
+  --black:#242424;
+  --gray:#77736d;
+  --linen:#f4f0e8;
+  --paper:#fff;
+  --line:#ddd8ce;
+  --green:#356b4b;
+  --green-bg:#eef5f0;
+  --danger:#b42318;
+  --danger-bg:#fff0ee;
+  --yellow:#9a6b00;
+  --yellow-bg:#fff8df;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--linen);
+  color:var(--black);
+  font-family:"Microsoft JhengHei","微軟正黑體",sans-serif;
+  text-align:center
+}
+
+button,input,textarea{font-family:inherit}
+button{cursor:pointer}
+body,body *{font-family:"Microsoft JhengHei","微軟正黑體",sans-serif!important}
+button,[role="button"],input[type="button"],input[type="submit"],input[type="reset"]{font-weight:700!important}
+
+.page{
+  max-width:900px;
+  margin:auto;
+  padding-bottom:50px
+}
+
+.header{
+  background:#fff;
+  padding:30px 20px 26px;
+  border-bottom:1px solid var(--line)
+}
+
+.eyebrow{
+  color:var(--gray);
+  font-size:12px;
+  letter-spacing:4px;
+  margin-bottom:8px
+}
+
+.title-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px
+}
+
+.title{
+  margin:0;
+  font-size:34px;
+  font-weight:800
+}
+
+.kfc{
+  color:var(--red);
+  font-size:28px;
+  font-weight:900
+}
+
+.date{
+  margin-top:10px;
+  color:var(--gray);
+  font-size:14px
+}
+
+.section{
+  padding:22px 16px 0
+}
+
+.section-title{
+  margin-bottom:14px;
+  font-size:20px;
+  font-weight:800
+}
+
+.summary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px
+}
+
+.summary-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px 8px
+}
+
+.summary-card.clickable{
+  cursor:pointer
+}
+
+.summary-label{
+  color:var(--gray);
+  font-size:13px;
+  margin-bottom:8px
+}
+
+.summary-number{
+  font-size:30px;
+  font-weight:800
+}
+
+.summary-card.done .summary-number{
+  color:var(--green)
+}
+
+.summary-card.abnormal .summary-number{
+  color:var(--danger)
+}
+
+.search-box{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px
+}
+
+.search-input{
+  width:100%;
+  height:54px;
+  border:2px solid #d8d3ca;
+  border-radius:14px;
+  padding:0 16px;
+  font-size:18px;
+  text-align:center;
+  outline:none
+}
+
+.search-input:focus{
+  border-color:var(--red)
+}
+
+.action-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px
+}
+
+.action-btn{
+  height:48px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+  font-size:15px;
+  font-weight:800
+}
+
+.action-btn.danger{
+  background:var(--danger-bg);
+  color:var(--danger);
+  border-color:#e7b7b2
+}
+
+.vehicle-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.vehicle-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  cursor:pointer
+}
+
+.vehicle-card.has-unresolved{
+  border:2px solid var(--danger);
+  background:#fffafa
+}
+
+.vehicle-card.oil-warning{
+  border:2px solid #e1c66e;
+  background:#fffdf5
+}
+
+.vehicle-card.oil-danger{
+  border:2px solid #d9958d;
+  background:#fffafa
+}
+
+.vehicle-top{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px
+}
+
+.plate{
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:1px
+}
+
+.center{
+  font-size:13px;
+  color:var(--gray);
+  font-weight:700
+}
+
+.status,
+.oil-status{
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  padding:5px 11px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:800
+}
+
+.status-normal,
+.oil-normal{
+  background:var(--green-bg);
+  color:var(--green)
+}
+
+.status-abnormal,
+.oil-danger{
+  background:var(--danger-bg);
+  color:var(--danger)
+}
+
+.status-none,
+.oil-none{
+  background:#f1eee8;
+  color:var(--gray)
+}
+
+.oil-warning{
+  background:var(--yellow-bg);
+  color:var(--yellow)
+}
+
+.vehicle-card.claim-pending{
+  border:2px solid #6f9b7a;
+  background:#f7fbf8
+}
+
+.claim-pending-badge{
+  padding:5px 10px;
+  border-radius:20px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:12px;
+  font-weight:800
+}
+
+.unresolved-badge{
+  padding:5px 10px;
+  border-radius:20px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:12px;
+  font-weight:800
+}
+
+.priority-badge{
+  padding:4px 10px;
+  border-radius:20px;
+  background:var(--danger);
+  color:#fff;
+  font-size:11px;
+  font-weight:800
+}
+
+.vehicle-info{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  margin-top:10px;
+  gap:5px;
+  color:var(--gray);
+  font-size:13px
+}
+
+.vehicle-info>div{
+  padding:5px 3px
+}
+
+.vehicle-info strong{
+  display:block;
+  margin-top:3px;
+  color:var(--black);
+  font-size:14px
+}
+
+.claim-info{
+  grid-column:1 / -1;
+  padding:7px 3px 2px;
+  border-top:1px solid var(--line);
+  color:var(--gray);
+  font-size:12px;
+  line-height:1.6
+}
+
+.claim-info strong{
+  display:inline;
+  margin:0 12px 0 4px;
+  color:var(--black);
+  font-size:13px
+}
+
+.empty,
+.loading{
+  padding:40px 20px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  color:var(--gray)
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  justify-content:center;
+  align-items:flex-end;
+  z-index:1000
+}
+
+.modal.show{
+  display:flex
+}
+
+.modal-content{
+  width:100%;
+  max-width:700px;
+  max-height:90vh;
+  overflow-y:auto;
+  background:#fff;
+  border-radius:25px 25px 0 0;
+  padding:24px 18px 35px
+}
+
+.modal-title{
+  font-size:25px;
+  font-weight:800
+}
+
+.modal-subtitle{
+  color:var(--gray);
+  margin-top:5px;
+  font-size:14px
+}
+
+.quick-list,
+.history{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:18px
+}
+
+.quick-item,
+.history-card{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  background:#faf9f6
+}
+
+.quick-item{
+  cursor:pointer
+}
+
+.quick-plate{
+  font-size:21px;
+  font-weight:800
+}
+
+.quick-center{
+  margin-top:5px;
+  color:var(--gray);
+  font-size:14px
+}
+
+.quick-detail{
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+  background:#fff;
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.6
+}
+
+.health-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.health-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:12px
+}
+
+.health-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px
+}
+
+.health-item{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px 8px
+}
+
+.health-label{
+  color:var(--gray);
+  font-size:12px
+}
+
+.health-value{
+  margin-top:5px;
+  font-size:15px;
+  font-weight:800
+}
+
+.oil-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.oil-panel-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:10px
+}
+
+.oil-panel-info{
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.8
+}
+
+'.oil-panel-status{
+  margin-top:10px;
+  font-size:17px;
+  font-weight:800
+}
+
+.claim-panel{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:#faf9f6;
+  border:1px solid var(--line)
+}
+
+.claim-panel-title{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:10px
+}
+
+.claim-summary{
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.7;
+  margin-bottom:12px
+}
+
+.claim-card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  margin-top:10px
+}
+
+.claim-card:first-child{
+  margin-top:0
+}
+
+.claim-time{
+  font-size:13px;
+  color:var(--gray);
+  margin-bottom:7px
+}
+
+.claim-person{
+  font-size:17px;
+  font-weight:800
+}
+
+.claim-detail{
+  margin-top:8px;
+  color:var(--gray);
+  font-size:14px;
+  line-height:1.8
+}
+
+.oil-action,
+.resolve-btn,
+.close-btn{
+  width:100%;
+  height:50px;
+  margin-top:14px;
+  border:0;
+  border-radius:14px;
+  color:#fff;
+  font-size:16px;
+  font-weight:800
+}
+
+.oil-action{
+  background:var(--red)
+}
+
+.resolve-btn{
+  background:var(--green)
+}
+
+.close-btn{
+  height:52px;
+  background:var(--black)
+}
+
+.history-top{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px
+}
+
+.history-date{
+  font-size:14px;
+  color:var(--gray)
+}
+
+.history-mileage{
+  margin-top:12px;
+  font-size:18px;
+  font-weight:800
+}
+
+.history-normal{
+  margin-top:10px;
+  padding:10px;
+  border-radius:11px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:14px;
+  font-weight:700
+}
+
+.history-abnormal{
+  margin-top:10px;
+  padding:12px;
+  border-radius:11px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:14px;
+  line-height:1.7;
+  white-space:pre-wrap
+}
+
+.unresolved-box{
+  margin-top:12px;
+  padding:14px;
+  border-radius:12px;
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:14px;
+  line-height:1.7
+}
+
+.resolution-note{
+  width:100%;
+  min-height:90px;
+  margin-top:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  resize:vertical;
+  text-align:center;
+  font-size:15px;
+  outline:none
+}
+
+.resolved-box{
+  margin-top:12px;
+  padding:13px;
+  border-radius:12px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:14px;
+  line-height:1.8
+}
+
+@media(max-width:700px){
+  .summary{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px
+  }
+
+  .summary-card:first-child{
+    grid-column:auto
+  }
+
+  .summary-card{
+    padding:14px 6px;
+    border-radius:16px
+  }
+
+  .summary-label{
+    font-size:12px;
+    margin-bottom:6px
+  }
+
+  .summary-number{
+    font-size:25px
+  }
+
+  .title{
+    font-size:28px
+  }
+
+  .kfc{
+    font-size:24px
+  }
+
+  .action-row{
+    grid-template-columns:1fr
+  }
+
+  .vehicle-list{
+    gap:7px
+  }
+
+  .vehicle-card{
+    padding:12px;
+    border-radius:15px
+  }
+
+  .vehicle-top{
+    gap:5px
+  }
+
+  .plate{
+    font-size:19px
+  }
+
+  .vehicle-info{
+    margin-top:8px;
+    font-size:12px
+  }
+
+  .vehicle-info strong{
+    font-size:13px
+  }
+}
+
+
+.admin-menu{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  padding:20px 16px 0;
+}
+
+.admin-mode-btn{
+  min-height:110px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 3px 12px rgba(0,0,0,.035);
+  font-size:18px;
+  font-weight:800;
+}
+
+.admin-mode-btn .icon{
+  display:block;
+  font-size:32px;
+  margin-bottom:8px;
+}
+
+.admin-mode-page{display:none}
+
+.card-abnormal-text{
+  max-width:100%;
+  margin-top:6px;
+  color:var(--danger);
+  font-size:12px;
+  line-height:1.45;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.resolved-detail{
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:11px;
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:12px;
+  line-height:1.65;
+}
+
+.resolved-detail summary{
+  cursor:pointer;
+  font-weight:800;
+}
+
+.survey-summary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.summary-with-refresh{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+.summary-with-refresh .survey-summary{
+  display:contents;
+}
+
+.summary-refresh-btn{
+  width:100%;
+  min-height:92px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  color:var(--black);
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.summary-refresh-btn:hover{
+  border-color:#c9a99e;
+}
+
+@media(max-width:700px){
+  .summary-with-refresh{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+.survey-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:15px;
+  text-align:left;
+}
+
+.survey-card-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+}
+
+.survey-name{font-size:18px;font-weight:800}
+.survey-time{color:var(--gray);font-size:12px}
+.survey-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:700px){.survey-grid{grid-template-columns:1fr}.survey-card-top{align-items:flex-start;flex-direction:column;gap:4px}.survey-name{font-size:17px}.record-actions{display:grid;grid-template-columns:1fr;gap:8px}.record-actions .action-btn{width:100%}}
+.survey-item{padding:9px;border-radius:10px;background:#faf9f6;color:var(--gray);font-size:13px;line-height:1.5}
+.survey-item strong{display:block;color:var(--black);font-size:15px}
+.survey-result-pass{color:var(--green)!important}
+.survey-result-fail{color:var(--danger)!important}
+.survey-detail{margin-top:10px;color:var(--gray);font-size:13px;line-height:1.6}
+.survey-status-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.survey-status-heading{grid-column:1/-1;text-align:left;color:var(--gray);font-size:13px}
+.survey-status-card{width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;text-align:left;font:inherit;color:var(--black);cursor:pointer}
+.survey-status-card:hover{border-color:#c9a99e}
+.survey-status-card .status-name{font-size:16px;font-weight:800}
+.survey-status-card .status-meta{margin-top:5px;color:var(--gray);font-size:12px;line-height:1.55}
+.survey-status-card .status-result{margin-top:5px;font-size:13px;font-weight:800}
+.status-card-actions{display:flex;justify-content:flex-end;margin-top:10px}
+.status-delete-btn{border:1px solid #e2aaa4;background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:6px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.defensive-status-list{display:flex;flex-direction:column;gap:8px}
+.defensive-status-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
+.defensive-status-card .status-line{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.defensive-status-card .status-meta{margin-top:7px;color:var(--gray);font-size:13px;line-height:1.55}
+.survey-status-card .status-pass{color:var(--green)}
+.survey-status-card .status-fail{color:var(--danger)}
+.survey-summary .summary-card.active{border:2px solid var(--red);background:#fff8f8}
+.summary-card{font:inherit;color:var(--black)}
+.record-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.record-actions .action-btn{width:auto;min-width:104px;padding:9px 12px;font-size:13px}
+.record-actions .delete-btn{background:var(--danger-bg);border:1px solid #e2aaa4;color:var(--danger);cursor:pointer;border-radius:10px;font:inherit;font-weight:800;padding:9px 12px;min-width:104px}
+.mode-tools{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+
+@media(max-width:700px){
+  .admin-menu{grid-template-columns:1fr}
+  .survey-summary{grid-template-columns:repeat(2,1fr)}
+}
+
+
+.mode-back-row{padding:16px 16px 0}
+.mode-back-row .action-btn{width:100%}
+
+
+
+/* 前後台標題字體統一 */
+.title{font-size:30px;line-height:1.2}
+@media(max-width:700px){.title{font-size:26px}}
+
+
+
+/* 三行標題：城市-Rider Center／KFC／日期 */
+.header-row,
+.title-row{
+  flex-direction:column;
+  gap:4px;
+}
+.title{font-size:30px;line-height:1.2}
+.kfc{font-size:26px}
+.date{margin-top:4px;font-size:14px}
+@media(max-width:700px){.title{font-size:26px}}
+
+/* 後台入口：長條形按鈕與日期 */
+.admin-menu{grid-template-columns:1fr;gap:10px;padding:16px}
+.admin-mode-btn{min-height:72px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:18px}
+.admin-mode-btn .icon{display:inline-block;font-size:28px;margin:0}
+.date{display:block;min-height:20px}
+
+/* 車輛新增、問卷名單與防禦駕駛 */
+.vehicle-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.vehicle-add-grid .action-btn{grid-column:1 / -1;width:100%}
+.survey-admin-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.survey-admin-tools .action-btn{width:100%}
+.roster-panel{margin-top:14px;text-align:left}
+.roster-panel-title{font-weight:800;margin-bottom:8px}
+.roster-list{display:grid;gap:8px}
+.roster-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#faf9f6;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:left}
+.roster-item button{border:1px solid #e2aaa4;background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:7px 10px;font-weight:800;cursor:pointer}
+.defensive-admin-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;text-align:left;margin-bottom:10px}
+.defensive-admin-card .status-line{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.defensive-admin-card .answer-line{color:var(--gray);font-size:13px;line-height:1.6;margin-top:8px}
+@media(max-width:700px){.vehicle-add-grid,.survey-admin-tools{grid-template-columns:1fr}}
+@media(max-width:700px){.survey-status-list{grid-template-columns:1fr}}
+/* 新人名單：批次、姓名、新增同一列 */
+.survey-admin-tools{max-width:620px;margin:10px auto 0;grid-template-columns:112px minmax(0,1fr) auto;align-items:center}
+.survey-admin-tools .search-input{height:42px;padding:8px 10px;font-size:14px}
+.survey-admin-tools .action-btn{width:auto;min-height:42px;padding:8px 12px;white-space:nowrap;font-size:14px}
+@media(max-width:700px){.survey-admin-tools{grid-template-columns:1fr}.survey-admin-tools .action-btn{width:100%}}
+
+/* 管理員登入：手機優先、簡潔品牌卡片 */
+.auth-gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 18px;position:relative;overflow:hidden;background:#f4f0e8}
+.auth-gate::before,.auth-gate::after{content:"";position:absolute;border-radius:999px;pointer-events:none}
+.auth-gate::before{width:420px;height:420px;right:-180px;top:-170px;background:rgba(200,16,46,.08)}
+.auth-gate::after{width:340px;height:340px;left:-180px;bottom:-190px;background:rgba(200,16,46,.06)}
+.auth-card{width:min(100%,460px);position:relative;z-index:1;background:rgba(255,255,255,.96);border:1px solid rgba(36,36,36,.08);border-radius:30px;padding:28px 30px 26px;box-shadow:0 20px 60px rgba(36,36,36,.13);text-align:left}
+.auth-card::before{content:"";display:block;width:48px;height:5px;margin-bottom:26px;border-radius:999px;background:var(--red)}
+.auth-brand{display:flex;align-items:center;gap:9px;color:var(--gray);font-size:11px;font-weight:900;letter-spacing:2.4px;margin-bottom:18px}
+.auth-brand-kfc{color:var(--red);font-size:16px;letter-spacing:1px}
+.auth-brand-separator{color:#c7c0b6;font-size:16px}
+.auth-mark{width:72px;height:72px;margin:0 0 18px;border-radius:22px;background:var(--red);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:900;letter-spacing:1px;box-shadow:0 10px 20px rgba(200,16,46,.22)}
+.auth-mark span{display:block}
+.auth-card h1{margin:0;color:var(--black);font-size:30px;line-height:1.2;letter-spacing:.3px}
+.auth-heading{margin-top:7px;color:var(--black);font-size:18px;font-weight:800}
+.auth-subtitle{margin:10px 0 26px;color:var(--gray);font-size:14px;line-height:1.65}
+.auth-field{text-align:left;margin:16px 0}
+.auth-field label{display:block;margin:0 0 8px;font-size:14px;font-weight:900;color:var(--black)}
+.auth-input-wrap{position:relative}
+.auth-input{width:100%;height:54px;border:1px solid #d8d3ca;border-radius:15px;padding:0 15px;background:#fff;color:var(--black);font-size:16px;outline:none;transition:.2s}
+.auth-input::placeholder{color:#aaa}
+.auth-input:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(200,16,46,.10)}
+.auth-input.has-toggle{padding-right:68px}
+.auth-toggle{position:absolute;right:7px;top:7px;height:40px;border:0;border-left:1px solid var(--line);background:transparent;color:var(--red);font-size:13px;font-weight:900;padding:0 12px;cursor:pointer}
+.auth-submit{width:100%;height:56px;margin-top:12px;border:0;border-radius:15px;background:var(--red);color:#fff;font-size:17px;font-weight:900;letter-spacing:.5px;box-shadow:0 10px 22px rgba(200,16,46,.20);cursor:pointer}
+.auth-submit:hover{background:#ae0e28}
+.auth-submit:disabled{opacity:.6;cursor:wait}
+.auth-message{min-height:22px;margin-top:14px;color:var(--danger);font-size:14px;line-height:1.5}
+.auth-foot{margin-top:20px;padding-top:16px;border-top:1px solid #eee9e1;color:var(--gray);font-size:12px;line-height:1.5}
+.admin-session-bar{display:none;align-items:center;justify-content:center;gap:10px;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line);color:var(--gray);font-size:12px}
+.admin-session-bar button{border:1px solid #e2aaa4;background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:6px 10px;font-weight:800}
+@media(max-width:500px){.auth-gate{padding:18px 14px}.auth-card{padding:24px 20px 22px;border-radius:26px}.auth-card::before{margin-bottom:22px}.auth-card h1{font-size:27px}.auth-mark{width:66px;height:66px;border-radius:20px}.auth-subtitle{margin-bottom:22px}}
+
+
+/* 後台首頁與設備管理：手機優先 */
+.title{font-weight:900}
+.admin-mode-btn{min-height:84px;font-size:22px;font-weight:800!important}
+.admin-mode-btn .icon{font-size:34px}
+.device-admin-type-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:620px;margin:0 auto}
+.device-admin-type-btn{min-height:58px;border:2px solid var(--line);border-radius:15px;background:#fff;color:var(--black);font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.device-admin-type-btn.active{border-color:var(--red);background:var(--danger-bg);color:var(--red);box-shadow:0 0 0 3px rgba(200,16,46,.08)}
+.device-admin-type-btn:focus-visible{outline:3px solid rgba(22,131,223,.35);outline-offset:2px}
+.device-add-panel{border-color:#e1c66e;background:#fffdf5}
+.device-add-intro{padding:12px;border-radius:12px;background:var(--yellow-bg);color:#765800;font-size:14px;line-height:1.6;text-align:left;margin-bottom:12px}
+@media(max-width:700px){.admin-mode-btn{min-height:82px;font-size:21px}.admin-mode-btn .icon{font-size:32px}}
+.employee-area-card{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.employee-area-card select{min-height:42px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;font:inherit}
+.employee-badge{display:inline-block;border-radius:999px;padding:3px 9px;background:#f5eee2;color:#674b21;font-size:12px;font-weight:900;margin-left:6px}
+.employee-status{font-size:12px;color:var(--gray);margin-top:4px}
+.shift-admin-toolbar{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.shift-admin-toolbar select,.shift-admin-toolbar button{min-height:44px}
+.shift-admin-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:10px;text-align:left}
+.shift-admin-card h3{margin:0;font-size:17px;line-height:1.4}
+.shift-admin-card.is-missing{border-left:4px solid #d5803b}
+.shift-admin-card.is-empty{border-left:4px solid #77736d}
+.shift-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px}
+.shift-admin-day{background:#faf9f6;border-radius:9px;padding:8px;font-size:13px;min-height:54px}
+.shift-admin-day b{display:block;color:var(--gray);font-size:11px;margin-bottom:3px}
+.shift-admin-notes{margin-top:10px;color:var(--gray);font-size:13px;white-space:pre-wrap;line-height:1.5}
+.shift-admin-empty{padding:20px;text-align:center;color:var(--gray)}
+.shift-admin-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.employee-list .roster-item{align-items:flex-start}
+.staffing-panel{background:#faf9f6;border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;text-align:left}
+.staffing-panel h3{margin:0 0 8px;font-size:17px}
+.staffing-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.staffing-results{display:grid;gap:10px;margin-top:12px}
+.staffing-day-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;text-align:left}
+.staffing-day-card h3{margin:0 0 9px;font-size:16px}
+.staffing-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.staffing-metric{background:#f8f7f5;border-radius:9px;padding:9px;font-size:12px;color:var(--gray)}
+.staffing-metric strong{display:block;margin-top:3px;font-size:15px;color:var(--black)}
+.staffing-gap-bad{color:#b42318!important}.staffing-gap-good{color:#176b3a!important}
+.staffing-upload-preview{font-size:13px;line-height:1.55;margin-top:8px;white-space:pre-wrap}
+.device-delete-btn{border:1px solid #b42318!important;background:#fff0ee!important;color:#b42318!important}
+@media(min-width:700px){.shift-admin-toolbar{grid-template-columns:minmax(200px,1fr) minmax(150px,.7fr) auto auto}.shift-admin-grid{grid-template-columns:repeat(7,minmax(0,1fr))}.staffing-grid{grid-template-columns:1fr 1fr}.staffing-results{grid-template-columns:repeat(2,minmax(0,1fr))}.staffing-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+.employee-area-tabs{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px;margin:12px 0 7px}
+.employee-area-tab{min-width:0;min-height:40px;padding:5px 2px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font-weight:800;font-size:13px;cursor:pointer}
+.employee-area-tab.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.16)}
+.employee-directory-summary{min-height:20px;color:var(--gray);font-size:13px;margin:4px 0 8px}
+.employee-list .roster-item{align-items:center;flex-wrap:wrap}
+.employee-area-card{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.employee-area-card select{min-width:94px;max-width:130px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}
+.employee-area-card button{white-space:nowrap;padding:7px 8px;font-size:12px}
+.employee-area-card .permanent-delete-employee{border:1px solid #a5231e;background:#fff0ee;color:#a5231e;border-radius:9px;font-weight:800;cursor:pointer}
+@media(max-width:900px){.employee-area-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}}
+
+
+/* T995 v3 — protected modules and equal-height administrative cards */
+.protected-mode-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shift-test-toggle{display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#fff;text-align:left;cursor:pointer}
+.shift-test-toggle input{width:22px;height:22px;accent-color:var(--red);flex:none}
+.shift-test-toggle span{display:grid;gap:3px}.shift-test-toggle small{color:var(--gray);line-height:1.45}
+.admin-fixed-card{height:300px;min-height:300px;max-height:300px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;overflow:hidden;padding:14px;background:#fff;border:1px solid var(--line);border-radius:16px;text-align:left}
+.admin-fixed-card .admin-card-head{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden}
+.admin-fixed-card .admin-card-body{flex:1;min-height:0;overflow:hidden}
+.admin-fixed-card .admin-card-actions{min-height:44px;margin-top:auto;display:flex;align-items:flex-end;gap:8px}
+.employee-directory-card .employee-admin-name{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.employee-directory-card .employee-admin-body{display:flex;flex-direction:column;justify-content:center;gap:10px;color:var(--gray);font-size:13px}
+.employee-directory-card .employee-admin-body select{width:100%;height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;font:inherit;color:var(--black)}
+.employee-directory-card .permanent-delete-employee{width:100%;height:44px;border:1px solid #e2aaa4;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-size:13px;font-weight:800;cursor:pointer}
+.device-card-fixed{display:flex;flex-direction:column;text-align:left}
+.device-card-fixed .survey-card-top{min-width:0;min-height:38px;flex:0 0 38px;flex-direction:row;align-items:center;gap:8px;overflow:hidden}
+.device-card-fixed .survey-name{min-width:0;min-height:24px;line-height:24px;flex:1 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.device-card-fixed .survey-time{flex:none;white-space:nowrap}
+.device-card-fixed .survey-grid{grid-template-columns:1fr 1fr;overflow:visible}
+.device-card-fixed .survey-detail{display:block;flex:none;height:22px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;line-height:22px}
+.device-latest-claim{margin-top:auto;padding-top:6px;border-top:1px solid var(--line);color:var(--gray);font-size:12px;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.device-delete-btn{min-height:44px;border:1px solid #e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.vehicle-card.admin-fixed-card{cursor:pointer}
+.vehicle-card.admin-fixed-card .vehicle-top{max-height:155px;overflow:hidden}
+.vehicle-card.admin-fixed-card .vehicle-info{flex:1;min-height:0;overflow:hidden}
+.protected-password-overlay{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(25,25,25,.48)}
+.protected-password-card{width:min(100%,440px);padding:26px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,.16)}
+.protected-password-mark{display:grid;place-items:center;width:58px;height:58px;border-radius:16px;background:var(--red);color:#fff;font-size:17px;font-weight:900}
+.protected-password-card h2{margin:18px 0 6px;font-size:21px}.protected-password-card p{margin:0 0 18px;color:var(--gray);line-height:1.5}
+.protected-password-field{margin:12px 0;display:grid;gap:6px}.protected-password-field label{font-size:14px;font-weight:800}
+.protected-password-field input{width:100%;height:48px;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:11px;font:inherit}
+.protected-password-error{min-height:22px;color:var(--danger);font-size:13px;line-height:1.45}
+.protected-password-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.protected-password-primary{background:var(--red);border-color:var(--red);color:#fff}
+@media(max-width:700px){.protected-mode-actions{grid-template-columns:1fr}.admin-fixed-card{height:300px;min-height:300px;max-height:300px}.protected-password-card{padding:22px}}
+
+/* T995 v4 — compact, centered admin UI */
+.admin-mode-page{text-align:center}
+.admin-mode-page *{text-align:center}
+.admin-mode-page .mode-back-row{padding:16px 0 0;margin:0 auto 10px;width:100%}
+.admin-mode-page .mode-back-row .action-btn{width:100%}
+.admin-mode-page .protected-mode-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-mode-page .section-title{margin-bottom:12px}
+.admin-mode-page .hint{margin-left:auto;margin-right:auto}
+.admin-mode-page input,.admin-mode-page textarea,.admin-mode-page select{text-align:center}
+.admin-mode-page .search-box,.admin-mode-page .staffing-panel,.admin-mode-page .staffing-day-card,.admin-mode-page .vehicle-card,.admin-mode-page .survey-card,.admin-mode-page .admin-fixed-card,.admin-mode-page .claim-panel,.admin-mode-page .health-panel{text-align:center}
+.admin-mode-page .shift-data-table th,.admin-mode-page .shift-data-table td{text-align:center}
+.employee-add-panel{display:grid;grid-template-columns:minmax(170px,1fr) minmax(130px,.55fr) auto;gap:9px;align-items:center;max-width:760px;margin:12px auto 0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:15px}
+.employee-add-panel .employee-add-name,.employee-add-panel .employee-add-area{width:100%;height:46px;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--black)}
+.employee-add-panel .employee-add-btn{height:46px;min-width:164px;margin:0;white-space:nowrap}
+.employee-add-panel .employee-add-message{grid-column:1/-1;margin:0!important;min-height:0}
+.employee-area-tabs{margin:12px 0 7px}
+#employeeDirectoryList{display:grid;gap:7px}
+.employee-directory-card{height:68px;min-height:68px;max-height:68px;display:grid;grid-template-columns:minmax(0,1fr) 48px 82px 52px 52px;align-items:center;gap:5px;overflow:hidden;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:13px;text-align:center}
+.employee-directory-card .employee-admin-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:800}
+.employee-directory-card .employee-badge{margin:0;padding:4px 5px;font-size:11px;white-space:nowrap}
+.employee-directory-card select{width:100%;height:42px;min-width:0;padding:5px 3px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:13px;color:var(--black)}
+.employee-directory-card .employee-area-save-btn,.employee-directory-card .permanent-delete-employee{width:100%;height:42px;min-height:42px;padding:4px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font:inherit;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+.employee-directory-card .permanent-delete-employee,.vehicle-card-admin-actions .permanent-delete-vehicle,.device-delete-btn{border-color:#e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.employee-directory-card .employee-area-save-btn:focus-visible,.employee-directory-card .permanent-delete-employee:focus-visible{outline:3px solid rgba(200,16,46,.25);outline-offset:2px}
+.shift-test-toggle{display:inline-flex;align-items:center;gap:6px;min-height:32px;margin:7px 0 0;padding:4px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font-size:12px;font-weight:800;cursor:pointer}
+.shift-test-toggle input{width:16px;height:16px;margin:0;accent-color:var(--red)}
+.shift-admin-toolbar{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.shift-week-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-column:1/-1}
+.shift-week-btn,.shift-status-btn{min-width:0;min-height:42px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.shift-status-btn{height:48px;min-height:48px;align-self:start}
+.shift-week-btn.active,.shift-status-btn.active{border-color:var(--red);background:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.13)}
+.shift-status-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-self:start;align-items:start}
+.shift-admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.shift-admin-actions button{height:48px;min-height:48px;align-self:start;padding:7px 8px;font-size:13px}
+.shift-admin-scroll{max-width:100%;margin-top:12px;overflow:auto;border:1px solid var(--line);border-radius:11px;background:#fff}
+.shift-data-table{width:100%;min-width:840px;border-collapse:separate;border-spacing:0;text-align:center;font-size:12px}
+.shift-data-table th,.shift-data-table td{padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle}
+.shift-data-table thead th{position:sticky;top:0;background:#f7f5f1;color:#55514c;font-size:12px;white-space:nowrap;z-index:1}
+.shift-data-table tbody tr:last-child td{border-bottom:0}
+.shift-data-table .shift-person-cell{position:sticky;left:0;z-index:2;min-width:150px;background:#fff}
+.shift-data-table thead th:first-child{left:0;z-index:4;background:#f7f5f1}
+.shift-scroll-cue{display:none}
+.shift-data-table .shift-person-cell strong{display:block;font-size:13px;color:var(--black)}
+.shift-data-table .shift-person-meta{display:block;margin-top:2px;color:var(--gray);font-size:11px;line-height:1.35}
+.shift-data-table .shift-cell{min-width:78px;white-space:pre-wrap;line-height:1.35}
+.shift-data-table .is-missing .shift-person-cell{border-left:4px solid #d5803b}
+.shift-data-table .is-empty .shift-person-cell{border-left:4px solid #77736d}
+.shift-data-table .shift-notes-row td{background:#fbfaf8;color:var(--gray);white-space:pre-wrap;line-height:1.45}
+.vehicle-card-admin-actions{margin-top:auto;width:100%}
+.vehicle-card-admin-actions .permanent-delete-vehicle{width:100%;min-height:42px;border:1px solid #e2aaa4;border-radius:9px;background:var(--danger-bg);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer}
+.device-delete-btn{min-height:40px!important;padding:7px 10px!important;font-size:12px!important}
+@media(min-width:700px){
+ .shift-admin-toolbar{grid-template-columns:minmax(200px,1fr) minmax(240px,.8fr) auto}
+ .shift-week-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .shift-status-tabs{grid-column:2}
+ .shift-admin-actions{grid-column:3;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+}
+@media(max-width:699px){
+ .admin-mode-page .protected-mode-actions{grid-template-columns:1fr 1fr}
+ .employee-add-panel{grid-template-columns:1fr;padding:11px}
+ .employee-add-panel .employee-add-btn{width:100%;min-width:0}
+ .employee-add-panel .employee-add-message{grid-column:1}
+ .employee-directory-card{grid-template-columns:minmax(0,1fr) 46px 76px 48px 48px;gap:4px;padding:7px 8px}
+ .employee-directory-card .employee-admin-name{font-size:13px}
+ .employee-directory-card select,.employee-directory-card .employee-area-save-btn,.employee-directory-card .permanent-delete-employee{font-size:11px}
+ .shift-admin-actions{grid-template-columns:1fr 1fr}
+ #shiftAdminList .shift-scroll-cue{display:block!important;color:var(--gray);font-size:13px;line-height:16px;margin:2px 0;text-align:center}
+ .shift-data-table{min-width:900px}
+}
+.staffing-file-picker{position:relative;display:grid;place-items:center;min-height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font-size:14px;font-weight:700;overflow:hidden;cursor:pointer}
+.staffing-file-picker span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.staffing-file-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+/* Forecast view: explicit 20% uplift, aligned summary, and mobile card rhythm. */
+.forecast-formula{max-width:820px;margin:0 auto 8px!important;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#5f5a53;font-size:13px;line-height:1.55;text-align:center}
+.forecast-summary-grid{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.forecast-summary-grid .summary-card{min-width:0;min-height:88px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.forecast-summary-grid .summary-label{line-height:1.35;min-height:32px;display:flex;align-items:center;justify-content:center}
+.forecast-data-warning{margin:8px 0 0;padding:9px 11px;border:1px solid #e1c66e;border-radius:10px;background:var(--yellow-bg);color:#765800;font-size:12px;line-height:1.5;text-align:center}
+.forecast-data-warning[hidden]{display:none}
+.forecast-week-gap.is-warning{border-color:#e1c66e;background:var(--yellow-bg);color:#765800}
+.forecast-history-weeks{display:block;margin-top:2px;color:var(--gray);font-size:10px;line-height:1.2;font-weight:600}
+.forecast-day-total-card{min-height:62px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.forecast-area-table td:first-child strong{display:block}
+.forecast-area-table td:first-child .forecast-history-weeks{font-weight:600}
+/* Forecast view: weekly summary, weekday tabs, aligned area table/cards. */
+.staffing-results{display:block!important;margin-top:10px}
+.forecast-week-gap{margin-top:8px;padding:10px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;font-weight:800}
+.forecast-week-gap.is-short{border-color:#e2aaa4;background:var(--danger-bg);color:var(--danger)}
+.forecast-week-gap.is-surplus{border-color:#c9ddcf;background:var(--green-bg);color:var(--green)}
+.staffing-day-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.staffing-day-tab{min-width:0;min-height:46px;padding:6px 4px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--black);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.staffing-day-tab span,.staffing-day-tab small{display:block}
+.staffing-day-tab small{margin-top:2px;color:var(--gray);font-size:11px;font-weight:600}
+.staffing-day-tab.active{border-color:var(--red);background:var(--red);color:#fff;box-shadow:0 3px 9px rgba(200,16,46,.13)}
+.staffing-day-tab.active small{color:#fff}
+.staffing-day-tab:focus-visible{outline:3px solid rgba(200,16,46,.25);outline-offset:2px}
+.forecast-day-panel{margin-top:9px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.forecast-day-heading{padding:11px 13px;background:#f7f5f1;border-bottom:1px solid var(--line);font-size:15px;font-weight:800}
+.forecast-area-table-wrap{overflow-x:auto}
+.forecast-area-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.forecast-area-table th,.forecast-area-table td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+.forecast-area-table th{background:#faf9f6;color:var(--gray);font-size:12px;font-weight:800}
+.forecast-area-table tr:last-child td{border-bottom:0}
+.forecast-area-table td:first-child{font-weight:800}
+.forecast-area-table .forecast-gap{font-weight:800;white-space:nowrap}
+.forecast-gap.is-short{color:var(--danger)}.forecast-gap.is-surplus{color:var(--green)}
+.forecast-area-cards{display:none}
+#staffingRecommendationSummary.summary{gap:7px;margin-top:7px}
+#staffingRecommendationSummary .summary-card{padding:11px 7px;border-radius:12px}
+#staffingRecommendationSummary .summary-label{font-size:12px;margin-bottom:3px}
+#staffingRecommendationSummary .summary-number{font-size:22px}
+.shift-week-btn span,.shift-week-btn small{display:block}
+.shift-week-btn small{margin-top:2px;color:var(--gray);font-size:11px;font-weight:600}
+.shift-week-btn.active small{color:#fff}
+.forecast-day-total-wrap{padding:8px;border-bottom:1px solid var(--line);background:#fff}
+.forecast-day-total-title{margin:0 0 7px;font-size:13px;font-weight:800;text-align:center}
+.forecast-day-total-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.forecast-day-total-card{min-width:0;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:#faf9f6;text-align:center}
+.forecast-day-total-card span{display:block;color:var(--gray);font-size:12px;line-height:1.3}
+.forecast-day-total-card strong{display:block;margin-top:3px;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.shift-test-delete-btn{border-color:#e2aaa4!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.shift-fold>summary{display:flex;align-items:center;justify-content:center;gap:9px;list-style:none;cursor:pointer}
+.shift-fold>summary::-webkit-details-marker{display:none}
+.shift-fold>summary::after{content:"＋";display:inline-grid;place-items:center;width:24px;height:24px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--gray);font-size:14px;line-height:1}
+.shift-fold[open]>summary::after{content:"−";color:var(--red);border-color:#e2aaa4;background:var(--danger-bg)}
+.shift-fold:not([open])>summary{margin-bottom:0}
+.shift-fold-content{padding-top:1px}
+@media(max-width:699px){
+ .staffing-day-tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .staffing-day-tab{min-height:44px;font-size:12px}
+ .forecast-day-heading{padding:10px 11px}
+ .forecast-area-table-wrap{display:none}
+ .forecast-area-cards{display:grid;gap:7px;padding:8px}
+ .forecast-area-card{padding:8px;background:#faf9f6;border:1px solid var(--line);border-radius:10px}
+ .forecast-area-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:13px;font-weight:800}
+ .forecast-area-card-head .forecast-gap{font-size:12px}
+ .forecast-area-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .forecast-area-stat{min-width:0;padding:6px;background:#fff;border-radius:8px;text-align:center}
+ .forecast-area-stat span{display:block;color:var(--gray);font-size:12px;line-height:1.3}
+ .forecast-area-stat strong{display:block;margin-top:2px;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
+ .forecast-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #staffingRecommendationSummary .summary-card{padding:9px 5px;border-radius:11px;min-height:78px}
+ #staffingRecommendationSummary .summary-label{font-size:11px;line-height:1.25;min-height:28px;margin-bottom:2px}
+ #staffingRecommendationSummary .summary-number{font-size:20px;overflow-wrap:anywhere}
+ .forecast-formula{font-size:12px;padding:8px 9px}
+ .forecast-day-total-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .forecast-day-total-card{padding:7px 5px;min-height:58px}
+ .forecast-day-total-card:last-child{grid-column:span 2}
+ .shift-admin-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shift-admin-actions button:last-child:nth-child(3){grid-column:1/-1}
+}
+
+/* T996 指休工具列：固定三列，各列格子等寬等高 */
+.shift-admin-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px!important;margin-top:10px!important;align-items:stretch}
+.shift-toolbar-week-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;min-width:0}
+.shift-week-buttons{display:grid;grid-column:span 4!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.shift-week-btn,.shift-toolbar-week-row>button,.shift-status-btn,.shift-name-search,.shift-toolbar-search-row>button,.shift-open-toggle,.shift-test-control{width:100%;min-width:0;height:44px;min-height:44px;box-sizing:border-box}
+.shift-week-btn{padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-toolbar-week-row>button{padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-toolbar-status-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.shift-status-tabs{display:grid;grid-column:span 3!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:stretch;min-width:0}
+.shift-status-btn{height:44px;min-height:44px;align-self:stretch;padding:5px 3px;font-size:12px;white-space:nowrap}
+.shift-open-toggle,.shift-test-toggle{display:flex;align-items:center;justify-content:center;gap:5px;height:44px;min-height:44px;box-sizing:border-box;margin:0;padding:4px 5px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--black);font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+.shift-open-toggle input,.shift-test-toggle input{width:16px;height:16px;margin:0;accent-color:var(--red);flex:none}
+.shift-name-search{padding:0 9px;font-size:14px;text-align:center}
+.shift-toolbar-search-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:stretch;min-width:0}
+.shift-toolbar-search-row>button,.shift-open-toggle{height:48px;min-height:48px;box-sizing:border-box}
+.shift-toolbar-search-row>button{height:44px;min-height:44px;padding:4px 3px;font-size:12px;white-space:nowrap}
+.shift-test-control{display:grid;grid-template-rows:1fr 1fr;gap:2px;align-items:stretch;min-width:0;height:48px;min-height:48px;box-sizing:border-box}
+.shift-test-control .shift-test-toggle{width:100%;height:23px;min-height:23px;margin:0;padding:1px 3px;box-sizing:border-box}
+.shift-admin-toolbar .shift-mini-delete{position:static;width:100%;height:23px!important;min-height:23px!important;padding:1px 2px;border:1px solid #e2aaa4;border-radius:7px;background:var(--danger-bg);color:var(--danger);font-size:10px;line-height:1;white-space:nowrap;cursor:pointer}
+.shift-admin-toolbar .shift-mini-delete:disabled{opacity:.48;cursor:not-allowed}
+.shift-open-toggle.is-checked,.shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+.shift-open-toggle input,.shift-test-toggle input{accent-color:var(--red)}
+@media(max-width:699px){
+ .shift-toolbar-week-row,.shift-toolbar-status-row,.shift-toolbar-search-row{gap:4px}
+ .shift-week-buttons,.shift-status-tabs{gap:4px}
+ .shift-week-btn,.shift-toolbar-week-row>button{padding:4px 1px;font-size:9px;letter-spacing:-.2px}
+ .shift-status-btn,.shift-toolbar-search-row>button{padding:3px 1px;font-size:10px;letter-spacing:-.2px}
+ .shift-name-search{padding:0 3px;font-size:12px}
+ .shift-open-toggle,.shift-test-toggle{gap:3px;padding:3px 2px;font-size:10px}
+ .shift-open-toggle input,.shift-test-toggle input{width:14px;height:14px}
+ .shift-toolbar-search-row>button,.shift-open-toggle{height:48px;min-height:48px}
+ .shift-test-control{height:48px;min-height:48px}
+ .shift-test-control .shift-test-toggle{height:23px;min-height:23px;padding:1px 2px}
+ .shift-mini-delete{height:23px;min-height:23px;font-size:9px}
+}
+
+
+/* Verified T995/996 control grid: 3 compact rows, equal-width cells and equal heights. */
+#shiftModePage .shift-toolbar-week-row,
+#shiftModePage .shift-toolbar-status-row,
+#shiftModePage .shift-toolbar-search-row{width:100%;min-width:0;align-items:stretch}
+#shiftModePage .shift-toolbar-week-row>button,
+#shiftModePage .shift-week-btn,
+#shiftModePage .shift-status-btn,
+#shiftModePage .shift-name-search,
+#shiftModePage .shift-toolbar-search-row>button,
+#shiftModePage .shift-test-control,
+#shiftModePage .shift-open-toggle{height:48px!important;min-height:48px!important;box-sizing:border-box}
+#shiftModePage .shift-test-control{position:relative;display:flex;align-items:center;justify-content:center;min-width:0}
+#shiftModePage .shift-test-control .shift-test-toggle{width:100%;height:48px!important;min-height:48px!important;padding-right:31px;box-sizing:border-box}
+#shiftModePage .shift-mini-delete{position:absolute;right:3px;top:9px;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid #e2aaa4;border-radius:8px;background:var(--danger-bg);color:var(--danger);font-size:14px;cursor:pointer}
+#shiftModePage .shift-mini-delete[hidden]{display:none!important}
+#shiftModePage .shift-open-toggle.is-checked,
+#shiftModePage .shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+#shiftModePage .shift-open-toggle input,
+#shiftModePage .shift-test-toggle input{accent-color:var(--red)}
+@media(max-width:699px){
+  #shiftModePage .shift-toolbar-week-row,
+  #shiftModePage .shift-toolbar-status-row,
+  #shiftModePage .shift-toolbar-search-row{gap:4px}
+  #shiftModePage .shift-mini-delete{right:2px;width:25px;min-width:25px;height:26px;min-height:26px;font-size:12px}
+  #shiftModePage .shift-test-control .shift-test-toggle{padding-right:26px}
+}
+
+
+/* T995 V4：週次開放勾選，維持工具列欄位等寬並讓勾選狀態紅色可辨。 */
+.shift-week-option{display:grid;grid-template-rows:minmax(0,1fr) 22px;gap:2px;min-width:0;height:66px;box-sizing:border-box}
+.shift-week-option .shift-week-btn{width:100%;height:42px!important;min-height:42px!important;padding:4px 2px!important;font-size:10px!important;white-space:nowrap}
+.shift-week-open-toggle{display:flex;align-items:center;justify-content:center;gap:3px;width:100%;height:22px!important;min-height:22px!important;margin:0;padding:1px 2px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--black);font-size:10px;font-weight:800;line-height:1;white-space:nowrap;cursor:pointer;box-sizing:border-box}
+.shift-week-open-toggle input{width:14px;height:14px;margin:0;accent-color:var(--red);flex:none}
+.shift-week-open-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important;box-shadow:0 0 0 1px rgba(200,16,46,.08)}
+#shiftModePage .shift-toolbar-week-row>button{height:66px!important;min-height:66px!important}
+#shiftModePage .shift-week-btn{height:42px!important;min-height:42px!important}
+.shift-week-open-hint{display:flex;align-items:center;justify-content:center;min-width:0;height:48px;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--gray);font-size:11px;font-weight:800;text-align:center;line-height:1.35}
+@media(max-width:699px){.shift-week-option{height:62px}.shift-week-option .shift-week-btn{height:39px!important;min-height:39px!important;font-size:9px!important;letter-spacing:-.25px}#shiftModePage .shift-toolbar-week-row>button{height:62px!important;min-height:62px!important}.shift-week-open-toggle{font-size:9px}}
+
+/* T995 V5：保持後台控制格尺寸，只略微提高字級及可讀性。 */
+.shift-week-option .shift-week-btn{font-size:12px!important}
+.shift-week-open-toggle{font-size:11px}
+.shift-status-btn,.shift-toolbar-search-row>button,.shift-toolbar-week-row>button{font-size:13px}
+.shift-test-toggle{font-size:13px}
+.shift-week-open-hint{font-size:12px}
+.shift-admin-toolbar .shift-mini-delete{font-size:11px}
+@media(max-width:699px){
+ .shift-week-option .shift-week-btn{font-size:10px!important;letter-spacing:-.15px}
+ .shift-week-open-toggle{font-size:10px}
+ .shift-status-btn,.shift-toolbar-search-row>button,.shift-toolbar-week-row>button{font-size:11px}
+ .shift-test-toggle{font-size:11px}
+ .shift-week-open-hint{font-size:10px}
+}
+
+/* T995 V6：逐週開放勾選整合於日期卡；工具列三列固定四欄。 */
+#shiftModePage .shift-heading-tools{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+#shiftModePage .shift-heading-tools>.hint{margin:0;padding:0;line-height:1.35}
+#shiftModePage .shift-heading-tools .shift-test-toggle{width:auto;height:32px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:12px}
+#shiftModePage .shift-heading-tools .shift-test-toggle.is-checked{border-color:var(--red)!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+#shiftModePage .shift-heading-tools .shift-mini-delete[hidden]{display:none!important}
+#shiftModePage .shift-toolbar-week-row{display:block!important;grid-template-columns:none!important}
+#shiftModePage .shift-week-buttons{display:grid!important;grid-column:auto!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;width:100%;min-width:0}
+#shiftModePage .shift-week-option{display:grid;grid-template-rows:39px 24px;gap:0;height:64px!important;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#fff;box-sizing:border-box}
+#shiftModePage .shift-week-option .shift-week-btn{width:100%;height:39px!important;min-height:39px!important;margin:0;padding:3px 1px!important;border:0!important;border-radius:0!important;background:#fff;color:var(--black);box-shadow:none!important;font-size:11px!important;font-weight:800;white-space:nowrap;letter-spacing:-.2px}
+#shiftModePage .shift-week-option .shift-week-btn.active{background:var(--red)!important;color:#fff!important}
+#shiftModePage .shift-week-open-toggle{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:24px!important;min-height:24px!important;margin:0;padding:1px 2px;border:0!important;border-top:1px solid #eee8e0!important;border-radius:0!important;background:transparent!important;color:var(--black);font-size:11px!important;font-weight:700;line-height:1;white-space:nowrap;box-shadow:none!important;box-sizing:border-box}
+#shiftModePage .shift-week-open-toggle input{width:14px;height:14px;margin:0;accent-color:var(--red);flex:none}
+#shiftModePage .shift-week-open-toggle.is-checked{background:var(--danger-bg)!important;color:var(--danger)!important;border-top-color:#f1c4c1!important}
+#shiftModePage .shift-toolbar-status-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-status-tabs{display:grid!important;grid-column:span 3!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-status-btn,#shiftModePage .shift-name-search{width:100%;height:48px!important;min-height:48px!important;box-sizing:border-box}
+#shiftModePage .shift-toolbar-search-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+#shiftModePage .shift-toolbar-search-row>button,#shiftModePage .shift-export-week{width:100%;height:48px!important;min-height:48px!important;min-width:0;box-sizing:border-box;padding:4px 3px;font-size:12px;font-weight:800;text-align:center}
+#shiftModePage .shift-export-week{appearance:auto;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--black);font-family:inherit;white-space:nowrap}
+#shiftModePage .shift-purge-old-btn{background:var(--danger-bg);border-color:#f2b6b0;color:var(--danger);font-size:10px!important;white-space:normal;line-height:1.15}
+#shiftModePage .shift-toolbar-search-row>button:disabled{opacity:.55;cursor:wait}
+@media(max-width:699px){
+ #shiftModePage .shift-week-buttons,#shiftModePage .shift-toolbar-status-row,#shiftModePage .shift-toolbar-search-row{gap:4px!important}
+ #shiftModePage .shift-week-option{height:62px!important;grid-template-rows:37px 23px}
+ #shiftModePage .shift-week-option .shift-week-btn{height:37px!important;min-height:37px!important;font-size:10px!important;letter-spacing:-.35px}
+ #shiftModePage .shift-week-open-toggle{height:23px!important;min-height:23px!important;font-size:10px!important;gap:3px}
+ #shiftModePage .shift-week-open-toggle input{width:13px;height:13px}
+ #shiftModePage .shift-status-btn,#shiftModePage .shift-toolbar-search-row>button,#shiftModePage .shift-export-week{height:46px!important;min-height:46px!important;padding:2px 1px;font-size:10px!important;letter-spacing:-.25px}
+ #shiftModePage .shift-name-search{height:46px!important;min-height:46px!important;padding:0 3px;font-size:12px;text-align:center}
+ #shiftModePage .shift-purge-old-btn{font-size:9px!important;letter-spacing:-.45px}
+ #shiftModePage .shift-heading-tools{gap:6px;margin-bottom:7px}
+ #shiftModePage .shift-heading-tools .shift-test-toggle{height:29px;min-height:29px;font-size:11px}
+}
+
+
+.ops-section h3{margin:20px 0 12px;text-align:left}.ops-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}.ops-analysis{margin:14px 0}.ops-export-bottom{display:flex;justify-content:center;margin:18px 0 4px}.ops-export-bottom .action-btn{min-width:min(420px,100%)}.ops-analysis-tools{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}.ops-analysis-tools input{min-height:42px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}.ops-mini-tabs{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#fff}.ops-mini-tabs button{border:0;background:transparent;border-radius:8px;padding:8px 12px;font:inherit}.ops-mini-tabs button.active{background:var(--red);color:#fff}.ops-hours-input{width:80px;min-width:68px;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;text-align:center}.ops-toggle-group{display:flex;gap:10px;align-items:center;justify-content:center}.ops-toggle{min-height:46px;min-width:120px;border:1px solid var(--line);border-radius:12px;background:#fff;font:inherit;font-weight:800}.ops-toggle.selected{background:var(--green);border-color:var(--green);color:#fff}.ops-tab{padding:12px 8px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--black);font:inherit;font-weight:800;cursor:pointer}.ops-tab.active{background:var(--red);color:#fff;border-color:var(--red)}.ops-panel{padding:12px 0}.ops-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;text-align:center}.ops-form-grid label,.ops-toolbar label{display:grid;gap:6px;font-weight:700;color:var(--black);text-align:center}.ops-form-grid input,.ops-form-grid select,.ops-form-grid textarea,.ops-toolbar input{width:100%;min-height:46px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--black);text-align:center}.ops-form-grid textarea{resize:vertical}.ops-wide{grid-column:1/-1}.ops-form-grid .action-btn{min-height:46px}.ops-lookup{min-height:18px;color:var(--green);font-size:13px;font-weight:700}.ops-message{min-height:24px;margin:8px 0;text-align:center;color:var(--gray)}.ops-toolbar{display:flex;align-items:end;gap:8px;margin:14px 0;text-align:left}.ops-toolbar label{min-width:145px}.ops-toolbar .action-btn{min-height:44px}.ops-table-wrap{overflow:auto;text-align:left}.ops-table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}.ops-table th,.ops-table td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}.ops-table th{background:#f8f6f1;white-space:nowrap}.ops-status{display:inline-block;padding:4px 8px;border-radius:99px;background:#fff0ee;color:#b42318;font-weight:800;white-space:nowrap}.ops-status.done{background:#eef5f0;color:#356b4b}.ops-help{padding:12px;background:#f8f6f1;border-radius:12px;text-align:left;color:var(--gray);line-height:1.7}.ops-link-result{display:flex;gap:8px;margin-top:12px}.ops-link-result input{min-width:0;flex:1;padding:10px;border:1px solid var(--line);border-radius:10px}.ops-empty{padding:18px;color:var(--gray);text-align:center}@media(max-width:600px){.ops-form-grid{grid-template-columns:1fr}.ops-wide{grid-column:auto}.ops-tabs{grid-template-columns:1fr}.ops-toolbar{align-items:stretch;flex-direction:column}.ops-link-result{flex-direction:column}.ops-table{font-size:12px}.ops-table th,.ops-table td{padding:8px 6px}}
+.ops-score-upload{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}.ops-score-file-button{display:inline-flex;align-items:center;min-height:44px;padding:9px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:800;cursor:pointer}.ops-score-file-button input{position:absolute;width:1px;height:1px;opacity:0}.ops-score-file-hint{color:var(--gray);font-size:13px}.ops-score-divider{height:1px;background:var(--line);margin:24px 0}.ops-score-history-tools{display:flex;align-items:end;gap:10px;margin:12px 0}.ops-score-history-tools label{display:grid;gap:6px;min-width:170px;color:var(--gray);font-weight:700;text-align:left}.ops-score-history-tools input,.ops-score-history-tools select{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}.ops-score-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.ops-batch-link{border:0;background:transparent;color:#1683df;font:inherit;font-weight:800;cursor:pointer;text-decoration:underline}.ops-score-count{color:var(--gray);white-space:nowrap}@media(max-width:600px){.ops-score-history-tools{align-items:stretch;flex-direction:column}.ops-score-history-tools label{min-width:0}.ops-score-detail-heading{align-items:flex-start;flex-direction:column}}
+
+.ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
+@media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
+</style>
+<link rel="stylesheet" href="operations-report.css?v=998-preview1">
+<style>body,button,input,select,textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans-serif}button,[role="button"],a{font-weight:800!important}.title{font-weight:900!important}.kfc{font-weight:900!important}.admin-mode-btn,.home-menu-btn{font-weight:800!important}</style>
 </head>
 
 <body>
@@ -1322,31 +2602,82 @@ button{cursor:pointer}
 </header>
 
 <div id="adminModeMenu" class="admin-menu">
-  <button id="vehicleModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">🚗</span>
-    車輛管理
-  </button>
-  <button id="batteryModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">🔋</span>
-    設備管理
-  </button>
-  <button id="defensiveModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">🛡️</span>
-    防禦駕駛
-  </button>
-  <button id="surveyModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">📋</span>
-    意向調查
-  </button>
-  <button id="rosterModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">👥</span>
-    在職名單
-  </button>
-  <button id="shiftModeBtn" class="admin-mode-btn" type="button">
-    <span class="icon">🗓️</span>
-    指休管理
-  </button>
+  <button id="vehicleModeBtn" class="admin-mode-btn" type="button"><span class="icon">🚗</span>車輛管理</button>
+  <button id="opsModeBtn" class="admin-mode-btn" type="button"><span class="icon">🍽️</span>營運管理</button>
+  <button id="batteryModeBtn" class="admin-mode-btn" type="button"><span class="icon">🔋</span>設備管理</button>
+  <button id="defensiveModeBtn" class="admin-mode-btn" type="button"><span class="icon">🛡️</span>防禦駕駛</button>
+  <button id="surveyModeBtn" class="admin-mode-btn" type="button"><span class="icon">📋</span>意向調查</button>
+  <button id="shiftModeBtn" class="admin-mode-btn" type="button"><span class="icon">🗓️</span>指休管理</button>
+  <button id="rosterModeBtn" class="admin-mode-btn" type="button"><span class="icon">👥</span>在職名單</button>
 </div>
+
+<section id="opsModePage" class="admin-mode-page">
+  <div class="mode-back-row"><button id="opsBackBtn" class="action-btn" type="button">← 返回後台入口</button></div>
+  <section class="section ops-section">
+    <div class="section-title">營運管理</div>
+    <div id="opsGlobalDateToolbar" class="ops-entry-date-toolbar ops-global-date-toolbar">
+      <div class="ops-date-nav"><button id="opsGlobalPrev" type="button" aria-label="前一個日期區間">‹</button><input id="opsGlobalDate" type="date" aria-label="營運統計日期"><button id="opsGlobalNext" type="button" aria-label="後一個日期區間">›</button></div>
+      <div id="opsGlobalPeriodTabs" class="ops-mini-tabs"><button type="button" data-period="day" class="active">日</button><button type="button" data-period="week">週</button><button type="button" data-period="month">月</button></div>
+      <div class="ops-date-actions"><button id="opsGlobalRefresh" type="button" class="action-btn">重新整理</button><a class="action-btn" href="analysis.html" aria-label="開啟營運分析儀表板">儀表板</a></div>
+    </div>
+    <div id="opsGlobalPeriodChoices" class="ops-period-choices" hidden aria-live="polite"></div>
+    <div class="ops-tabs">
+      <button type="button" class="ops-tab active" data-ops-tab="delay">等餐紀錄</button>
+      <button type="button" class="ops-tab" data-ops-tab="line">劃線／簽名</button>
+      <button type="button" class="ops-tab" data-ops-tab="scores">當日成績</button>
+      <button type="button" class="ops-tab" data-ops-tab="summary">匯總資料</button>
+    </div>
+    <div id="opsDelayPanel" class="ops-panel">
+      <div class="ops-form-grid ops-entry-row ops-delay-entry-row">
+
+        <label>店號<input id="opsDelayStore" type="text" inputmode="numeric" maxlength="3" placeholder="輸入店號" autocomplete="off"><span id="opsDelayStoreName" class="ops-lookup" aria-live="polite"></span><div id="opsDelayStoreChoices" class="ops-store-choices"></div></label>
+        <label>編號<input id="opsDelayOrder" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="4 碼"></label>
+        <button id="opsDelaySave" type="button" class="action-btn primary">新增</button>
+        <label>餐廳查詢<input id="opsDelaySearch" type="search" placeholder="輸入店號或餐廳名稱"></label>
+      </div>
+      <div id="opsDelayMessage" class="ops-message" role="status"></div>
+      <h3 id="opsDelayListTitle">當日紀錄</h3>
+      <div id="opsDelayList" class="ops-table-wrap"></div>
+    </div>
+    <div id="opsLinePanel" class="ops-panel" hidden>
+      <div class="ops-line-toolbar-row">
+        <div id="opsLineStats" class="ops-line-stats"></div>
+        <label class="ops-line-search"><input id="opsLineSearch" type="search" aria-label="餐廳查詢" placeholder="輸入店號或餐廳名稱"></label>
+      </div>
+      <div class="ops-form-grid ops-entry-row">
+
+        <label>店號<input id="opsLineStore" type="text" inputmode="numeric" maxlength="3" placeholder="輸入店號" autocomplete="off"><span id="opsLineStoreName" class="ops-lookup" aria-live="polite"></span><div id="opsLineStoreChoices" class="ops-store-choices"></div></label>
+        <div class="ops-line-control"><span>劃線／簽名</span><div class="ops-toggle-group"><button type="button" id="opsLineMark" class="ops-toggle" aria-pressed="false">劃線</button><button type="button" id="opsSignMark" class="ops-toggle" aria-pressed="false">簽名</button></div></div>
+        <input id="opsSigner" type="hidden">
+        <input id="opsLineNote" type="hidden">
+        <button id="opsLineSave" type="button" class="action-btn primary">新增</button>
+      </div>
+      <div id="opsLineMessage" class="ops-message" role="status"></div>
+      <h3 id="opsLineListTitle">餐廳狀態</h3><div id="opsLineList" class="ops-table-wrap"></div>
+    </div>
+    <div id="opsScoresPanel" class="ops-panel" hidden>
+      <div class="ops-upload-block"><h3>匯入當日成績</h3><div class="ops-score-upload"><label class="ops-score-file-button">選擇兩個 Excel<input id="opsScoreFiles" type="file" accept=".xlsx,.xls,.xlsm" multiple></label></div><div id="opsScorePreview" class="ops-table-wrap"></div><button id="opsScoreImport" type="button" class="action-btn primary" disabled>匯入當日成績</button><div id="opsScoreMessage" class="ops-message" role="status"></div></div>
+      <div id="opsFileStatus" class="ops-file-status"></div><h3 id="opsPeriodLabel">區域成績</h3>
+      <div id="opsReportWarnings" class="ops-report-warnings" hidden></div>
+      <div id="opsAnalysisSummary"></div>
+      <section class="ops-report-card"><h3>區域成績與工時</h3><div id="opsAnalysisTable"></div><div id="opsLaborAdjustments"></div></section><section class="ops-report-card"><h3>餐廳所在地天氣</h3><div id="opsWeather" aria-live="polite"></div></section><section class="ops-report-card"><h3>每日成績</h3><div id="opsDayList" class="ops-table-wrap"></div></section>
+      <div id="opsReportStatus" class="ops-report-status" role="status"></div>
+      <details class="ops-month-fold"><summary>各區每日／整月工時</summary><div id="opsMonthHours"></div></details>
+    </div>
+    <div id="opsSummaryPanel" class="ops-panel" hidden>
+      <div id="opsSummaryWarnings" class="ops-report-warnings" hidden></div>
+      <div id="opsSummaryMetrics"></div>
+      <div class="ops-ranking-grid">
+        <section class="ops-report-card"><h3>等餐列</h3><h4>AC（等餐最多）</h4><div id="opsDelayAcSummary"></div><h4>前三多餐廳</h4><div id="opsDelayRank"></div></section>
+        <section class="ops-report-card"><h3>劃線簽名列</h3><h4>AC（達標率最低）</h4><div id="opsLineAcSummary"></div><h4>前三低餐廳</h4><div id="opsLineRank"></div></section>
+      </div>
+      <section class="ops-report-card"><h3>餐廳所在地天氣</h3><div id="opsSummaryWeather" aria-live="polite"></div></section>
+      <div id="opsSummaryStatus" class="ops-report-status" role="status"></div>
+      <div class="ops-export-bottom"><button id="opsExportDay" type="button" class="action-btn primary">每日匯出</button><button id="opsExportWeek" type="button" class="action-btn">每週匯出</button><button id="opsExportMonth" type="button" class="action-btn">每月匯出</button><button id="opsLinkCreate" type="button" class="action-btn">產生等餐連結</button></div>
+      <div id="opsLinksPanel" class="ops-shared-link"><div id="opsLinkMessage" class="ops-message" role="status"></div><div id="opsLinkResult" class="ops-link-result" hidden><input id="opsLinkUrl" type="text" readonly><button id="opsLinkCopy" type="button" class="action-btn">複製連結</button></div></div>
+    </div>
+  </section>
+</section>
 
 <section id="vehicleModePage" class="admin-mode-page">
 
@@ -1494,22 +2825,7 @@ button{cursor:pointer}
     <div class="section-title">新增正常設備</div>
     <div class="search-box device-add-panel">
       <div id="deviceRegisterIntro" class="device-add-intro">查無此設備，請補充資料後新增。新增的設備會直接設定為正常。</div>
-      <select id="deviceRegisterRestaurant" class="search-input">
-        <option value="">請選擇電池所在餐廳</option>
-        <option value="093">林口文化（093）</option><option value="018">林口復興（018）</option><option value="099">南崁中正（099）</option>
-            <option value="201">台南台茂（201）</option><option value="095">中壢環中東（095）</option><option value="209">中壢環中東二（209）</option>
-            <option value="137">台南大園（137）</option><option value="062">龍潭北龍（062）</option><option value="154">新竹清大（154）</option>
-            <option value="227">台南新屋（227）</option><option value="248">台南領航（248）</option><option value="041">楊梅中山（041）</option>
-            <option value="161">楊梅大成（161）</option><option value="516">中壢中正（516）</option><option value="544">中壢中和（544）</option>
-            <option value="084">中壢民族（084）</option><option value="242">中壢過嶺（242）</option><option value="580">苗栗頭份（580）</option>
-            <option value="133">新竹新豐（133）</option><option value="203">新竹湖口（203）</option><option value="562">新竹竹北（562）</option>
-            <option value="144">竹北自強（144）</option><option value="587">新竹民生（587）</option><option value="066">新竹竹東（066）</option>
-            <option value="214">新竹中正（214）</option><option value="594">新竹亞太（594）</option><option value="235">竹北中華（235）</option>
-            <option value="025">苗栗中正（025）</option><option value="173">苗栗竹南（173）</option><option value="142">台南桃營（142）</option>
-            <option value="182">台南萬壽（182）</option><option value="167">台南介壽（167）</option><option value="165">台南南平（165）</option>
-            <option value="179">台南大竹（179）</option><option value="190">台南大溪（190）</option><option value="098">台南大興西（098）</option>
-            <option value="183">台南中山二（183）</option><option value="013">新竹光復（013）</option>
-      </select>
+      <select id="deviceRegisterRestaurant" class="search-input"><option value="">請選擇餐廳</option><option value="012">台南中華（012）</option><option value="239">台南仁德（239）</option><option value="207">台南大灣（207）</option><option value="556">台南崇明（556）</option><option value="150">台南成大（150）</option><option value="081">台南東門（081）</option><option value="570">台南永康（570）</option><option value="047">台南中華西（047）</option><option value="241">台南安和（241）</option><option value="208">台南民族（208）</option><option value="143">台南海佃（143）</option><option value="100">台南西門二（100）</option><option value="158">台南金華（158）</option><option value="597">新營中正（597）</option><option value="221">新營復興（221）</option><option value="054">嘉義中興（054）</option><option value="550">嘉義垂楊（550）</option><option value="036">嘉義忠孝（036）</option><option value="225">台南佳里（225）</option><option value="139">台南善化（139）</option><option value="243">台南新市（243）</option><option value="245">台南麻豆（245）</option><option value="127">斗六民生（127）</option><option value="232">斗六民生二（232）</option><option value="236">嘉義朴子（236）</option><option value="189">嘉義民雄（189）</option><option value="204">雲林北港（204）</option><option value="582">雲林虎尾（582）</option></select>
       <select id="deviceRegisterSize" class="search-input" style="margin-top:10px;display:none">
         <option value="large">A10／大台</option>
         <option value="small">C100／小台</option>
@@ -1735,6 +3051,7 @@ const SUPABASE_KEY =
 
 const db =
   supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.t998SupabaseClient=db;
 
 const OIL_INTERVAL = 1500;
 const OIL_WARNING_DISTANCE = 300;
@@ -4980,12 +6297,13 @@ async function unlockAdmin(session){
     lockAdmin("此帳號尚未授權使用本區後台。");
     return;
   }
+  const isEnteringAdmin=adminApp.style.display!=="block";
   authGate.style.display = "none";
   adminApp.style.display = "block";
   adminSessionBar.style.display = "flex";
   adminSessionEmail.textContent = `已登入：${email}`;
   showAuthMessage("", true);
-  showAdminMode("home");
+  if(isEnteringAdmin && !(window.T998_PREVIEW && new URLSearchParams(location.search).get("mode")==="ops"))showAdminMode("home");
 }
 
 authPasswordToggle.onclick = () => {
@@ -6007,5 +7325,136 @@ vehicleList.addEventListener("click",event=>{
 
 
 
+<script>
+/* T998 營運管理：延遲訂單、月度餐廳回覆連結與劃線／簽名。 */
+/* 營運管理共用介面。分頁與登記邏輯位於 operations-entry.js。 */
+const opsToday=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+function opsEscape(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const opsSetToggle=(id,on)=>{const b=$(id);b.classList.toggle("selected",on);b.setAttribute("aria-pressed",String(on));};
+
+/* 每日成績報表：辨識 ByDate／ByOrder，排除不必要個資欄位後寫入歷史資料表。 */
+const opsScoreFileInput=$("opsScoreFiles");
+let opsPreparedScoreFiles=[];
+const opsByDateColumns=["訂單號碼","ID（門市名稱／代號）","訂單日期","指派時間","QT","留店時間","外送時間（去）","外送達成時間（D30)","外出時間 (車程)","完成整張外送時間","距離"];
+const opsByOrderColumns=["reg order id","RC","AC","ID","訂單","自動/手動","落單時間","預計送達時間","原預計送達時間","指派時間","門市到達時間","外送出發","到達時間","到店時間","外送員留店時間","遲到時間","Quote Time","配送費","餐點金額","結算金額","距離","外送員","D7","D25"];
+function opsXlsxValue(value){
+  if(value instanceof Date){const d=new Date(value.getTime()-value.getTimezoneOffset()*60000);return d.toISOString().slice(0,19).replace("T"," ");}
+  return value;
+}
+function opsDateIso(value){
+  if(value instanceof Date&&!Number.isNaN(value.getTime())){const d=new Date(value.getTime()-value.getTimezoneOffset()*60000);return d.toISOString().slice(0,10);}
+  if(typeof value==="number"&&window.XLSX?.SSF?.parse_date_code){const d=XLSX.SSF.parse_date_code(value);if(d?.y&&d?.m&&d?.d)return String(d.y).padStart(4,"0")+"-"+String(d.m).padStart(2,"0")+"-"+String(d.d).padStart(2,"0");}
+  const text=String(value??"").trim();let m=text.match(/^(20\d{2})[./-](\d{1,2})[./-](\d{1,2})/);
+  if(m)return opsValidIsoDate(Number(m[1]),Number(m[2]),Number(m[3]));
+  m=text.match(/^(\d{1,2})[./-](\d{1,2})[./-](20\d{2})/);
+  if(m)return opsValidIsoDate(Number(m[3]),Number(m[1]),Number(m[2]));
+  return "";
+}
+function opsValidIsoDate(y,m,d){const value=new Date(Date.UTC(y,m-1,d));return value.getUTCFullYear()===y&&value.getUTCMonth()===m-1&&value.getUTCDate()===d?String(y).padStart(4,"0")+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"):"";}
+function opsScorePair(){
+  if(opsPreparedScoreFiles.length!==2)return null;
+  const byType=Object.fromEntries(opsPreparedScoreFiles.map(x=>[x.type,x]));if(!byType.ByDate||!byType.ByOrder)return null;
+  const a=byType.ByDate.dates,b=byType.ByOrder.dates;if(a.length!==b.length||a.some((d,i)=>d!==b[i]))return null;
+  return {byType,dates:a};
+}
+async function opsParseScoreFile(file){
+  if(!window.XLSX)throw new Error("Excel 元件尚未載入，請重新整理後再試。");
+  const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+  const sheetName=wb.SheetNames[0];if(!sheetName)throw new Error("檔案沒有工作表。");
+  const matrix=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:"",raw:true});
+  if(!matrix.length)throw new Error("工作表沒有資料。");
+  const headers=matrix[0].map(v=>String(v??"").trim());
+  const lower=headers.map(v=>v.toLowerCase());
+  let type="";
+  if(headers.includes("訂單號碼")&&headers.some(v=>v.includes("門市名稱／代號"))&&headers.includes("QT"))type="ByDate";
+  else if(lower.includes("reg order id")&&headers.includes("落單時間")&&headers.includes("D25"))type="ByOrder";
+  else throw new Error("無法辨識報表格式；請選 ByDate 或 ByOrder Excel 檔。");
+  const allowed=type==="ByDate"?opsByDateColumns:opsByOrderColumns;
+  const indices=allowed.map(name=>headers.indexOf(name));
+  const orderHeader=type==="ByDate"?"訂單號碼":"reg order id";
+  const dateHeader=type==="ByDate"?"訂單日期":"落單時間";
+  const restaurantHeader=type==="ByDate"?"ID（門市名稱／代號）":"ID";
+  const fileDates=[...new Set([...String(file.name).matchAll(/20\d{2}[.-]\d{2}[.-]\d{2}/g)].map(x=>x[0]))],fileDate=fileDates.length===1?opsDateIso(fileDates[0]):"";
+  const rows=[];
+  matrix.slice(1).forEach((cells,index)=>{
+    if(!cells.some(v=>v!==""&&v!==null&&v!==undefined))return;
+    const payload={};
+    indices.forEach((column,i)=>{if(column<0)return;const value=cells[column];if(value===""||value===null||value===undefined)return;payload[allowed[i]]=opsXlsxValue(value);});
+    const orderNo=String(payload[orderHeader]??"").trim();
+    const restaurantRaw=String(payload[restaurantHeader]??"").trim();
+    const codeMatch=(type==="ByDate"?restaurantRaw:orderNo).match(/(?:TWI|TWB)(\d{3})/i);
+    const storeCode=codeMatch?codeMatch[1]:"";
+    const restaurantName=type==="ByDate"?restaurantRaw.split(/[/／]/)[0].trim():restaurantRaw;
+    const dateValue=cells[headers.indexOf(dateHeader)],dateText=opsDateIso(dateValue)||fileDate;
+    rows.push({row_number:index+2,record_date:dateText,store_code:storeCode,restaurant_name:restaurantName,order_number:orderNo,payload});
+  });
+  if(type==="ByOrder"){
+    const courierIds=new Map(),courierOrders=new Map(),dispatchWaves=new Map();
+    for(const row of rows){
+      const payload=row.payload||{},courierName=String(payload["外送員"]??"").trim(),assigned=String(payload["指派時間"]??"").trim().replace("T"," ").slice(0,19);
+      delete payload["外送員"];
+      if(!courierName||String(payload["自動/手動"]||"").trim()==="第三方")continue;
+      const courierKey=row.record_date+"|"+courierName.toLocaleLowerCase();
+      if(!courierIds.has(courierKey))courierIds.set(courierKey,window.crypto?.randomUUID?.()||("courier-"+(courierIds.size+1)));
+      const courierId=courierIds.get(courierKey);payload._courier_day_id=courierId;
+      const riderOrders=courierOrders.get(courierId)||[];riderOrders.push(row);courierOrders.set(courierId,riderOrders);
+      if(assigned){const waveKey=row.record_date+"|"+courierId+"|"+assigned,wave=dispatchWaves.get(waveKey)||[];wave.push(row);dispatchWaves.set(waveKey,wave);}
+    }
+    for(const riderOrders of courierOrders.values()){
+      const storeCount=new Set(riderOrders.map(row=>row.store_code).filter(Boolean)).size;
+      for(const row of riderOrders)row.payload._courier_day_store_count=storeCount;
+    }
+    for(const wave of dispatchWaves.values()){
+      const storeCount=new Set(wave.map(row=>row.store_code).filter(Boolean)).size;
+      for(const row of wave){row.payload._dispatch_wave_size=wave.length;row.payload._dispatch_wave_store_count=storeCount;}
+    }
+  }
+  if(!rows.length)throw new Error("報表沒有可匯入的訂單資料列。");
+  if(rows.some(r=>!r.record_date))throw new Error("有訂單列沒有可辨識的日期；請使用含日期欄的報表。");
+  const dates=[...new Set(rows.map(r=>r.record_date))].sort();
+  return {file,type,dates,rows};
+}
+function opsRenderPreparedScoreFiles(errors=[]){
+  const data=opsPreparedScoreFiles.map(x=>({file:x.file.name,type:x.type,date:x.dates.length===1?x.dates[0]:x.dates[0]+"～"+x.dates.at(-1)+"（"+x.dates.length+"天）",count:x.rows.length,status:"待匯入"}));
+  const failed=errors.map(x=>({file:x.file,type:"—",date:"—",count:"—",status:x.error}));
+  const all=[...data,...failed];
+  $("opsScorePreview").innerHTML=all.length
+    ?'<table class="ops-table"><thead><tr><th>檔案</th><th>報表類型</th><th>日期</th><th>資料筆數</th><th>狀態</th></tr></thead><tbody>'+all.map(x=>'<tr><td>'+opsEscape(x.file)+'</td><td>'+opsEscape(x.type)+'</td><td>'+opsEscape(x.date)+'</td><td>'+opsEscape(x.count)+'</td><td>'+opsEscape(x.status)+'</td></tr>').join("")+'</tbody></table>'
+    :"";
+  $("opsScoreImport").disabled=!opsScorePair();
+}
+opsScoreFileInput.addEventListener("change",async()=>{
+  opsPreparedScoreFiles=[];$("opsScoreImport").disabled=true;$("opsScoreMessage").textContent="讀取與辨識檔案中…";
+  const errors=[];
+  for(const file of [...(opsScoreFileInput.files||[])]){
+    try{opsPreparedScoreFiles.push(await opsParseScoreFile(file));}
+    catch(e){errors.push({file:file.name,error:e.message||"檔案無法讀取"});}
+  }
+  opsRenderPreparedScoreFiles(errors);
+  const pair=opsScorePair();$("opsScoreMessage").textContent=errors.length?"辨識完成；"+errors.length+" 個檔案格式不符或無法讀取。":pair?"兩份檔案日期一致，共 "+pair.dates.length+" 天，可匯入。":"請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";
+});
+$("opsScoreImport").onclick=async()=>{
+  const pair=opsScorePair();if(!pair){$("opsScoreMessage").textContent="請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";return;}
+  $("opsScoreImport").disabled=true;$("opsScoreMessage").textContent="匯入資料中…";
+  const importedDate=pair.dates.at(-1);let completed=0;
+  try{
+    for(const date of pair.dates){
+      const results=await Promise.all(Object.values(pair.byType).map(item=>db.rpc("t998_import_score_batch",{p_report_date:date,p_report_type:item.type,p_source_file:item.file.name,p_rows:item.rows.filter(row=>row.record_date===date)})));
+      const failed=results.find(r=>r.error);if(failed)throw new Error("已完成 "+completed+"／"+pair.dates.length+" 天；日期 "+date+"："+failed.error.message);
+      completed++;$("opsScoreMessage").textContent="匯入中… "+completed+"／"+pair.dates.length+" 天";
+    }
+    $("opsScoreMessage").textContent="完成匯入 "+pair.dates.length+" 天（兩種報表已分別按日整理）。";
+    opsPreparedScoreFiles=[];opsScoreFileInput.value="";opsRenderPreparedScoreFiles();
+    window.OpsDateControl?.set(importedDate||opsToday(),"day",false);
+    await opsLoadDailyAnalytics();
+  }catch(e){$("opsScoreMessage").textContent="匯入中止："+(e.message||"請檢查資料庫 migration 與登入狀態");}
+  finally{$("opsScoreImport").disabled=!opsScorePair();}
+};
+
+</script>
+<script src="operations-metrics.js?v=998-preview1"></script>
+<script src="operations-summary.js?v=998-preview1"></script>
+<script src="operations-report.js?rev=preflight-20261101"></script>
+<script src="operations-entry.js?rev=preflight-20261101"></script>
 </body>
 </html>
