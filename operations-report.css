@@ -280,3 +280,9 @@
 #opsModePage .ops-weather-cards{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:12px;align-items:stretch}
 #opsModePage .ops-weather-card{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:140px;text-align:center}
 @media(max-width:480px){#opsModePage .ops-weather-cards{gap:8px}#opsModePage .ops-weather-card{padding:12px 6px;min-height:125px}#opsModePage .ops-weather-card h4{font-size:14px}}
+/* Source archive controls share equal dimensions. */
+#opsArchiveOnly,#opsScoreImport{min-width:160px;min-height:48px;margin:8px 6px;font-weight:700;text-align:center}
+@media(max-width:600px){#opsArchiveOnly,#opsScoreImport{width:calc(50% - 16px);min-width:0;margin:8px 6px;font-size:15px}}
+
+.ops-archive-actions{display:flex;align-items:center;justify-content:center;gap:12px}.ops-archive-actions #opsArchiveOnly,.ops-archive-actions #opsScoreImport{flex:1;margin:0;height:52px}
+@media(max-width:600px){.ops-upload-block .ops-score-upload{width:100%;justify-content:center}.ops-archive-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ops-archive-actions #opsArchiveOnly,.ops-archive-actions #opsScoreImport{width:100%;min-width:0;font-size:14px}}

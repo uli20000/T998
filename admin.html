@@ -2556,7 +2556,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 .ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
 @media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
 </style>
-<link rel="stylesheet" href="operations-report.css?v=mobile-dates-preview-20261101">
+<link rel="stylesheet" href="operations-report.css?v=source-archive-20261101">
 <style>body,button,input,select,textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans-serif}button,[role="button"],a{font-weight:800!important}.title{font-weight:900!important}.kfc{font-weight:900!important}.admin-mode-btn,.home-menu-btn{font-weight:800!important}</style>
 </head>
 
@@ -2656,7 +2656,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
       <h3 id="opsLineListTitle">餐廳狀態</h3><div id="opsLineList" class="ops-table-wrap"></div>
     </div>
     <div id="opsScoresPanel" class="ops-panel" hidden>
-      <div class="ops-upload-block"><h3>匯入當日成績</h3><div class="ops-score-upload"><label class="ops-score-file-button">選擇兩個 Excel<input id="opsScoreFiles" type="file" accept=".xlsx,.xls,.xlsm" multiple></label></div><div id="opsScorePreview" class="ops-table-wrap"></div><button id="opsScoreImport" type="button" class="action-btn primary" disabled>匯入當日成績</button><div id="opsScoreMessage" class="ops-message" role="status"></div></div>
+      <div class="ops-upload-block"><h3>匯入當日成績</h3><div class="ops-score-upload"><label class="ops-score-file-button">選擇兩個 Excel<input id="opsScoreFiles" type="file" accept=".xlsx,.xls,.xlsm" multiple></label></div><div id="opsScorePreview" class="ops-table-wrap"></div><div class="ops-archive-actions"><button id="opsArchiveOnly" type="button" class="action-btn" disabled>歷史檔只封存</button><button id="opsScoreImport" type="button" class="action-btn primary" disabled>匯入當日成績</button></div><div id="opsScoreMessage" class="ops-message" role="status"></div></div>
       <div id="opsFileStatus" class="ops-file-status"></div><h3 id="opsPeriodLabel">區域成績</h3>
       <div id="opsReportWarnings" class="ops-report-warnings" hidden></div>
       <div id="opsAnalysisSummary"></div>
@@ -7421,7 +7421,7 @@ function opsRenderPreparedScoreFiles(errors=[]){
   $("opsScorePreview").innerHTML=all.length
     ?'<table class="ops-table"><thead><tr><th>檔案</th><th>報表類型</th><th>日期</th><th>資料筆數</th><th>狀態</th></tr></thead><tbody>'+all.map(x=>'<tr><td>'+opsEscape(x.file)+'</td><td>'+opsEscape(x.type)+'</td><td>'+opsEscape(x.date)+'</td><td>'+opsEscape(x.count)+'</td><td>'+opsEscape(x.status)+'</td></tr>').join("")+'</tbody></table>'
     :"";
-  $("opsScoreImport").disabled=!opsScorePair();
+  $("opsScoreImport").disabled=!opsScorePair();$("opsArchiveOnly").disabled=!opsScorePair();
 }
 opsScoreFileInput.addEventListener("change",async()=>{
   opsPreparedScoreFiles=[];$("opsScoreImport").disabled=true;$("opsScoreMessage").textContent="讀取與辨識檔案中…";
@@ -7433,25 +7433,35 @@ opsScoreFileInput.addEventListener("change",async()=>{
   opsRenderPreparedScoreFiles(errors);
   const pair=opsScorePair();$("opsScoreMessage").textContent=errors.length?"辨識完成；"+errors.length+" 個檔案格式不符或無法讀取。":pair?"兩份檔案日期一致，共 "+pair.dates.length+" 天，可匯入。":"請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";
 });
+$("opsArchiveOnly").onclick=async()=>{
+ const pair=opsScorePair();if(!pair)return;
+ $("opsArchiveOnly").disabled=true;$("opsScoreImport").disabled=true;
+ try{await window.T998Archive.archivePair(db,Object.values(pair.byType));$("opsScoreMessage").textContent="原檔封存完成；既有成績未變更。";}
+ catch(e){$("opsScoreMessage").textContent="封存失敗："+e.message;}
+ finally{$("opsArchiveOnly").disabled=!opsScorePair();$("opsScoreImport").disabled=!opsScorePair();}
+};
 $("opsScoreImport").onclick=async()=>{
   const pair=opsScorePair();if(!pair){$("opsScoreMessage").textContent="請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";return;}
   $("opsScoreImport").disabled=true;$("opsScoreMessage").textContent="匯入資料中…";
-  const importedDate=pair.dates.at(-1);let completed=0;
+  const importedDate=pair.dates.at(-1);let completed=0;let archives=[];$("opsArchiveOnly").disabled=true;
   try{
+    archives=await window.T998Archive.archivePair(db,Object.values(pair.byType));
     for(const date of pair.dates){
       const results=await Promise.all(Object.values(pair.byType).map(item=>db.rpc("t998_import_score_batch",{p_report_date:date,p_report_type:item.type,p_source_file:item.file.name,p_rows:item.rows.filter(row=>row.record_date===date)})));
       const failed=results.find(r=>r.error);if(failed)throw new Error("已完成 "+completed+"／"+pair.dates.length+" 天；日期 "+date+"："+failed.error.message);
       completed++;$("opsScoreMessage").textContent="匯入中… "+completed+"／"+pair.dates.length+" 天";
     }
+    await window.T998Archive.mark(db,archives,"imported","");
     $("opsScoreMessage").textContent="完成匯入 "+pair.dates.length+" 天（兩種報表已分別按日整理）。";
     opsPreparedScoreFiles=[];opsScoreFileInput.value="";opsRenderPreparedScoreFiles();
     window.OpsDateControl?.set(importedDate||opsToday(),"day",false);
     await opsLoadDailyAnalytics();
-  }catch(e){$("opsScoreMessage").textContent="匯入中止："+(e.message||"請檢查資料庫 migration 與登入狀態");}
-  finally{$("opsScoreImport").disabled=!opsScorePair();}
+  }catch(e){await window.T998Archive.mark(db,archives,"partial",e.message).catch(()=>{});$("opsScoreMessage").textContent="匯入中止："+(e.message||"請檢查資料庫 migration 與登入狀態");}
+  finally{$("opsScoreImport").disabled=!opsScorePair();$("opsArchiveOnly").disabled=!opsScorePair();}
 };
 
 </script>
+<script src="source-archive.js?v=source-archive-20261101"></script>
 <script src="operations-metrics.js?v=998-preview1"></script>
 <script src="operations-summary.js?v=998-preview1"></script>
 <script src="operations-report.js?rev=preflight-20261101"></script>
