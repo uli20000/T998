@@ -7,17 +7,17 @@
   const periodLabel=()=>{const r=periodRange(),p=dateControl.period;return p==='day'?r.start:p==='week'?S.weekLabel(r.start)+'　'+r.start+' ～ '+r.end:r.start.slice(0,7);};
   const shiftDate=(date,days)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
   const shiftMonth=(date,months)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+months);return d.toISOString().slice(0,10);};
-  const dateText=date=>{const d=new Date(date+'T12:00:00Z'),weekday=['日','一','二','三','四','五','六'][d.getUTCDay()];return date.slice(5).replace('-','/')+'（'+weekday+'）';};
+  const dateText=date=>{const d=new Date(date+'T12:00:00Z'),weekday=['日','一','二','三','四','五','六'][d.getUTCDay()];return '週'+weekday;};
   const monthText=date=>new Intl.DateTimeFormat('zh-TW',{timeZone:'UTC',year:'numeric',month:'long'}).format(new Date(date+'T12:00:00Z'));
   function renderPeriodChoices(){
     const box=E('opsGlobalPeriodChoices'),period=dateControl.period;
     box.hidden=!state.choicesOpen;
     if(!state.choicesOpen){box.innerHTML='';return;}
     if(period==='day'){
-      box.innerHTML='<div class="ops-choice-list" role="group" aria-label="選擇日期">'+Array.from({length:7},(_,i)=>{const date=shiftDate(dateControl.date,i-3);return '<button type="button" class="ops-choice-button '+(date===dateControl.date?'active':'')+'" data-choice-date="'+date+'" aria-pressed="'+(date===dateControl.date)+'"><span>'+dateText(date)+'</span><strong>'+date.slice(5).replace('-','/')+'</strong></button>';}).join('')+'</div>';
+      box.innerHTML='<div class="ops-choice-list" role="group" aria-label="選擇日期">'+Array.from({length:7},(_,i)=>{const date=shiftDate(dateControl.date,i-3);return '<button type="button" class="ops-choice-button '+(date===dateControl.date?'active':'')+'" data-choice-date="'+date+'" aria-label="'+date+' '+dateText(date)+'" aria-pressed="'+(date===dateControl.date)+'"><span>'+dateText(date)+'</span><strong>'+date.slice(5).replace('-','/')+'</strong></button>';}).join('')+'</div>';
     }else if(period==='week'){
       const start=S.range(dateControl.date,'week').start;
-      box.innerHTML='<div class="ops-choice-list" role="group" aria-label="選擇週次">'+Array.from({length:5},(_,i)=>{const weekStart=shiftDate(start,(i-2)*7),range=S.range(weekStart,'week');return '<button type="button" class="ops-choice-button '+(range.start===S.range(dateControl.date,'week').start?'active':'')+'" data-choice-date="'+weekStart+'" aria-pressed="'+(range.start===S.range(dateControl.date,'week').start)+'"><strong>'+S.weekLabel(weekStart)+'</strong><span>'+range.start.slice(5).replace('-','/')+'–'+range.end.slice(5).replace('-','/')+'</span></button>';}).join('')+'</div>';
+      box.innerHTML='<div class="ops-choice-list" role="group" aria-label="選擇週次">'+Array.from({length:5},(_,i)=>{const weekStart=shiftDate(start,(i-2)*7),range=S.range(weekStart,'week');return '<button type="button" class="ops-choice-button '+(range.start===S.range(dateControl.date,'week').start?'active':'')+'" data-choice-date="'+weekStart+'" aria-pressed="'+(range.start===S.range(dateControl.date,'week').start)+'"><strong>'+S.weekLabel(weekStart)+'</strong><span>'+range.start.slice(5).replace('-','/')+'<wbr>–'+range.end.slice(5).replace('-','/')+'</span></button>';}).join('')+'</div>';
     }else{
       const prev=shiftMonth(dateControl.date,-1),current=shiftMonth(dateControl.date,0),next=shiftMonth(dateControl.date,1);
       box.innerHTML='<div class="ops-month-choices" role="group" aria-label="選擇月份"><button type="button" class="ops-choice-button" data-choice-date="'+prev+'"><span>‹</span><strong>'+monthText(prev)+'</strong></button><button type="button" class="ops-choice-button active" data-choice-date="'+current+'" aria-pressed="true"><strong>'+monthText(current)+'</strong></button><button type="button" class="ops-choice-button" data-choice-date="'+next+'"><strong>'+monthText(next)+'</strong><span>›</span></button></div>';

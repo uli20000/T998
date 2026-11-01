@@ -14,7 +14,7 @@
   const addMonths=(d,n)=>{const x=new Date(monthStart(d)+'T12:00:00Z');x.setUTCMonth(x.getUTCMonth()+n);return x.toISOString().slice(0,10);};
   const selected=()=>state.period==='month'?state.month+'-01':state.date;
   const shiftDate=(d,n)=>M.addDays(d,n);
-  const dateLabel=d=>{const weekday=['日','一','二','三','四','五','六'][new Date(d+'T12:00:00Z').getUTCDay()];return d.slice(5).replace('-','/')+'（'+weekday+'）';};
+  const dateLabel=d=>{const weekday=['日','一','二','三','四','五','六'][new Date(d+'T12:00:00Z').getUTCDay()];return '週'+weekday;};
   const monthLabel=d=>new Intl.DateTimeFormat('zh-TW',{timeZone:'UTC',year:'numeric',month:'long'}).format(new Date(d+'T12:00:00Z'));
   const shiftMonth=(d,n)=>addMonths(d,n);
   const fullWeek=d=>{const monday=M.addDays(d,-((new Date(d+'T12:00:00Z').getUTCDay()+6)%7));return {start:monday,end:M.addDays(monday,6)};};
@@ -207,10 +207,10 @@
     const box=$('periodChoices');box.dataset.period=state.period;$('periodDate').value=state.date;
     document.querySelectorAll('[data-period]').forEach(b=>{b.classList.toggle('active',b.dataset.period===state.period);b.setAttribute('aria-pressed',String(b.dataset.period===state.period));});
     if(state.period==='day'){
-      box.innerHTML=Array.from({length:7},(_,i)=>{const d=shiftDate(state.date,i-3);return '<button type="button" class="'+(d===state.date?'active':'')+'" data-choice="'+d+'" aria-pressed="'+(d===state.date)+'"><span>'+dateLabel(d)+'</span><strong>'+d.slice(5).replace('-','/')+'</strong></button>';}).join('');
+      box.innerHTML=Array.from({length:7},(_,i)=>{const d=shiftDate(state.date,i-3);return '<button type="button" class="'+(d===state.date?'active':'')+'" data-choice="'+d+'" aria-label="'+d+' '+dateLabel(d)+'" aria-pressed="'+(d===state.date)+'"><span>'+dateLabel(d)+'</span><strong>'+d.slice(5).replace('-','/')+'</strong></button>';}).join('');
     }else if(state.period==='week'){
       const active=fullWeek(state.date);
-      box.innerHTML=Array.from({length:5},(_,i)=>{const start=shiftDate(active.start,(i-2)*7),r=fullWeek(start),selected=r.start===active.start;return '<button type="button" class="'+(selected?'active':'')+'" data-choice="'+r.start+'" aria-pressed="'+selected+'"><strong>'+S.weekLabel(r.start)+'</strong><span>'+r.start.slice(5).replace('-','/')+'–'+r.end.slice(5).replace('-','/')+'</span></button>';}).join('');
+      box.innerHTML=Array.from({length:5},(_,i)=>{const start=shiftDate(active.start,(i-2)*7),r=fullWeek(start),selected=r.start===active.start;return '<button type="button" class="'+(selected?'active':'')+'" data-choice="'+r.start+'" aria-pressed="'+selected+'"><strong>'+S.weekLabel(r.start)+'</strong><span>'+r.start.slice(5).replace('-','/')+'<wbr>–'+r.end.slice(5).replace('-','/')+'</span></button>';}).join('');
     }else{
       const prev=shiftMonth(state.date,-1),current=shiftMonth(state.date,0),next=shiftMonth(state.date,1);
       box.innerHTML=[prev,current,next].map((d,i)=>'<button type="button" class="'+(i===1?'active':'')+'" data-choice="'+d+'" aria-pressed="'+(i===1)+'"><strong>'+monthLabel(d)+'</strong></button>').join('');

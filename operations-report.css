@@ -86,6 +86,8 @@
  .ops-choice-button{min-height:52px;padding:5px 2px}
  .ops-choice-button span{font-size:11px}
  .ops-choice-button strong{font-size:13px}
+ .ops-choice-list[aria-label="選擇週次"] .ops-choice-button{min-height:68px}
+ .ops-choice-list[aria-label="選擇週次"] .ops-choice-button span{max-width:100%;white-space:normal;line-height:1.35}
  .ops-month-choices{gap:5px}
 }
 .ops-record-search{grid-template-columns:minmax(0,1fr);max-width:960px;margin:12px auto}
