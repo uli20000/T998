@@ -313,3 +313,10 @@
 .ops-compact-actions .ops-link-result[hidden]{display:none!important}
 .ops-export-link-row .ops-export-bottom #opsExportSelected{width:100%!important;max-width:none!important;min-width:0!important}
 .ops-export-link-row>.ops-export-bottom{display:block!important;grid-template-columns:none!important;padding:0!important}
+
+/* Equal export/month/link cells; scoped to the summary action row. */
+#opsSummaryPanel .ops-export-link-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
+#opsSummaryPanel .ops-export-link-row>.ops-export-bottom{display:block;margin:0;padding:0;min-width:0;grid-template-columns:none}
+#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;height:46px;min-height:46px;max-height:46px;margin:0;padding:8px;border-radius:10px;text-align:center}
+@media(max-width:600px){#opsSummaryPanel .ops-export-link-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:12px!important;padding:6px 3px}#opsSummaryPanel .ops-export-link-row #opsLinkMonth{padding:6px 0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-datetime-edit{padding:0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{margin:0;padding:0;width:12px}}
+@media(max-width:360px){#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:11px!important}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{width:10px}}
