@@ -3,6 +3,8 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<meta name="darkreader-lock">
+<script src="display-mode.js?v=998-preview-20261102"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f4f0e8">
 <title>KFC｜台南-T998 巡檢後台</title>
@@ -2556,8 +2558,9 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 .ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
 @media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
 </style>
-<link rel="stylesheet" href="operations-report.css?v=source-archive-20261101">
+<link rel="stylesheet" href="operations-report.css?v=three-preview-20261102d">
 <style>body,button,input,select,textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans-serif}button,[role="button"],a{font-weight:800!important}.title{font-weight:900!important}.kfc{font-weight:900!important}.admin-mode-btn,.home-menu-btn{font-weight:800!important}</style>
+<link rel="stylesheet" href="display-mode.css?v=998-preview-20261102b">
 </head>
 
 <body>
@@ -2618,7 +2621,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
     <div id="opsGlobalDateToolbar" class="ops-entry-date-toolbar ops-global-date-toolbar">
       <div class="ops-date-nav"><button id="opsGlobalPrev" type="button" aria-label="前一個日期區間">‹</button><input id="opsGlobalDate" type="date" aria-label="營運統計日期"><button id="opsGlobalNext" type="button" aria-label="後一個日期區間">›</button></div>
       <div id="opsGlobalPeriodTabs" class="ops-mini-tabs"><button type="button" data-period="day" class="active">日</button><button type="button" data-period="week">週</button><button type="button" data-period="month">月</button></div>
-      <div class="ops-date-actions"><button id="opsGlobalRefresh" type="button" class="action-btn">重新整理</button><a class="action-btn" href="analysis.html" aria-label="開啟營運分析儀表板">儀表板</a></div>
+      <div class="ops-date-actions"><button id="opsGlobalRefresh" type="button" class="action-btn">重新整理</button><a class="action-btn" href="analysis.html" aria-label="開啟營運分析儀表板">儀表板</a><button type="button" class="action-btn" data-display-mode-toggle aria-pressed="false">☀️</button></div>
     </div>
     <div id="opsGlobalPeriodChoices" class="ops-period-choices" hidden aria-live="polite"></div>
     <div class="ops-tabs">
@@ -2668,13 +2671,21 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
       <div id="opsSummaryWarnings" class="ops-report-warnings" hidden></div>
       <div id="opsSummaryMetrics"></div>
       <div class="ops-ranking-grid">
-        <section class="ops-report-card"><h3>等餐列</h3><h4>AC（等餐最多）</h4><div id="opsDelayAcSummary"></div><h4>前三多餐廳</h4><div id="opsDelayRank"></div></section>
-        <section class="ops-report-card"><h3>劃線簽名列</h3><h4>AC（達標率最低）</h4><div id="opsLineAcSummary"></div><h4>前三低餐廳</h4><div id="opsLineRank"></div></section>
+        <section class="ops-report-card"><h3>等餐</h3><h4>AC 排名</h4><div id="opsDelayAcSummary"></div><h4>待改善餐廳</h4><div id="opsDelayRank"></div></section>
+        <section class="ops-report-card"><h3>劃線簽名</h3><h4>AC 排名</h4><div id="opsLineAcSummary"></div><h4>待改善餐廳</h4><div id="opsLineRank"></div></section>
       </div>
       <section class="ops-report-card"><h3>餐廳所在地天氣</h3><div id="opsSummaryWeather" aria-live="polite"></div></section>
       <div id="opsSummaryStatus" class="ops-report-status" role="status"></div>
-      <div class="ops-export-bottom"><button id="opsExportDay" type="button" class="action-btn primary">每日匯出</button><button id="opsExportWeek" type="button" class="action-btn">每週匯出</button><button id="opsExportMonth" type="button" class="action-btn">每月匯出</button><button id="opsLinkCreate" type="button" class="action-btn">產生等餐連結</button></div>
-      <div id="opsLinksPanel" class="ops-shared-link"><div id="opsLinkMessage" class="ops-message" role="status"></div><div id="opsLinkResult" class="ops-link-result" hidden><input id="opsLinkUrl" type="text" readonly><button id="opsLinkCopy" type="button" class="action-btn">複製連結</button></div></div>
+      <div id="opsLinksPanel" class="ops-shared-link ops-compact-actions">
+        <div class="ops-export-link-row">
+          <div class="ops-export-bottom"><button id="opsExportSelected" type="button" class="action-btn primary" title="匯出上方日期控制所選期間">匯出報表</button></div>
+          <input id="opsLinkMonth" type="month" aria-label="等餐回覆連結月份" aria-describedby="opsLinkMonthPreview" title="等餐回覆連結月份">
+          <button id="opsLinkCreate" type="button" class="action-btn" title="產生所選月份的等餐回覆連結">產生月份連結</button>
+        </div>
+        <span id="opsLinkMonthPreview" class="ops-sr-only" aria-live="polite"></span>
+        <div id="opsLinkMessage" class="ops-message" role="status"></div>
+        <div id="opsLinkResult" class="ops-link-result" hidden><strong id="opsLinkMonthLabel"></strong><input id="opsLinkUrl" type="text" readonly><button id="opsLinkCopy" type="button" class="action-btn">複製連結</button></div>
+      </div>
     </div>
   </section>
 </section>
@@ -7464,7 +7475,7 @@ $("opsScoreImport").onclick=async()=>{
 <script src="source-archive.js?v=source-archive-20261101"></script>
 <script src="operations-metrics.js?v=998-preview1"></script>
 <script src="operations-summary.js?v=998-preview1"></script>
-<script src="operations-report.js?rev=preflight-20261101"></script>
-<script src="operations-entry.js?rev=mobile-dates-preview-20261101"></script>
+<script src="operations-report.js?rev=three-preview-20261102"></script>
+<script src="operations-entry.js?rev=three-preview-20261102"></script>
 </body>
 </html>

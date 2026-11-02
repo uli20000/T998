@@ -97,8 +97,30 @@
   E('opsGlobalRefresh').onclick=()=>refreshActive(true);
   E('opsDelaySearch').oninput=renderDelay;E('opsLineSearch').oninput=renderLine;
   E('opsLineStats').onclick=e=>{const b=e.target.closest('[data-line-filter]');if(!b)return;state.lineFilter=state.lineFilter===b.dataset.lineFilter?'all':b.dataset.lineFilter;renderLine();};
-  E('opsLinkCreate').onclick=async()=>{const msg=E('opsLinkMessage');E('opsLinkCreate').disabled=true;try{const r=await db.rpc('t998_issue_shared_reply_link');if(r.error)throw r.error;const url=new URL('reply.html',location.href);url.searchParams.set('token',r.data);E('opsLinkUrl').value=url.href;E('opsLinkResult').hidden=false;msg.textContent='共用連結已產生';}catch(e){msg.textContent='產生失敗：'+e.message;}finally{E('opsLinkCreate').disabled=false;}};
-  E('opsLinkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(E('opsLinkUrl').value);E('opsLinkMessage').textContent='已複製連結';}catch{E('opsLinkUrl').select();document.execCommand('copy');E('opsLinkMessage').textContent='已複製連結';}};
+  const linkMonth=E('opsLinkMonth');
+  const monthLabel=value=>value.slice(0,4)+'年'+value.slice(5)+'月';
+  linkMonth.value=opsToday().slice(0,7);
+  function clearMonthLink(){
+    E('opsLinkResult').hidden=true;E('opsLinkUrl').value='';E('opsLinkMonthLabel').textContent='';
+    E('opsLinkMonthPreview').textContent=/^\d{4}-(0[1-9]|1[0-2])$/.test(linkMonth.value)?'將建立 '+monthLabel(linkMonth.value)+' 的固定月份連結':'請選擇回覆月份';
+  }
+  linkMonth.onchange=()=>{clearMonthLink();E('opsLinkMessage').textContent='';};
+  clearMonthLink();
+  E('opsLinkCreate').onclick=async()=>{
+    const msg=E('opsLinkMessage'),month=linkMonth.value,button=E('opsLinkCreate');
+    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)){msg.textContent='請選擇有效的回覆月份';return;}
+    if(!confirm('建立 '+monthLabel(month)+' 的固定月份連結？同月重新產生會撤銷該月前一個新制連結；其他月份及既有舊連結不受影響。'))return;
+    button.disabled=true;linkMonth.disabled=true;clearMonthLink();msg.textContent='正在建立 '+monthLabel(month)+' 連結…';
+    try{
+      const r=await db.rpc('t998_issue_month_reply_link',{p_month:month+'-01'});if(r.error)throw r.error;
+      if(r.data?.month!==month||!/^[0-9a-f]{64}$/.test(r.data?.token||''))throw new Error('月份連結回應不完整，請重新確認');
+      const url=new URL('reply.html',location.href);url.searchParams.set('kind','month');url.searchParams.set('token',r.data.token);
+      E('opsLinkUrl').value=url.href;E('opsLinkMonthLabel').textContent='固定回覆月份：'+monthLabel(month);E('opsLinkResult').hidden=false;
+      msg.textContent=monthLabel(month)+' 連結已建立，沒有固定到期日；跨月仍只顯示此月份。';
+    }catch(e){msg.textContent='產生失敗：'+(e.message||'請檢查管理員權限及月份連結功能是否已部署');}
+    finally{button.disabled=false;linkMonth.disabled=false;}
+  };
+  E('opsLinkCopy').onclick=async()=>{if(!E('opsLinkUrl').value||E('opsLinkResult').hidden)return;try{await navigator.clipboard.writeText(E('opsLinkUrl').value);E('opsLinkMessage').textContent='已複製'+E('opsLinkMonthLabel').textContent+'的連結';}catch{E('opsLinkUrl').select();document.execCommand('copy');E('opsLinkMessage').textContent='已複製'+E('opsLinkMonthLabel').textContent+'的連結';}};
   function openTab(name){
     state.active=name;document.querySelectorAll('.ops-tab').forEach(b=>b.classList.toggle('active',b.dataset.opsTab===name));
     for(const [tab,id] of Object.entries({delay:'opsDelayPanel',line:'opsLinePanel',scores:'opsScoresPanel',summary:'opsSummaryPanel'}))E(id).hidden=tab!==name;

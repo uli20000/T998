@@ -2,6 +2,8 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
+<meta name="darkreader-lock">
+<script src="display-mode.js?v=998-preview-20261102"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f4f0e8">
 <title>T998｜營運分析儀表板</title>
@@ -51,6 +53,7 @@ body{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans
 @media(max-width:600px){.dashboard-date-toolbar{gap:8px}.dashboard-date-toolbar .period-nav{grid-template-columns:40px minmax(0,1fr) 40px;width:100%}.dashboard-date-toolbar .period-nav input{width:100%;min-width:0}.dashboard-date-toolbar .periods{width:min(100%,280px);justify-content:center}.dashboard-date-toolbar .periods button{flex:1}.dashboard-date-toolbar .date-actions{width:100%;gap:6px}.dashboard-date-toolbar .date-actions button{min-width:0;flex:1}.period-choices{gap:4px}.period-choices button{min-height:52px;padding:5px 2px}.period-choices button span{font-size:11px}.period-choices button strong{font-size:13px}.period-choices[data-period="week"] button{min-height:68px}.period-choices[data-period="week"] button span{max-width:100%;white-space:normal;line-height:1.35}}
 </style>
 <style>#sstgWeatherPanel td:nth-child(2){white-space:pre-line;line-height:1.8;min-width:220px;text-align:center}</style>
+<link rel="stylesheet" href="display-mode.css?v=998-preview-20261102b">
 </head>
 <body>
 <header><div class="topline"><div class="brand">KFC DELIVERY CENTER｜T998</div><a class="back" href="admin.html">返回後台</a></div><h1>營運分析儀表板</h1><div class="subtitle">成績追蹤與因素分析</div></header>
@@ -60,7 +63,7 @@ body{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",Arial,sans
   <div class="period-toolbar dashboard-date-toolbar">
     <div class="period-nav" aria-label="統計日期"><button id="periodPrev" type="button" aria-label="前一個日期區間">‹</button><input id="periodDate" type="date" aria-label="統計日期"><button id="periodNext" type="button" aria-label="後一個日期區間">›</button></div>
     <div class="periods" role="group" aria-label="報表週期"><button type="button" data-period="day" class="active" aria-pressed="true">日</button><button type="button" data-period="week" aria-pressed="false">週</button><button type="button" data-period="month" aria-pressed="false">月</button></div>
-    <div class="date-actions"><button id="refresh" class="secondary" type="button">重新整理</button><button id="export" class="primary" type="button">匯出 Excel</button></div>
+    <div class="date-actions"><button id="refresh" class="secondary" type="button">重新整理</button><button id="export" class="primary" type="button">匯出 Excel</button><button type="button" class="secondary" data-display-mode-toggle aria-pressed="false">☀️</button></div>
   </div>
   <div id="periodPicker" class="period-picker hidden" aria-live="polite"><div id="periodChoices" class="period-choices"></div></div>
   <div id="status" class="period-status" role="status"></div>

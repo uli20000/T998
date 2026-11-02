@@ -1,0 +1,22 @@
+/* Explicit site modes avoid relying on an extension to resume after unlocking. */
+html[data-display-mode="light"],html[data-display-mode="light"] *{color-scheme:only light!important}
+html[data-display-mode="dark"],html[data-display-mode="dark"] *{color-scheme:dark!important}
+html[data-display-mode="dark"]{--red:#f06079;--black:#f1f1f1;--ink:#f1f1f1;--gray:#b8b4ad;--muted:#b8b4ad;--linen:#17191d;--bg:#17191d;--paper:#22262b;--line:#4b5058;--green:#8dd6a8;--green-bg:#21382b;--danger:#ffaaa3;--danger-bg:#402624;--yellow:#edce80;--yellow-bg:#3b3423}
+html[data-display-mode="dark"] body{background:#17191d;color:#f1f1f1}
+html[data-display-mode="dark"] :is(header,.toolbar,.periods,.week-tabs,.metric-tabs button,.back,.score-board,.analysis-panel,.metric-card,.summary-card,.admin-mode-btn,.action-btn,.ops-entry-date-toolbar,.ops-mini-tabs,.ops-tab,.ops-toggle,.ops-upload-block,.ops-history-fold,.ops-month-fold,.ops-ac-summary-card,.ops-ac-summary-row,.ops-rank-row,.ops-report-card,.ops-store-choices button,.ops-week-tab,.ops-score-heading button,.ops-global-date-toolbar button,.ops-global-date-toolbar a,input,select,textarea,output,table){background:#22262b;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(th,thead,tfoot,.ops-help,.ops-labor-grid output,.ops-month-hours th:first-child,.period-picker,.notice,.weather-cell){background:#2c3138;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(.ops-ac-summary-row,.ops-rank-row,.ops-report-warnings){background:#2c3138;color:#f1f1f1}
+html[data-display-mode="dark"] :is(button.active,.ops-tab.active,.ops-toggle.selected,.ops-week-tab.active,.primary){background:#b51b35!important;color:#fff!important;border-color:#b51b35!important}
+html[data-display-mode="dark"] :is(input,select,textarea)::placeholder{color:#b8b4ad}
+[data-display-mode-toggle]{font-size:22px!important;line-height:1!important;min-width:44px!important;width:44px;min-height:44px;padding:7px!important;flex:0 0 44px}
+[data-display-mode-toggle]:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+.ops-date-actions,.date-actions{margin-inline-start:auto}
+html[data-display-mode="dark"] :is(#opsScoresPanel,#opsSummaryPanel){--ops-ink:#f1f1f1;--ops-paper:#22262b;--ops-tint:#2c3138;color:#f1f1f1}
+html[data-display-mode="dark"] :is(.ops-file-card,.ops-file-card.ready,.ops-kpi-card,.ops-line-stat,.ops-incomplete-fold,.ops-records-table tr,.ops-area-table tr,.ops-score-heading,.ops-area-hour){background:#22262b!important;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(.ops-kpi-card strong,.ops-summary-priority-rank,.ops-summary-priority-list b,.ops-ac-summary-grid b){color:#ff91a5!important}
+html[data-display-mode="dark"] :is(.ops-area-table tfoot th,.ops-area-table tfoot td,.ops-area-table tbody tr:nth-child(even)){background:#2c3138;color:#f1f1f1}
+/* T998 surfaces and responsive action sizes. */
+html[data-display-mode="dark"] :is(#adminSessionBar,.panel,.kpi,.coverage,.coverage.good,.coverage.error,.dashboard-date-toolbar,.period-toolbar,.period-nav>button,.period-choices button,.datebox,.weather-card,.area-tag,.ops-export-link-row,.ops-links-panel){background:#22262b;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(.table th,.table tfoot td,.table tfoot th,.ops-weather-card){background:#2c3138;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] .period-choices button.active{background:#b51b35;color:#fff}
+.date-actions [data-display-mode-toggle],.ops-date-actions [data-display-mode-toggle]{max-width:44px!important;flex:0 0 44px!important}

@@ -14,6 +14,9 @@
 const SUPABASE_URL="https://flismbitnsaffebsepos.supabase.co";
 const SUPABASE_KEY="sb_publishable_HjkU0Bonn1HyfxG19sAx-A_3tAcz8_W";
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const monthLink=new URLSearchParams(location.search).get("kind")==="month";
+const listRpc=monthLink?"t998_public_list_month_delay_orders":"t998_public_list_shared_delay_orders";
+const submitRpc=monthLink?"t998_public_submit_month_delay_reasons":"t998_public_submit_shared_delay_reasons";
 const token=new URLSearchParams(location.search).get("token")||"";
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -31,7 +34,7 @@ function renderOrders(){
 async function load(){
  $("replyForm").hidden=true;$("orders").replaceChildren();
  if(!token){$("message").textContent="連結缺少識別碼，請向值班人員索取共用回覆連結。";return;}
- try{const r=await db.rpc("t998_public_list_shared_delay_orders",{p_token:token});if(r.error)throw r.error;const d=r.data||{};current=d.orders||[];currentMonth=d.month||"";$("restaurant").textContent="待回覆月份："+(currentMonth||"—")+"｜共 "+current.length+" 筆訂單";
+ try{const r=await db.rpc(listRpc,{p_token:token});if(r.error)throw r.error;const d=r.data||{};current=d.orders||[];currentMonth=d.month||"";$("restaurant").textContent="待回覆月份："+(currentMonth||"—")+"｜共 "+current.length+" 筆訂單";
  if(!current.length){$("message").innerHTML='<span class="success">目前沒有待回覆訂單。</span>';return;}
  $("message").textContent="請逐筆填寫原因，並按該筆訂單下方的送出按鈕；完成的訂單會從清單移除。";
  renderOrders();$("replyForm").hidden=false;
@@ -43,7 +46,7 @@ $("orders").onclick=async event=>{
  const row=button.closest(".order"),reason=row.querySelector(".reason").value.trim();
  if(!reason){$("message").textContent="請先填寫這筆訂單的等餐原因。";row.querySelector(".reason").focus();return;}
  const id=row.dataset.id,orderNumber=row.querySelector(".order-no").textContent;button.disabled=true;button.textContent="送出中…";
- try{const r=await db.rpc("t998_public_submit_shared_delay_reasons",{p_token:token,p_updates:[{id,reason}]});if(r.error)throw r.error;await load();if(current.length)$("message").innerHTML='<span class="success">訂單 '+esc(orderNumber)+' 已送出；其他待回覆訂單仍保留。</span>';}
+ try{const r=await db.rpc(submitRpc,{p_token:token,p_updates:[{id,reason}]});if(r.error)throw r.error;await load();if(current.length)$("message").innerHTML='<span class="success">訂單 '+esc(orderNumber)+' 已送出；其他待回覆訂單仍保留。</span>';}
  catch(e){$("message").textContent="送出失敗："+(e.message||"請重新整理後再試");if(button.isConnected){button.disabled=false;button.textContent="送出這筆原因";}}
 };
 load();
