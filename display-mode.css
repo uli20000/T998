@@ -22,3 +22,8 @@ html[data-display-mode="dark"] .period-choices button.active{background:#b51b35;
 .date-actions [data-display-mode-toggle],.ops-date-actions [data-display-mode-toggle]{max-width:44px!important;flex:0 0 44px!important}
 html[data-display-mode="dark"] :is(.date-actions button,.ops-date-actions button){background:#22262b;color:#f1f1f1;border-color:#4b5058}
 html[data-display-mode="dark"] .date-actions .primary{background:#b51b35;color:#fff;border-color:#b51b35}
+
+html[data-display-mode="dark"] .score-tile{background:#22262b;border-color:#596571}
+html[data-display-mode="dark"] :is(.panel,.period-toolbar,.secondary,#adminSessionBar){background:#22262b;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(.score-tile h4,#opsSummaryPanel .ops-kpi-card h4){color:#80d2ef!important}
+html[data-display-mode="dark"] :is(.score-tile strong,#opsSummaryPanel .ops-summary-counts b){color:#ff91a5!important}

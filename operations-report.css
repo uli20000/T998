@@ -320,3 +320,134 @@
 #opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;height:46px;min-height:46px;max-height:46px;margin:0;padding:8px;border-radius:10px;text-align:center}
 @media(max-width:600px){#opsSummaryPanel .ops-export-link-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:12px!important;padding:6px 3px}#opsSummaryPanel .ops-export-link-row #opsLinkMonth{padding:6px 0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-datetime-edit{padding:0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{margin:0;padding:0;width:12px}}
 @media(max-width:360px){#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:11px!important}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{width:10px}}
+
+
+/* 998 confirmed cards and symmetric summary layout */
+#opsSummaryPanel .ops-kpi-cards{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:8px}
+#opsSummaryPanel .ops-kpi-card{min-height:76px;padding:7px 5px;gap:5px;border:2px solid #dfc2c7;border-radius:10px;background:var(--ops-panel,#fff)}
+#opsSummaryPanel .ops-kpi-card h4{font-size:17px;color:#087ca5;margin:0;line-height:1.3}
+#opsSummaryPanel .ops-kpi-card strong{font-size:29px;font-weight:900;color:#b81930;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+#opsSummaryPanel .ops-summary-period{text-align:center;font-size:18px;margin:5px 0 10px}
+#opsSummaryPanel .ops-report-card{padding:9px 12px;border-radius:10px}
+#opsSummaryPanel .ops-report-card h3{font-size:20px;text-align:center;margin:0 0 8px}
+#opsSummaryPanel .ops-report-card h4{text-align:center;font-size:17px;margin:8px 0}
+#opsSummaryPanel .ops-ranking-grid{gap:12px;margin-top:10px}
+#opsSummaryPanel .ops-summary-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-bottom:8px}
+#opsSummaryPanel .ops-summary-counts>div{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:57px;padding:5px 2px;border:1px solid var(--line);border-radius:8px;min-width:0}
+#opsSummaryPanel .ops-summary-counts span{font-size:14px;font-weight:700;overflow-wrap:anywhere}
+#opsSummaryPanel .ops-summary-counts b{font-size:24px;line-height:1.2;color:#b81930}
+#opsSummaryPanel .ops-summary-ac-table{width:100%;table-layout:fixed;border-collapse:collapse;text-align:center;font-size:16px}
+#opsSummaryPanel .ops-summary-ac-table th,#opsSummaryPanel .ops-summary-ac-table td{padding:4px;border-bottom:1px solid var(--line)}
+#opsSummaryPanel .ops-summary-ac-table th{background:var(--ops-tint,#f7f7f7)}
+#opsSummaryPanel .ops-summary-priority-list{display:grid;gap:5px;margin:0;padding:0;min-height:0}
+#opsSummaryPanel .ops-summary-priority-list li{min-height:42px;padding:5px 8px;grid-template-columns:24px minmax(0,1fr) auto}
+#opsSummaryPanel .ops-summary-priority-list strong{font-size:16px}
+#opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){font-size:13px;margin-top:1px}
+#opsSummaryPanel .ops-summary-priority-list b{font-size:20px}
+#opsSummaryPanel .ops-summary-priority-empty{min-height:136px;font-size:16px}
+#opsSummaryPanel #opsSummaryContext[hidden]{display:none}
+#opsSummaryPanel #opsSummaryContext{margin:8px 0}
+#opsSummaryPanel #opsSummaryContext .ops-context-list{font-size:17px;text-align:center}
+#opsSummaryPanel .ops-summary-weather{margin-top:8px}
+#opsSummaryPanel .ops-summary-weather summary{text-align:center;cursor:pointer;font-size:16px;font-weight:800}
+#opsSummaryPanel #opsLinksPanel{margin-top:8px;padding:10px}
+#opsSummaryPanel .ops-export-link-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#opsSummaryPanel .ops-export-bottom,#opsSummaryPanel .ops-month-link-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;min-width:0;padding:7px;border:1px solid var(--line);border-radius:9px}
+#opsSummaryPanel .ops-export-link-row h3{width:100%;font-size:17px;text-align:center;margin:0}
+#opsSummaryPanel .ops-export-bottom .action-btn{flex:none;width:auto}
+#opsSummaryPanel .ops-month-link-controls input{width:155px;min-width:0}
+#opsSummaryPanel .ops-export-link-row .action-btn,#opsSummaryPanel .ops-export-link-row input{min-height:34px;font-size:15px;padding:4px 9px}
+#opsSummaryPanel .ops-secondary{margin:6px 0}
+@media(max-width:700px){
+ #opsSummaryPanel .ops-kpi-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #opsSummaryPanel .ops-kpi-card{min-height:90px}
+ #opsSummaryPanel .ops-kpi-card strong{font-size:28px}
+ #opsSummaryPanel .ops-ranking-grid{grid-template-columns:1fr}
+ #opsSummaryPanel .ops-export-link-row{grid-template-columns:1fr}
+ #opsSummaryPanel .ops-summary-counts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header{padding:8px 12px;margin-bottom:8px}
+body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .eyebrow,
+body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .kfc,
+body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .date{display:none}
+body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .title{font-size:24px;margin:0}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row{margin:5px 0}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row .action-btn{min-height:30px;padding:3px 10px;font-size:14px}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-section{padding:10px}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-section>.section-title{display:none}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar{padding:6px;margin:5px auto;gap:10px}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar button,
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar input,
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar .action-btn{min-height:34px;padding:4px 8px;font-size:16px}
+#opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-tab{min-height:34px;padding:4px 7px;font-size:16px}
+#opsSummaryPanel .ops-ranking-grid>.ops-report-card{display:flex;flex-direction:column}
+#opsSummaryPanel #opsDelayRank,#opsSummaryPanel #opsLineRank{margin-top:auto}
+@media(min-width:701px){
+ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .page{padding-top:5px}
+ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header{padding:3px 10px;margin:0 0 5px}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row{margin:3px 0}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row .action-btn{min-height:26px;padding:1px 8px}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-section{margin-top:5px;padding:7px}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar{padding:3px;margin:3px 0}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-global-date-toolbar .ops-mini-tabs{padding:2px}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .ops-tabs{margin:5px 0}
+ #opsSummaryPanel .ops-kpi-card{min-height:68px;padding:5px}
+ #opsSummaryPanel .ops-summary-period{margin:4px 0 6px}
+ #opsSummaryPanel .ops-report-card{padding:6px 8px}
+ #opsSummaryPanel .ops-report-card h3{font-size:18px;line-height:1.4;margin:0 0 4px}
+ #opsSummaryPanel .ops-report-card h4{font-size:16px;line-height:1.4;margin:5px 0}
+ #opsSummaryPanel .ops-summary-ac-table th,#opsSummaryPanel .ops-summary-ac-table td{padding:2px;line-height:1.4}
+ #opsSummaryPanel .ops-summary-counts>div{min-height:47px;padding:3px}
+ #opsSummaryPanel .ops-summary-counts{margin-bottom:4px}
+ #opsSummaryPanel .ops-summary-counts b{font-size:22px}
+ #opsSummaryPanel .ops-summary-priority-list li{min-height:35px;padding:3px 6px;line-height:1.3}
+ #opsSummaryPanel .ops-summary-priority-list strong{font-size:15px;line-height:1.3}
+ #opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){font-size:12px;line-height:1.2}
+ #opsSummaryPanel .ops-summary-priority-empty{min-height:115px}
+ #opsSummaryPanel .ops-export-bottom,#opsSummaryPanel .ops-month-link-controls{padding:4px}
+ #opsSummaryPanel #opsLinksPanel{padding:5px}
+ #opsSummaryPanel #opsLinkMessage{font-size:12px;margin:3px 0;line-height:1.3}
+ #opsSummaryPanel .ops-summary-weather{padding:4px}
+}
+@media(min-width:701px){
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row{padding:0}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row .action-btn{height:28px!important;min-height:28px!important}
+ #opsSummaryPanel{padding:5px 0}
+ #opsSummaryPanel .ops-export-link-row{align-items:stretch}
+ #opsSummaryPanel .ops-export-bottom,#opsSummaryPanel .ops-month-link-controls{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:3px 6px}
+ #opsSummaryPanel .ops-export-link-row h3{grid-column:1;grid-row:1;font-size:16px}
+ #opsSummaryPanel .ops-export-bottom .action-btn,#opsSummaryPanel .ops-month-link-controls .action-btn{grid-column:2;grid-row:1/3;min-height:32px!important;height:auto!important}
+ #opsSummaryPanel .ops-month-link-controls input{grid-column:1;grid-row:2;justify-self:center;min-height:28px!important;padding:1px}
+ #opsSummaryPanel .ops-export-bottom{min-height:64px}
+ #opsSummaryPanel .ops-summary-priority-list{grid-auto-rows:1fr}
+ #opsSummaryPanel .ops-summary-priority-list li{min-height:32px}
+ #opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){display:none}
+ #opsSummaryPanel .ops-report-card h4{margin:4px 0}
+}
+@media(min-width:701px){
+ #opsSummaryPanel .ops-ranking-grid>.ops-report-card>h4{margin:3px 0;font-size:16px}
+ #opsSummaryPanel .ops-ranking-grid>.ops-report-card>h3{margin:0 0 4px}
+ #opsSummaryPanel .ops-summary-counts>div{min-height:43px}
+ #opsSummaryPanel .ops-secondary{margin:2px 0}
+ #opsSummaryPanel .ops-kpi-cards>.ops-kpi-card{min-height:66px}
+ #opsSummaryPanel .ops-kpi-cards>.ops-kpi-card h4{margin:0!important;font-size:16px;line-height:1.2}
+ #opsSummaryPanel .ops-kpi-cards>.ops-kpi-card strong{font-size:28px}
+}
+@media(min-width:701px){
+ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) #adminSessionBar{padding:2px 8px;min-height:28px;font-size:12px}
+ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) #adminSessionBar button{padding:2px 8px;min-height:24px;font-size:12px}
+ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .page{padding:0}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) #opsBackBtn{min-height:28px!important;height:28px!important;padding:2px 8px!important}
+ #opsModePage:has(#opsSummaryPanel:not([hidden])) .mode-back-row{padding:0!important;margin:2px 0!important}
+ #opsSummaryPanel .ops-summary-ac-table th,#opsSummaryPanel .ops-summary-ac-table td{line-height:1.25;padding:1px 3px}
+ #opsSummaryPanel .ops-ranking-grid>.ops-report-card>h4{margin:2px 0}
+ #opsSummaryPanel .ops-summary-priority-list li{min-height:30px}
+ #opsSummaryPanel #opsLinksPanel .ops-export-bottom,#opsSummaryPanel #opsLinksPanel .ops-month-link-controls{min-height:56px}
+}
+#opsSummaryPanel #opsDelayRank,#opsSummaryPanel #opsLineRank{margin-top:0;min-height:112px}
+#opsSummaryPanel .ops-summary-priority-list{list-style:none;padding:0;margin:0;display:grid;gap:5px}
+#opsSummaryPanel .ops-summary-priority-list li{display:grid;grid-template-columns:24px minmax(0,1fr) 72px;align-items:center;gap:6px;min-height:32px;padding:3px 7px;border:1px solid var(--line);border-radius:8px;background:var(--ops-tint);text-align:center}
+#opsSummaryPanel .ops-summary-priority-list strong{display:block;overflow-wrap:anywhere}
+#opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){display:block;font-size:12px}
+#opsSummaryPanel :is(.ops-summary-priority-rank,.ops-summary-priority-list b){font-weight:900;color:#b81930}
+#opsSummaryPanel .ops-summary-ties summary{text-align:center;cursor:pointer;font-size:13px;min-height:25px}

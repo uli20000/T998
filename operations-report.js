@@ -44,9 +44,11 @@
   ];}
   function formattedMetric(key,value,unit){return unit==='%'?pct(value):unit==='秒'?time(value):fmt(value,['hrs','分',''].includes(unit)?2:0);}
   function renderMetrics(v){
-    const hasScores=[...v.days.values()].some(d=>d.types.has('ByOrder')),actual=new Set(['實際總單數','SSTG%','TC預估達成率','TPLH（扣FA）','第三方佔比','D7達成率','D25達成率','FA單數','SSTG%（扣FA）','QT','平均留店時間','平均送達時間']);
-    const cards=metricsRows(v.summary).map(([k,value,unit])=>'<article class="ops-kpi-card"><h4>'+k+'</h4><strong>'+(!hasScores&&actual.has(k)?'—':formattedMetric(k,value,unit))+'</strong>'+(['單','hrs','分'].includes(unit)?'<span>'+unit+'</span>':'')+'</article>');
-    E('opsSummaryMetrics').innerHTML='<div class="ops-kpi-cards">'+cards.slice(0,10).join('')+'</div><details class="ops-secondary"><summary>其他指標</summary><div class="ops-kpi-cards ops-secondary-cards">'+cards.slice(10).join('')+'</div></details>';
+    const hasScores=[...v.days.values()].some(day=>day.types.has('ByOrder')&&!day.scoreExcluded);
+    const primary=['實際總單數','SSTG%','TPLH（扣FA）','第三方佔比','D7達成率','D25達成率','實際工時','TC預估達成率'];
+    const all=metricsRows(v.summary);
+    const card=([key,value,unit])=>'<article class="ops-kpi-card"><h4>'+escape(({'實際總單數':'實際 TC','D7達成率':'D7','D25達成率':'D25','SSTG%':'SSTG','TPLH（扣FA）':'TPLH','TC預估達成率':'TC 預估達成率'})[key]||key)+'</h4><strong>'+(!hasScores&&key!=='實際工時'?'—':formattedMetric(key,value,unit))+'</strong></article>';
+    E('opsSummaryMetrics').innerHTML='<h3 class="ops-summary-period">'+escape(periodTitle(selectedDate(),period()))+'</h3><div class="ops-kpi-cards">'+primary.map(key=>card(all.find(row=>row[0]===key))).join('')+'</div><details class="ops-secondary"><summary>其他指標</summary><div class="ops-kpi-cards ops-secondary-cards">'+all.filter(row=>!primary.includes(row[0])).map(card).join('')+'</div></details>';
   }
   function warnings(v,isDay,date){
     const messages=[];if(v.missingPairs.length)messages.push('尚缺另一份成績檔：'+v.missingPairs.map(x=>x.slice(5)).join('、'));
@@ -61,7 +63,7 @@
     const days=[...v.days.values()],notes=days.filter(d=>String(d.report?.special_notes||'').trim()),excluded=days.filter(d=>d.report?.score_excluded);
     const list='<div class="ops-context-list">'+(excluded.length?'<div><b>不計成績</b>　'+excluded.map(d=>d.date.slice(5).replace('-','/')+(d.report?.special_notes?' '+escape(d.report.special_notes):'')).join('、')+'</div>':'')+(notes.length?notes.filter(d=>!d.report?.score_excluded).map(d=>'<div><b>'+d.date.slice(5).replace('-','/')+' 特殊事項</b>　'+escape(d.report.special_notes)+'</div>').join(''):'')+(!excluded.length&&!notes.length?'<div>本期尚無特殊事項</div>':'')+'</div>';
     if(state.context==='summary'){
-      let target=E('opsSummaryContext');if(!target){target=document.createElement('section');target.id='opsSummaryContext';target.className='ops-report-card';E('opsSummaryWarnings').after(target);}target.innerHTML='<h3>特殊事項</h3>'+list;return;
+      let target=E('opsSummaryContext');if(!target){target=document.createElement('section');target.id='opsSummaryContext';target.className='ops-report-card';E('opsSummaryMetrics').after(target);}target.hidden=!notes.length&&!excluded.length;target.innerHTML='<h3>'+(p==='day'?'當日特殊備註':'期間特殊備註')+'</h3>'+list;return;
     }
     const target=E('opsAnalysisSummary');if(!target)return;
     if(p!=='day'){target.innerHTML='<section class="ops-report-card"><h3>週期特殊事項</h3>'+list+'</section>';return;}
@@ -92,31 +94,62 @@
     renderMetrics(v);
     const acStoreCodes=new Set(M.AC_ASSIGNMENTS.flatMap(ac=>ac.stores).filter(code=>!M.NON_DELIVERY_STORES.has(code)));
     const eligibleDelay=state.records.delay.filter(x=>acStoreCodes.has(String(x.store_code)));
-    const delayTop=S.delayRanking(eligibleDelay,r.start,r.end).top;
+    const grouped=new Map();for(const row of eligibleDelay){if(row.record_date<r.start||row.record_date>r.end)continue;const key=String(row.store_code),entry=grouped.get(key)||{store_code:key,restaurant_name:row.restaurant_name,count:0,pending:0};entry.count++;if(row.status!=='completed')entry.pending++;grouped.set(key,entry);}const sorted=[...grouped.values()].sort((a,b)=>b.count-a.count||a.store_code.localeCompare(b.store_code)),cutoff=sorted[Math.min(2,sorted.length-1)]?.count;let last=null,rank=0;const delayTop=sorted.filter(x=>x.count>=cutoff).map((x,i)=>{if(last!==x.count)rank=i+1;last=x.count;return {...x,rank};});
     E('opsDelayRank').innerHTML=renderPriorityRestaurants(delayTop,x=>x.count+' 筆',x=>'待回覆 '+x.pending+' 筆','本期沒有等餐紀錄');
-    renderAcWaitSummary(state.records.delay,r);renderAcLineSummary(state.records.line,r);periodRecords(date,p,v);
+    renderAcWaitSummary(state.records.delay,r,v);renderAcLineSummary(state.records.line,r);renderSummaryCounts(v,r);periodRecords(date,p,v);
   }
-  function renderAcWaitSummary(records,r){
+  function renderAcWaitSummary(records,r,v){
     const acByStore=new Map();for(const ac of M.AC_ASSIGNMENTS)for(const code of ac.stores)if(!M.NON_DELIVERY_STORES.has(code))acByStore.set(code,ac.name);
     const counts=new Map(M.AC_ASSIGNMENTS.map(ac=>[ac.name,0]));
     for(const row of records){if(row.record_date<r.start||row.record_date>r.end||M.NON_DELIVERY_STORES.has(String(row.store_code)))continue;const name=acByStore.get(String(row.store_code));if(name)counts.set(name,(counts.get(name)||0)+1);}
     const ranked=[...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-    E('opsDelayAcSummary').innerHTML='<ul class="ops-ac-summary-grid">'+ranked.map(([name,count])=>'<li><strong>'+escape(name)+'</strong><b>'+count+' 筆</b></li>').join('')+'</ul>';
+    const pending=new Map(),orders=new Map();
+    for(const row of records){if(row.record_date<r.start||row.record_date>r.end||row.status==='completed')continue;const name=acByStore.get(String(row.store_code));if(name)pending.set(name,(pending.get(name)||0)+1);}
+    if(v)for(const day of v.days.values())for(const order of day.orders){const name=acByStore.get(String(order.store_code));if(name)orders.set(name,(orders.get(name)||0)+1);}
+    E('opsDelayAcSummary').innerHTML='<table class="ops-summary-ac-table"><thead><tr><th>AC</th><th>登記</th><th>待回覆</th><th>等餐／TC</th></tr></thead><tbody>'+ranked.map(([name,count])=>'<tr><td>'+escape(name)+'</td><td>'+count+' 筆</td><td>'+(pending.get(name)||0)+'</td><td>'+pct(orders.get(name)?count/orders.get(name):null)+'</td></tr>').join('')+'</tbody></table>';
   }
   function renderAcLineSummary(records,r){
     const acByStore=new Map();for(const ac of M.AC_ASSIGNMENTS)for(const code of ac.stores)if(!M.NON_DELIVERY_STORES.has(code))acByStore.set(code,ac.name);
     const acStats=new Map(M.AC_ASSIGNMENTS.map(ac=>[ac.name,{count:0,done:0}])),storeStats=new Map();
     for(const row of records){if(row.record_date<r.start||row.record_date>r.end||M.NON_DELIVERY_STORES.has(String(row.store_code)))continue;const code=String(row.store_code),name=acByStore.get(code);if(!name)continue;const done=Number(!!row.line_completed)+Number(!!row.signature_completed),a=acStats.get(name);a.count++;a.done+=done;const s=storeStats.get(code)||{store_code:code,restaurant_name:row.restaurant_name,count:0,done:0};s.count++;s.done+=done;storeStats.set(code,s);}
-    const acRates=[...acStats].map(([name,x])=>({name,rate:x.count?x.done/(x.count*2):null})).sort((a,b)=>a.rate===null?(b.rate===null?a.name.localeCompare(b.name):1):b.rate===null?-1:a.rate-b.rate||a.name.localeCompare(b.name));
-    E('opsLineAcSummary').innerHTML='<ul class="ops-ac-summary-grid">'+acRates.map(x=>'<li><strong>'+escape(x.name)+'</strong><b>'+(x.rate===null?'—':(x.rate*100).toFixed(1)+'%')+'</b></li>').join('')+'</ul>';
-    const worstStores=[...storeStats.values()].map(x=>({...x,rate:x.done/(x.count*2)})).filter(x=>x.rate<1).sort((a,b)=>a.rate-b.rate||a.store_code.localeCompare(b.store_code)).slice(0,3);
-    E('opsLineRank').innerHTML=worstStores.length?renderPriorityRestaurants(worstStores,x=>(x.rate*100).toFixed(1)+'%',x=>'已登記 '+x.count+' 次',''):'';
+    const acRates=[...acStats].map(([name,x])=>({name,count:x.count,rate:x.count?x.done/(x.count*2):null})).sort((a,b)=>a.rate===null?(b.rate===null?a.name.localeCompare(b.name):1):b.rate===null?-1:a.rate-b.rate||a.name.localeCompare(b.name));
+    const expected=new Map();
+    const end=typeof opsToday==='function'&&opsToday()<r.end?opsToday():r.end;
+    for(const date of S.dates(r.start,end))for(const ac of M.AC_ASSIGNMENTS){
+      expected.set(ac.name,(expected.get(ac.name)||0)+ac.stores.filter(code=>!M.NON_DELIVERY_STORES.has(code)).length);
+    }
+    E('opsLineAcSummary').innerHTML='<table class="ops-summary-ac-table"><thead><tr><th>AC</th><th>達成率</th><th>已登記</th><th>待檢查</th></tr></thead><tbody>'+acRates.map(x=>'<tr><td>'+escape(x.name)+'</td><td>'+(x.rate===null?'—':(x.rate*100).toFixed(1)+'%')+'</td><td>'+x.count+'</td><td>'+Math.max(0,(expected.get(x.name)||0)-x.count)+'</td></tr>').join('')+'</tbody></table>';
+    const worstStores=[...storeStats.values()].map(x=>({...x,rate:x.done/(x.count*2)})).filter(x=>x.rate<1).sort((a,b)=>a.rate-b.rate||a.store_code.localeCompare(b.store_code));const cutoff=worstStores[Math.min(2,worstStores.length-1)]?.rate;const worstTied=worstStores.filter(x=>x.rate<=cutoff);let lastRate=null,rank=0;worstTied.forEach((x,i)=>{if(x.rate!==lastRate)rank=i+1;x.rank=rank;lastRate=x.rate;});
+    E('opsLineRank').innerHTML=renderPriorityRestaurants(worstTied,x=>(x.rate*100).toFixed(1)+'%',x=>'已登記 '+x.count+' 次','本期沒有待改善紀錄');
+  }
+  function renderSummaryCounts(v,r){
+    const dates=S.dates(r.start,r.end<opsToday()?r.end:opsToday());
+    const activeCodes=date=>new Set(M.AC_ASSIGNMENTS.flatMap(ac=>ac.stores).filter(code=>!M.NON_DELIVERY_STORES.has(code)));
+    const delays=state.records.delay.filter(row=>row.record_date>=r.start&&row.record_date<=r.end&&activeCodes(row.record_date).has(String(row.store_code)));
+    const tail=value=>String(value||'').trim().slice(-4);
+    const orderKeys=new Set([...v.days.values()].flatMap(day=>day.orders.map(order=>day.date+'|'+order.store_code+'|'+tail(order.order_number))));
+    const matched=delays.filter(row=>orderKeys.has(row.record_date+'|'+row.store_code+'|'+tail(row.order_number))).length;
+    const tiles=items=>'<div class="ops-summary-counts">'+items.map(([name,value])=>'<div><span>'+name+'</span><b>'+fmt(value)+'</b></div>').join('')+'</div>';
+    E('opsDelayCounts').innerHTML=tiles([['登記筆數',delays.length],['待回覆',delays.filter(row=>row.status!=='completed').length],['已配對',matched],['未配對',delays.length-matched]]);
+    const byKey=new Map(state.records.line.map(row=>[row.record_date+'|'+row.store_code,row]));
+    let registered=0,unregistered=0,missingLine=0,missingSignature=0;
+    for(const date of dates)for(const code of activeCodes(date)){
+      const row=byKey.get(date+'|'+code);
+      if(!row){unregistered++;continue;}
+      registered++;
+      if(!row.line_completed)missingLine++;
+      if(!row.signature_completed)missingSignature++;
+    }
+    const suffix=period()==='day'?'餐廳':'店日';
+    E('opsLineCounts').innerHTML=tiles([['已登記'+suffix,registered],['待檢查'+suffix,unregistered],['劃線缺項'+(period()==='day'?'':'店日'),missingLine],['簽名缺項'+(period()==='day'?'':'店日'),missingSignature]]);
   }
   function renderPriorityRestaurants(rows,metric,details,empty){
-    return rows.length?'<ol class="ops-summary-priority-list">'+rows.map((x,i)=>'<li><span class="ops-summary-priority-rank">'+(x.rank??i+1)+'</span><div><strong>'+escape(x.store_code)+' '+escape(x.restaurant_name)+'</strong><span>'+details(x)+'</span></div><b>'+metric(x)+'</b></li>').join('')+'</ol>':'<div class="ops-summary-priority-empty">'+empty+'</div>';
+    if(!rows.length)return '<div class="ops-summary-priority-empty">'+empty+'</div>';
+    const item=(x,i)=>'<li><span class="ops-summary-priority-rank">'+(x.rank||i+1)+'</span><div><strong>'+escape(x.store_code)+' '+escape(x.restaurant_name)+'</strong><span>'+details(x)+'</span></div><b>'+metric(x)+'</b></li>';
+    return '<ol class="ops-summary-priority-list">'+rows.slice(0,3).map(item).join('')+'</ol>'+(rows.length>3?'<details class="ops-summary-ties"><summary>其餘同分餐廳（'+(rows.length-3)+' 間）</summary><ol class="ops-summary-priority-list">'+rows.slice(3).map((x,i)=>item(x,i+3)).join('')+'</ol></details>':'');
   }
   function render(){
-    if(!state.cache)return;const d=selectedDate(),p=period(),v=model(d,p),messages=warnings(v,p==='day',d),target=E(state.context==='summary'?'opsSummaryWarnings':'opsReportWarnings');target.textContent=messages.join('；');target.hidden=!messages.length;
+    if(!state.cache)return;const d=selectedDate(),p=period(),v=model(d,p),messages=warnings(v,p==='day',d),target=E(state.context==='summary'?'opsSummaryWarnings':'opsReportWarnings');target.textContent=messages.join('；');target.hidden=state.context==='summary'||!messages.length;
     if(state.context==='summary')renderSummary(d,v);else renderScores(d,v);renderWeather();
   }
   function monthHourRows(date,data=state.cache){

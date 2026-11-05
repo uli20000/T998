@@ -61,14 +61,24 @@
     const dateMatch=filterText.match(/日期範圍\s*:\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?\s*至\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?/);
     if(!dateMatch)throw new Error('GES 檔找不到日期範圍；請使用含「日期範圍」的匯出檔。');
     const start=`${dateMatch[1]}-${String(dateMatch[2]).padStart(2,'0')}-${String(dateMatch[3]).padStart(2,'0')}`,end=`${dateMatch[4]}-${String(dateMatch[5]).padStart(2,'0')}-${String(dateMatch[6]).padStart(2,'0')}`;
-    const headerRow=matrix.findIndex(row=>row.some(x=>clean(x)==='餐廳')&&row.some(x=>clean(x)==='# 回應數')&&row.some(x=>clean(x)==='問卷 OSAT'));
+    if(start>end||[start,end].some(d=>!Number.isFinite(Date.parse(d+'T00:00:00Z'))||new Date(d+'T00:00:00Z').toISOString().slice(0,10)!==d))throw new Error('GES 日期範圍無效，未匯入。');
+    const headerRow=matrix.findIndex(row=>row.some(x=>['餐廳','Franchisee_Name'].includes(clean(x)))&&row.some(x=>clean(x)==='# 回應數')&&row.some(x=>clean(x)==='問卷 OSAT'));
     if(headerRow<0)throw new Error('找不到 GES 餐廳／回應數／問卷 OSAT 欄位。');
-    const headers=matrix[headerRow].map(clean),ix={restaurant:indexOf(headers,'餐廳'),count:indexOf(headers,'# 回應數'),one:indexOf(headers,'1SAT'),survey:indexOf(headers,'問卷 OSAT'),google:indexOf(headers,'Google OSAT'),delivery:indexOf(headers,'外送平台 OSAT'),accuracy:indexOf(headers,'餐點正確性'),environment:indexOf(headers,'整體餐廳環境'),service:indexOf(headers,'服務'),speed:indexOf(headers,'服務速度'),food:indexOf(headers,'餐點好吃度')};
+    const center=matrix[headerRow].some(x=>clean(x)==='Franchisee_Name');
+    if(center){
+      const selection=matrix.slice(0,headerRow).flat().map(clean).find(x=>x.startsWith('CHAMPS ID:'))||'';
+      const ids=selection.match(/886KTW[IB]\d{3}/g)||[],codes=ids.map(x=>x.slice(-3));
+      if(codes.length!==stores.byCode.size||new Set(codes).size!==codes.length||codes.some(x=>!stores.byCode.has(x)))throw new Error('GES 中心彙總的 CHAMPS 篩選必須完整符合998餐廳，未匯入。');
+      if(!/訂購通路:\s*Online via the KFC website, Via a phone call/.test(filterText))throw new Error('GES 訂購通路篩選不符官網／電話，未匯入。');
+      if(nonempty(matrix.slice(headerRow+1)).length!==1)throw new Error('GES 中心彙總應只有一列，未匯入。');
+    }
+    const headers=matrix[headerRow].map(clean),ix={restaurant:indexOf(headers,'餐廳','Franchisee_Name'),count:indexOf(headers,'# 回應數'),one:indexOf(headers,'1SAT'),survey:indexOf(headers,'問卷 OSAT'),google:indexOf(headers,'Google OSAT'),delivery:indexOf(headers,'外送平台 OSAT'),accuracy:indexOf(headers,'餐點正確性','餐點正確性OSAT'),environment:indexOf(headers,'整體餐廳環境','整體餐廳環境 OSAT'),service:indexOf(headers,'服務','服務OSAT'),speed:indexOf(headers,'服務速度','服務速度 OSAT'),food:indexOf(headers,'餐點好吃度','餐點好吃度OSAT')};
     const out=[];
-    for(const cells of nonempty(matrix.slice(headerRow+1))){
+    for(const [offset,cells] of matrix.slice(headerRow+1).entries()){
       const restaurant=clean(cells[ix.restaurant]);if(!restaurant)continue;
-      const store=stores.byName.get(restaurant);if(!store)continue;const row={period_start:start,period_end:end,restaurant_name:restaurant,store_code:store?.store_code||'',response_count:Number(cells[ix.count])||0,score_1sat:percentage(cells[ix.one]),osat_survey:percentage(cells[ix.survey]),osat_google:percentage(cells[ix.google]),osat_delivery:percentage(cells[ix.delivery]),score_accuracy:percentage(cells[ix.accuracy]),score_environment:percentage(cells[ix.environment]),score_service:percentage(cells[ix.service]),score_speed:percentage(cells[ix.speed]),score_food:percentage(cells[ix.food]),raw_fields:Object.fromEntries(headers.map((h,i)=>[h||`欄位${i+1}`,cells[i]??'']))};
-      out.push(rowRecord('GES',keyParts([start,end,restaurant]),file,row));
+      const store=stores.byName.get(restaurant);if(!center&&!store)continue;const count=Number(cells[ix.count]);if(cells[ix.count]===''||cells[ix.count]===null||!Number.isInteger(count)||count<0)throw new Error('GES 回應數無效，未匯入。');const row={source_row:headerRow+offset+2,period_start:start,period_end:end,restaurant_name:center?'台南外送中心':restaurant,store_code:store?.store_code||'',response_count:count,score_1sat:percentage(cells[ix.one]),osat_survey:percentage(cells[ix.survey]),osat_google:percentage(cells[ix.google]),osat_delivery:percentage(cells[ix.delivery]),score_accuracy:percentage(cells[ix.accuracy]),score_environment:percentage(cells[ix.environment]),score_service:percentage(cells[ix.service]),score_speed:percentage(cells[ix.speed]),score_food:percentage(cells[ix.food]),raw_fields:{...Object.fromEntries(headers.map((h,i)=>[h||`欄位${i+1}`,cells[i]??''])),ges_scope:center?'center':'restaurant',filters:matrix.slice(0,headerRow).map(r=>r.map(clean).join(' '))}};
+      if(Object.entries(row).some(([key,value])=>(key.startsWith('score_')||key.startsWith('osat_'))&&value!==null&&(!Number.isFinite(value)||value<0||value>1)))throw new Error('GES 百分比超出0–100%，未匯入。');
+      out.push(rowRecord('GES',keyParts([start,end,center?'台南外送中心':restaurant]),file,row));
     }
     if(!out.length)throw new Error('GES 檔沒有餐廳彙總列。');
     return out;
@@ -81,7 +91,7 @@
     const stores=await restaurantDirectory();
     if(flat.some(r=>r.some(x=>clean(x)==='訂單編號')&&r.some(x=>clean(x)==='工作單號'))){type='4128';rows=await parse4128(flat,file,stores);}
     else if(flat.some(r=>r.some(x=>clean(x)==='建議種類')&&r.some(x=>clean(x)==='被抱怨型態')&&r.some(x=>clean(x)==='重點')&&r.some(x=>clean(x)==='項目1'))){type='0800';rows=await parse0800(flat,file);}
-    else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';rows=parseGes(flat,file,stores);}
+    else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';if(all.length!==1)throw new Error('GES 請使用單一匯出分頁，未匯入。');rows=parseGes(all[0].matrix,file,stores).map(row=>({...row,raw_fields:{...row.raw_fields,source_sheet:all[0].sheetName}}));}
     else throw new Error('無法辨識檔案類型；請選 0800、4128 或 GES 格式。');
     const uniq=new Map(rows.map(r=>[r.source_type+'|'+r.source_key,r]));rows=[...uniq.values()];
     const start=rows.map(r=>r.record_date||r.period_start).filter(Boolean).sort()[0],end=rows.map(r=>r.record_date||r.period_end).filter(Boolean).sort().at(-1);
@@ -106,7 +116,7 @@
         }
       }
       $('opsFeedbackMessage').textContent=`完成匯入 ${done.toLocaleString()} 筆篩選資料；重複鍵值已更新。`;
-      prepared.length=0;root.value='';render();
+      prepared.length=0;root.value='';render();window.t998RefreshFeedback?.();
     }catch(e){$('opsFeedbackMessage').textContent='匯入中止：'+(e.message||'請檢查登入狀態與資料庫 migration')+'；重新上傳同檔可更新已匯入資料。';}
     finally{const currentButton=$('opsFeedbackImport');if(currentButton)currentButton.disabled=!prepared.length;}
   });
