@@ -213,7 +213,7 @@
     const buttons=[...E('opsSummaryPanel').querySelectorAll('.ops-export-bottom button')];buttons.forEach(b=>b.disabled=true);
     try{
       await state.saveQueue;if(state.saveError)throw new Error('工時尚未儲存成功，請先重新儲存');
-      const d=selectedDate(),r=S.range(d,p);if(r.start>opsToday())throw new Error('所選日期尚未到');if(r.end>opsToday())r.end=opsToday();notify('匯出中…','summary');
+      const d=selectedDate(),r=S.range(d,p);if(r.start>opsToday())throw new Error('所選日期尚未到');notify('匯出中…','summary');
       const [data,records]=await Promise.all([loadRange(r,true),loadRecords(r),loadWeatherRange(r)]);const v=M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...r}),wb=XLSX.utils.book_new(),hasScores=[...v.days.values()].some(x=>x.types.has('ByOrder')&&!x.scoreExcluded);
       const summary=[['起始日期',r.start],['結束日期',r.end],['成績已匯入日數',[...v.days.values()].filter(x=>x.types.size===2).length],...metricsRows(v.summary).map(([k,value,unit])=>[k,!hasScores&&!['去年單數','預估單數','預估工時','實際工時'].includes(k)?null:value,unit])];
       const ws=XLSX.utils.aoa_to_sheet([['營運總覽','數值','單位'],...summary,['預估公式',window.OpsForecast.FORMULA,'']]);ws['!cols']=[{wch:24},{wch:22},{wch:12}];summary.forEach((r,i)=>{if(r[2]==='%'&&ws['B'+(i+2)])ws['B'+(i+2)].z='0.0%';});XLSX.utils.book_append_sheet(wb,ws,'營運總覽');appendScores(wb,data,r);
