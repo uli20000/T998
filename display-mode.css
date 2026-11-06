@@ -29,3 +29,10 @@ html[data-display-mode="dark"] :is(.score-tile h4,#opsSummaryPanel .ops-kpi-card
 html[data-display-mode="dark"] :is(.score-tile strong,#opsSummaryPanel .ops-summary-counts b){color:#ff91a5!important}
 
 html[data-display-mode="dark"] :is(.ops-period-choices,.ops-choice-button){background:#22262b;color:#f1f1f1;border-color:#4b5058}
+/* Keep the shared forecast readable in the existing built-in dark mode. */
+html[data-display-mode="dark"] #shiftModePage :is(.shift-week-option,.shift-week-btn,.shift-week-open-toggle,.shift-status-btn,.shift-export-week,.staffing-day-tab,.forecast-formula,.forecast-day-panel,.forecast-area-card,.forecast-day-total-card,.forecast-area-stat){background:#22262b!important;color:#f1f1f1!important;border-color:#596571!important}
+html[data-display-mode="dark"] #shiftModePage :is(.forecast-area-stat span,.forecast-history-weeks,.forecast-day-total-card span,.forecast-day-total-title,.forecast-day-heading){color:#d9dce1!important}
+html[data-display-mode="dark"] #shiftModePage :is(.forecast-area-stat strong,.forecast-day-total-card strong){color:#ff91a5!important}
+html[data-display-mode="dark"] #shiftModePage :is(.forecast-data-warning,.forecast-week-gap.is-warning){background:#3b3423;color:#f3d88e;border-color:#a48b4e}
+html[data-display-mode="dark"] #shiftModePage :is(.shift-week-btn.active,.shift-week-option.is-selected .shift-week-btn,.shift-status-btn.active,.staffing-day-tab.active){background:#b51b35!important;color:#fff!important;border-color:#b51b35!important}
+html[data-display-mode="dark"] #shiftModePage :is(.forecast-day-heading,.forecast-day-total-wrap,.forecast-day-total-title,.forecast-area-card-head){background:#22262b!important;color:#f1f1f1!important;border-color:#596571!important}

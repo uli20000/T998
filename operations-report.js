@@ -22,20 +22,21 @@
     const month=date.slice(0,7);if(state.monthLoads.has(month))return state.monthLoads.get(month);if(!force&&state.monthCache.has(month))return state.monthCache.get(month);
     const work=(async()=>{
       await loadDirectory();const r=S.range(date,'month');
-      const [batchRows,reportResult,reference]=await Promise.all([
+      const [batchRows,reportResult,reference,powerbiData]=await Promise.all([
         paged('t998_score_import_batches','*',q=>q.gte('report_date',r.start).lte('report_date',r.end),'report_date'),
         db.from('t998_operations_daily_reports').select('*').gte('record_date',r.start).lte('record_date',r.end).order('record_date'),
-        db.rpc('t998_get_operations_reference',{p_month:r.start})
+        db.rpc('t998_get_operations_reference',{p_month:r.start}),
+        window.OpsForecast.load(db,r.start,r.end)
       ]);
       if(reportResult.error)throw reportResult.error;if(reference.error)throw reference.error;
       const batches=M.latestBatches(batchRows),ids=batches.map(b=>b.id),rows=ids.length?await paged('t998_score_import_rows','batch_id,row_number,store_code,restaurant_name,order_number,payload',q=>q.in('batch_id',ids),'batch_id'):[];
-      return {rows,batches,reports:reportResult.data||[],history:reference.data?.history||[],mapping:reference.data?.mapping||[]};
+      return {rows,batches,reports:reportResult.data||[],history:reference.data?.history||[],mapping:reference.data?.mapping||[],powerbiData};
     })();state.monthLoads.set(month,work);
     try{const data=await work;state.monthCache.set(month,data);return data;}finally{state.monthLoads.delete(month);}
   }
   async function loadRange(r,force=false){
     const parts=await Promise.all(S.months(r.start,r.end).map(d=>loadMonth(d,force))),data={};
-    for(const key of ['rows','batches','reports','history','mapping'])data[key]=parts.flatMap(p=>p[key]);return data;
+    for(const key of ['rows','batches','reports','history','mapping'])data[key]=parts.flatMap(p=>p[key]);data.powerbiData={history:parts.flatMap(p=>p.powerbiData.history)};return data;
   }
   function model(date,p,data=state.cache){return M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...S.range(date,p)});}
   function metricsRows(s){return [
@@ -215,11 +216,12 @@
       const d=selectedDate(),r=S.range(d,p);if(r.start>opsToday())throw new Error('所選日期尚未到');if(r.end>opsToday())r.end=opsToday();notify('匯出中…','summary');
       const [data,records]=await Promise.all([loadRange(r,true),loadRecords(r),loadWeatherRange(r)]);const v=M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...r}),wb=XLSX.utils.book_new(),hasScores=[...v.days.values()].some(x=>x.types.has('ByOrder')&&!x.scoreExcluded);
       const summary=[['起始日期',r.start],['結束日期',r.end],['成績已匯入日數',[...v.days.values()].filter(x=>x.types.size===2).length],...metricsRows(v.summary).map(([k,value,unit])=>[k,!hasScores&&!['去年單數','預估單數','預估工時','實際工時'].includes(k)?null:value,unit])];
-      const ws=XLSX.utils.aoa_to_sheet([['營運總覽','數值','單位'],...summary]);ws['!cols']=[{wch:24},{wch:22},{wch:12}];summary.forEach((r,i)=>{if(r[2]==='%'&&ws['B'+(i+2)])ws['B'+(i+2)].z='0.0%';});XLSX.utils.book_append_sheet(wb,ws,'營運總覽');appendScores(wb,data,r);
+      const ws=XLSX.utils.aoa_to_sheet([['營運總覽','數值','單位'],...summary,['預估公式',window.OpsForecast.FORMULA,'']]);ws['!cols']=[{wch:24},{wch:22},{wch:12}];summary.forEach((r,i)=>{if(r[2]==='%'&&ws['B'+(i+2)])ws['B'+(i+2)].z='0.0%';});XLSX.utils.book_append_sheet(wb,ws,'營運總覽');appendScores(wb,data,r);
       appendTable(wb,'劃線簽名',S.lineExport(state.stores,records.line,r.start,r.end,opsToday()),['日期','店號','餐廳','是否登記','劃線','簽名','登記時間','更新時間']);
       appendTable(wb,'等餐紀錄',records.delay.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單編號:x.order_number,狀態:x.status==='completed'?'已回覆':'待回覆',等餐原因:x.reason||'',登記時間:x.created_at,回覆時間:x.responded_at||''})),['日期','店號','餐廳','訂單編號','狀態','等餐原因','登記時間','回覆時間']);
       const weather=S.dates(r.start,r.end).flatMap(date=>window.T998Config.weatherCities.map(city=>{const x=weatherRow(date,city),realtime=['current','partial_current'].includes(x?.status);return {日期:date,城市:city,測站:x?.station_name||'',測站代碼:x?.station_id||'',觀測類型:realtime?'即時觀測':'日觀測',平均氣溫:realtime?null:x?.temperature??null,即時氣溫:realtime?x?.temperature??null:null,觀測時間:x?.observed_at||'',降雨毫米:x?.precipitation??null,微量降雨:x?.trace?'是':'否',觀測狀態:x?.status||'unavailable',來源:x?.source_url||'https://codis.cwa.gov.tw/StationData',查詢時間:state.weather.get(date.slice(0,7))?.fetched_at||''};}));
       appendTable(wb,'天氣觀測',weather,['日期','城市','測站','測站代碼','觀測類型','平均氣溫','即時氣溫','觀測時間','降雨毫米','微量降雨','觀測狀態','來源','查詢時間']);
+      appendTable(wb,'預估依據',v.forecastDetails.map(x=>({日期:x.date,區域:x.area,去年對應日期:x.baselineDate,去年TC:x.baselineTc,預估TC:x.totalTc,需求工時:x.recommended,不計成績:x.excluded?'是':'否',缺漏餐廳:x.missingStores.join('、')})),['日期','區域','去年對應日期','去年TC','預估TC','需求工時','不計成績','缺漏餐廳']);
       XLSX.writeFile(wb,'營運'+({day:'日報',week:'週報',month:'月報'}[p])+'_'+r.start+(r.end===r.start?'':'_'+r.end)+'.xlsx');notify('已匯出成績、劃線簽名與等餐紀錄','summary');
     }catch(e){notify('匯出失敗：'+e.message,'summary');}finally{buttons.forEach(b=>b.disabled=false);}
   }

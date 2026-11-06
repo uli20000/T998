@@ -3,8 +3,8 @@
   const AREAS=window.T998Config.areas;
   const AC_ASSIGNMENTS=['Amber','Chili','Nemo','Eason'].map(name=>({name,stores:window.T998Config.restaurants.filter(x=>x.ac_name===name).map(x=>x.store_code)}));
   const NON_DELIVERY_STORES=new Set();
-  // 23:00 回饋範本：L3=L5*1.04，L7=L3/2，L10=L4/L5-1。
-  const GROWTH=0.042,FORECAST_TPLH=2;
+  // 預估統一使用 OpsForecast；DMS 實際及既有 SSTG 比較口徑保留。
+  const GROWTH=0.06,FORECAST_TPLH=2.5;
   const number=v=>v===null||v===undefined||String(v).trim()===''?null:Number.isFinite(Number(v))?Number(v):null;
   const ratio=(a,b)=>a!==null&&b!==null&&b>0?a/b:null;
   const clean=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').trim();
@@ -35,7 +35,7 @@
   function empty(){return {tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,qtSum:0,qtN:0,d7Seconds:0,d7TimeN:0,d25Seconds:0,d25TimeN:0,prior:0,priorN:0};}
   function add(target,source){for(const k of Object.keys(empty()))target[k]+=source[k]||0;return target;}
   function derived(x){const nonfa=x.tc-x.fa,forecast=x.priorN?x.prior*(1+GROWTH):null;return {...x,nonfa,forecast,forecastHours:forecast===null?null:forecast/FORECAST_TPLH,faShare:ratio(x.fa,x.tc),sstg:x.priorN&&x.prior>0?x.tc/x.prior-1:null,sstgExFA:x.priorN&&x.prior>0?nonfa/x.prior-1:null,tcAchievement:ratio(x.tc,forecast),d7:ratio(x.d7Y,x.d7Y+x.d7N),d25:ratio(x.d25Y,x.d25Y+x.d25N),qt:ratio(x.qtSum,x.qtN),d7Avg:ratio(x.d7Seconds,x.d7TimeN),d25Avg:ratio(x.d25Seconds,x.d25TimeN)};}
-  function build({rows,batches,history,mapping,catalog,reports,start,end}){
+  function buildActuals({rows,batches,history,mapping,catalog,reports,start,end}){
     const days=new Map(dates(start,end).map(date=>[date,{date,areas:new Map(AREAS.map(([a])=>[a,empty()])),types:new Set(),orders:[],raw:[],report:reports.find(x=>x.record_date===date)||null}]));
     const byBatch=new Map(batches.map(b=>[b.id,b]));
     const seen=new Set();
@@ -80,6 +80,20 @@
     const summary=derived(total),actualHours=hasHours&&completeHours?totalHours-transferOut+transferIn:null;
     if(missingBaselineDays.length){summary.forecast=null;summary.forecastHours=null;summary.sstg=null;summary.sstgExFA=null;summary.tcAchievement=null;}
     return {days,areas:new Map([...areas].map(([a,x])=>[a,derived(x)])),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays};
+  }
+  function build(args){
+    const v=buildActuals(args),F=root.OpsForecast;
+    if(!F)throw new Error('預估元件尚未載入，請重新整理。');
+    const source=F.prepare({history:args.powerbiData?.history||args.history,catalog:args.catalog,reports:args.reports}),details=[];
+    const decorate=(value,forecasts)=>{const valid=forecasts.filter(x=>!x.excluded),forecast=valid.length&&valid.every(x=>x.totalTc!==null)?valid.reduce((n,x)=>n+x.totalTc,0):null;return {...value,forecast,forecastHours:forecast===null?null:forecast/FORECAST_TPLH,tcAchievement:ratio(value.tc,forecast)};};
+    for(const day of v.days.values()){
+      const forecasts=source.forecast(day.date);details.push(...forecasts);
+      day.metrics=decorate(day.metrics,forecasts);
+      for(const [area,value] of day.areas)day.areas.set(area,decorate(value,forecasts.filter(x=>x.area===area)));
+    }
+    v.summary=decorate(v.summary,details);v.summary.hoursAchievement=v.hoursWithoutScores.length?null:ratio(v.summary.actualHours,v.summary.forecastHours);
+    for(const [area,value] of v.areas)v.areas.set(area,decorate(value,details.filter(x=>x.area===area)));
+    v.forecastDetails=details;return v;
   }
   const api={AREAS,AC_ASSIGNMENTS,NON_DELIVERY_STORES,GROWTH,FORECAST_TPLH,number,ratio,clean,duration,addDays,range,dates,weeks,latestBatches,areaFor,build};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.OpsMetrics=api;

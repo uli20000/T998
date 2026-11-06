@@ -34,7 +34,7 @@
     const key=r.start+'|'+r.end;if(!force&&state.cache.has(key))return state.cache.get(key);await loadDirectory();
     const monthRange=M.range(r.start,'month'),months=S.months(r.start,r.end);
     const firstWeek=fullWeek(r.start).start,lastWeek=fullWeek(r.end).start;
-    const [rawBatches,reports,monthReports,references,delays,campaigns,feedbackDaily,feedbackPeriod,weeklyNotesResult]=await Promise.all([
+    const [rawBatches,reports,monthReports,references,delays,campaigns,feedbackDaily,feedbackPeriod,weeklyNotesResult,powerbiData]=await Promise.all([
       paged('t998_score_import_batches','id,report_date,report_type,imported_at,row_count',q=>q.gte('report_date',r.start).lte('report_date',r.end),'report_date'),
       db.from('t998_operations_daily_reports').select('*').gte('record_date',r.start).lte('record_date',r.end).order('record_date'),
       db.from('t998_operations_daily_reports').select('*').gte('record_date',monthRange.start).lte('record_date',r.end).order('record_date'),
@@ -43,12 +43,13 @@
       db.from('t998_operations_coupon_campaigns').select('*').lte('active_from',r.end).gte('active_to',r.start).order('active_from'),
       paged('t998_feedback_import_rows','*',q=>q.in('source_type',['0800','4128']).gte('record_date',r.start).lte('record_date',r.end),'record_date'),
       ['week','month'].includes(state.period)?paged('t998_feedback_import_rows','*',q=>q.eq('source_type','GES').eq('period_start',r.start).eq('period_end',r.end),'restaurant_name'):Promise.resolve([]),
-      db.from('t998_weekly_metric_action_notes').select('*').gte('week_start',M.addDays(firstWeek,-7)).lte('week_start',lastWeek).order('week_start').order('metric_key')
+      db.from('t998_weekly_metric_action_notes').select('*').gte('week_start',M.addDays(firstWeek,-7)).lte('week_start',lastWeek).order('week_start').order('metric_key'),
+      window.OpsForecast.load(db,r.start,r.end)
     ]);
     if(reports.error)throw reports.error;if(monthReports.error)throw monthReports.error;if(campaigns.error)throw campaigns.error;if(weeklyNotesResult.error)throw weeklyNotesResult.error;for(const x of references)if(x.error)throw x.error;
     const batches=M.latestBatches(rawBatches),rows=batches.length?await fetchRows(batches):[],refs=references.map(x=>x.data||{});
     const mapping=[...new Map(refs.flatMap(x=>x.mapping||[]).map(x=>[M.clean(x.restaurant_name),x])).values()],history=refs.flatMap(x=>x.history||[]);
-    const data={rows,batches,reports:reports.data||[],monthReports:monthReports.data||[],history,mapping,delays:delays||[],campaigns:campaigns.data||[],feedback:[...(feedbackDaily||[]),...(feedbackPeriod||[])],weeklyNotes:weeklyNotesResult.data||[]};state.cache.set(key,data);return data;
+    const data={powerbiData,rows,batches,reports:reports.data||[],monthReports:monthReports.data||[],history,mapping,delays:delays||[],campaigns:campaigns.data||[],feedback:[...(feedbackDaily||[]),...(feedbackPeriod||[])],weeklyNotes:weeklyNotesResult.data||[]};state.cache.set(key,data);return data;
   }
   function model(data,r){const result=M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...r});if(!data.batches.some(b=>b.report_type==='ByOrder'&&b.report_date>=r.start&&b.report_date<=r.end&&!data.reports.some(d=>d.record_date===b.report_date&&d.score_excluded)))result.summary.sstg=null;return result;}
   function previousRange(r,data=state.data){if(state.period==='day'){const report=(data?.reports||[]).find(x=>x.record_date===r.start),special=!!report&&(report.score_excluded||/特殊節日|國定假日|連假|停班課|颱風/.test(String(report.special_notes||'')));const dow=new Date(r.start+'T12:00:00Z').getUTCDay(),d=special?M.addDays(r.start,(6-dow+7)%7):M.addDays(r.start,-7);return {start:d,end:d,special};}if(state.period==='week')return fullWeek(M.addDays(r.start,-7));const d=addMonths(r.start,-1);return M.range(d,'month');}
