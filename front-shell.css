@@ -1,0 +1,85 @@
+/* 前台改版（外送員手機版）。設計稿 docs/ui-mockup/front.html。
+ * 全部以 body.front-v2 為範圍，只改外觀；元素 id 與流程不變。 */
+body.front-v2{--fv-red:#C8102E;--fv-red-soft:#FDE7EA;--fv-bg:#F6F4F0;--fv-card:#fff;--fv-text:#1F2328;--fv-muted:#5B6470;--fv-faint:#8C959F;--fv-line:#E6E2DA;--fv-ok:#1A7F37;--fv-ok-soft:#DCF5E3;--fv-shadow:0 1px 2px rgb(0 0 0/6%),0 4px 12px rgb(0 0 0/4%);background:var(--fv-bg);font-variant-numeric:tabular-nums}
+html[data-display-mode=dark] body.front-v2{--fv-bg:#14171B;--fv-card:#1D2127;--fv-text:#E6EDF3;--fv-muted:#A8B3BF;--fv-faint:#7D8792;--fv-line:#2F353D;--fv-red:#E0344F;--fv-red-soft:#3A1F24;--fv-ok:#3FB950;--fv-ok-soft:#1B3A24}
+body.front-v2 .page{max-width:520px;margin:0 auto;padding-bottom:40px}
+
+/* 表頭：一行 */
+body.front-v2 .header{display:flex;align-items:center;gap:10px;padding:12px 16px;text-align:left;background:var(--fv-card);border-bottom:1px solid var(--fv-line)}
+body.front-v2 .header .eyebrow{display:none}
+body.front-v2 .header .header-row{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;margin:0;flex:1;justify-content:flex-start}
+body.front-v2 .header .kfc{order:-1;background:var(--fv-red);color:#fff;font-size:13px;font-weight:900;border-radius:8px;padding:6px 8px;letter-spacing:.5px;line-height:1}
+body.front-v2 .header .title{font-size:17px;margin:0;letter-spacing:0;color:var(--fv-text)}
+body.front-v2 .header .date{font-size:12px;color:var(--fv-faint);margin:0;white-space:nowrap}
+
+/* 每頁標題列：返回＋標題 */
+body.front-v2 .intro{padding:14px 16px 4px;text-align:left;background:none;border:0}
+body.front-v2 .intro .front-top-back{margin:0 0 6px;padding:0;width:auto}
+body.front-v2 .intro .back-home-btn{width:auto;min-height:40px;height:auto;line-height:1.2;padding:8px 14px;border-radius:999px;font-size:14px;background:var(--fv-card);border:1px solid var(--fv-line);box-shadow:none}
+body.front-v2 #introTitle{font-size:21px;margin:0;text-align:left}
+body.front-v2 #introText{font-size:13px;color:var(--fv-faint);margin:4px 0 0;text-align:left}
+body.front-v2.fv-home .intro{display:none!important}
+body.front-v2 #atomicRiderStatus{display:none}
+
+/* 首頁：領車／還車大按鈕＋其他兩欄 */
+body.front-v2 .mode-menu{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;max-width:none}
+body.front-v2 .fv-hello{grid-column:1/-1;color:var(--fv-muted);font-size:14px;margin:2px 2px -2px;text-align:left}
+body.front-v2 .fv-other{grid-column:1/-1;color:var(--fv-faint);font-size:13px;font-weight:700;margin:6px 2px -4px;text-align:left}
+body.front-v2 .mode-btn{margin:0;width:100%;min-height:0;height:auto;display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;border:1.5px solid transparent;background:var(--fv-card);box-shadow:var(--fv-shadow);justify-content:flex-start}
+body.front-v2 .mode-btn .icon{font-size:24px;margin:0}
+body.front-v2 .mode-btn .main{font-size:15px;font-weight:800}
+body.front-v2 #claimModeBtn,body.front-v2 #returnModeBtn{flex-direction:column;justify-content:center;padding:24px 10px 18px;border-radius:18px;gap:6px}
+body.front-v2 #claimModeBtn .icon,body.front-v2 #returnModeBtn .icon{font-size:42px}
+body.front-v2 #claimModeBtn .main,body.front-v2 #returnModeBtn .main{font-size:22px}
+body.front-v2 #claimModeBtn{border-color:var(--fv-red)}body.front-v2 #claimModeBtn .main{color:var(--fv-red)}
+body.front-v2 .fv-sub{font-size:12px;color:var(--fv-faint);font-weight:600}
+
+/* 表單卡片：緊湊、欄位標籤靠左 */
+body.front-v2 .card{margin:10px 14px;padding:14px;border-radius:14px;box-shadow:var(--fv-shadow);text-align:left}
+body.front-v2 .card .section-number{display:none}
+body.front-v2 .card .label{display:block;text-align:left;font-size:13px;color:var(--fv-muted);margin:0 0 6px;font-weight:700}
+body.front-v2 .card input[type=text],body.front-v2 .card input[type=number],body.front-v2 .card input:not([type]),body.front-v2 .card select{min-height:48px;font-size:17px;border-radius:12px;text-align:left}
+
+/* 巡檢：每項一行，右側點選 */
+body.front-v2 .check-item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 10px;padding:10px 0;text-align:left}
+body.front-v2 .check-name{font-size:15px;font-weight:700;text-align:left;margin:0}
+body.front-v2 .options{display:flex;gap:0;background:#F0EDE7;border-radius:999px;padding:3px;margin:0}
+html[data-display-mode=dark] body.front-v2 .options{background:#2A2F36}
+body.front-v2 .option{min-width:0;width:auto;height:auto;min-height:0;padding:8px 14px;border:0;border-radius:999px;background:none;font-size:14px;font-weight:800;color:var(--fv-faint);box-shadow:none}
+body.front-v2 .option.normal.selected{background:var(--fv-ok);color:#fff}
+body.front-v2 .option.abnormal.selected{background:var(--fv-red);color:#fff}
+body.front-v2 .abnormal-box{grid-column:1/-1;margin:0}
+body.front-v2 .abnormal-box textarea{border:1.5px solid var(--fv-red);background:var(--fv-red-soft);border-radius:10px}
+body.front-v2 .fv-check-count{display:flex;justify-content:space-between;align-items:center;font-weight:800;margin:0 0 4px}
+body.front-v2 .fv-check-count small{color:var(--fv-faint);font-weight:600;font-size:12px}
+
+/* 送出鈕固定在畫面底部 */
+body.front-v2 #claimSaveBtn,body.front-v2 #saveBtn{position:sticky;bottom:10px;z-index:5;box-shadow:0 6px 18px rgb(200 16 46/25%)}
+body.front-v2 .fv-hint{text-align:center;color:var(--fv-faint);font-size:12px;margin:6px 0 0}
+
+/* 被擋下：頁面內說明（取代跳窗） */
+.fv-banner{position:fixed;left:50%;top:52px;transform:translateX(-50%);width:min(492px,calc(100% - 24px));z-index:3000;background:#fff;border:1.5px solid #C8102E;border-radius:14px;padding:14px 14px 12px;box-shadow:0 10px 30px rgb(0 0 0/18%);text-align:left;font-family:inherit}
+html[data-display-mode=dark] .fv-banner{background:#1D2127;color:#E6EDF3}
+.fv-banner b{display:block;color:#C8102E;font-size:16px;margin-bottom:4px}
+.fv-banner p{margin:0 0 10px;font-size:14px;line-height:1.55;white-space:pre-line}
+.fv-banner .fv-actions{display:flex;gap:8px}
+.fv-banner button{flex:1;min-height:42px;border-radius:10px;font:inherit;font-weight:800;cursor:pointer;border:1.5px solid #E6E2DA;background:#fff;color:#1F2328}
+.fv-banner button.fv-go{background:#C8102E;border-color:#C8102E;color:#fff}
+.fv-banner.fv-info{border-color:#E6E2DA}.fv-banner.fv-info b{color:inherit}
+
+body.front-v2 .card.fv-merged > .label{margin-top:14px}
+body.front-v2 .card.fv-merged > .label:first-of-type{margin-top:0}
+
+/* 完成頁：大勾＋明細卡（方便給值班人員看） */
+body.front-v2 .success-panel{padding:28px 14px 20px;text-align:center}
+body.front-v2 .success-panel .front-top-back{text-align:left;margin:0 0 10px}
+body.front-v2 .success-icon{width:72px;height:72px;border-radius:50%;background:var(--fv-ok);color:#fff;font-size:40px;line-height:72px;margin:6px auto 12px;border:0}
+body.front-v2 .success-title{font-size:22px;font-weight:800;margin-bottom:16px}
+body.front-v2 .success-data{background:var(--fv-card);border-radius:14px;box-shadow:var(--fv-shadow);padding:4px 16px;text-align:left;margin:0}
+body.front-v2 .success-data > div{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--fv-line);font-size:15px}
+body.front-v2 .success-data > div:last-child{border-bottom:0}
+body.front-v2 .success-data strong{color:var(--fv-faint);font-weight:600;white-space:nowrap}
+body.front-v2 .success-panel .back-home-btn{width:auto;min-height:40px;height:auto;line-height:1.2;padding:8px 14px;border-radius:999px;font-size:14px;background:var(--fv-card);border:1px solid var(--fv-line);box-shadow:none}
+
+/* 姓名欄與其他欄位一樣靠左（原版置中） */
+body.front-v2 #claimantName,body.front-v2 #reporterName,body.front-v2 #surveyRespondentName,body.front-v2 #defensiveName,body.front-v2 .name-search-wrap input{text-align:left}

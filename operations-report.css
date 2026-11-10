@@ -86,8 +86,6 @@
  .ops-choice-button{min-height:52px;padding:5px 2px}
  .ops-choice-button span{font-size:11px}
  .ops-choice-button strong{font-size:13px}
- .ops-choice-list[aria-label="選擇週次"] .ops-choice-button{min-height:68px}
- .ops-choice-list[aria-label="選擇週次"] .ops-choice-button span{max-width:100%;white-space:normal;line-height:1.35}
  .ops-month-choices{gap:5px}
 }
 .ops-record-search{grid-template-columns:minmax(0,1fr);max-width:960px;margin:12px auto}
@@ -100,9 +98,17 @@
 .ops-line-search input{width:100%;height:100%;min-height:78px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;font:inherit;text-align:center}
 #opsSummaryPanel .ops-ranking-grid>.ops-report-card>h4{margin:12px 0 8px;text-align:center;font-size:15px}
 #opsSummaryPanel .ops-ac-focus{margin:8px 0 16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);font-size:18px;font-weight:800;text-align:center}
-#opsSummaryPanel .ops-period-rank-list{margin:0;padding:0;list-style:none}
-#opsSummaryPanel .ops-period-rank-list li{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);text-align:left}
-#opsSummaryPanel .ops-period-rank-list b{color:#a71930;white-space:nowrap}
+#opsSummaryPanel .ops-summary-priority-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+#opsSummaryPanel .ops-summary-priority-list li{display:grid;grid-template-columns:32px minmax(0,1fr) 72px;align-items:center;gap:10px;min-height:72px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);text-align:center}
+#opsSummaryPanel .ops-summary-priority-rank{font-size:18px;font-weight:800;color:#a71930}
+#opsSummaryPanel .ops-summary-priority-list strong{display:block;font-size:15px;overflow-wrap:anywhere}
+#opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){display:block;margin-top:4px;font-size:12px}
+#opsSummaryPanel .ops-summary-priority-list b{font-size:17px;color:#a71930;white-space:nowrap}
+#opsSummaryPanel .ops-summary-priority-empty{display:grid;place-items:center;min-height:246px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);text-align:center}
+#opsSummaryPanel .ops-ac-summary-grid{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+#opsSummaryPanel .ops-ac-summary-grid li{min-height:56px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:8px;padding:8px 12px;text-align:center}
+#opsSummaryPanel .ops-ac-summary-grid strong{font-size:15px;line-height:1.2}
+#opsSummaryPanel .ops-ac-summary-grid b{color:#a71930;font-size:20px}
 @media(min-width:1000px){body:has(#opsModePage[style*="block"]) .page{max-width:1180px}}
 @media(max-width:760px){
   .ops-report-grid{grid-template-columns:1fr;gap:16px}
@@ -118,7 +124,8 @@
   #opsModePage .ops-section{padding:16px 10px}.ops-report-grid>div{min-width:0}
   .ops-score-heading{gap:6px}.ops-score-heading input{max-width:155px;padding:8px 4px}.ops-score-heading .ops-mini-tabs button{padding:8px 10px}
   .ops-entry-date-toolbar{justify-content:center;flex-wrap:wrap;padding:9px;gap:8px}.ops-entry-date-toolbar>.action-btn{min-height:40px}
-  .ops-line-toolbar-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ops-line-search{max-width:none}
+   .ops-line-toolbar-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ops-line-search{max-width:none}
+ #opsSummaryPanel .ops-summary-priority-list li{grid-template-columns:28px minmax(0,1fr) 66px;gap:6px;padding:9px 8px}
 }
 
 /* Daily operations workspace: equal cards, compact centered controls. */
@@ -268,38 +275,11 @@
 .ops-feedback-upload .ops-message{min-height:24px;margin-top:8px;font-weight:700}
 .ops-feedback-upload .ops-table-wrap{margin:10px 0}
 @media(max-width:600px){.ops-feedback-upload .ops-table{font-size:12px}.ops-feedback-upload .ops-table th,.ops-feedback-upload .ops-table td{padding:7px 4px}}
-/* 998 entry controls share one measured label row and one 48px control row. */
-#opsModePage .ops-entry-row>label,#opsModePage .ops-entry-row>.ops-line-control{grid-template-rows:20px 48px auto;gap:8px;line-height:20px}
-#opsModePage .ops-entry-row input:not([type=hidden]),#opsModePage .ops-entry-row .ops-toggle,#opsModePage .ops-entry-row .ops-toggle-group{height:48px;min-height:48px;box-sizing:border-box;margin:0}
-#opsModePage .ops-entry-row>.action-btn{height:48px;min-height:48px;margin:28px 0 0;box-sizing:border-box}
-.ops-weather-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media(max-width:760px){.ops-weather-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:480px){.ops-weather-cards{grid-template-columns:1fr}}
 
-/* Four county weather cards form a balanced 2 x 2 grid. */
-#opsModePage .ops-weather-cards{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:12px;align-items:stretch}
-#opsModePage .ops-weather-card{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:140px;text-align:center}
-@media(max-width:480px){#opsModePage .ops-weather-cards{gap:8px}#opsModePage .ops-weather-card{padding:12px 6px;min-height:125px}#opsModePage .ops-weather-card h4{font-size:14px}}
-/* Source archive controls share equal dimensions. */
-#opsArchiveOnly,#opsScoreImport{min-width:160px;min-height:48px;margin:8px 6px;font-weight:700;text-align:center}
-@media(max-width:600px){#opsArchiveOnly,#opsScoreImport{width:calc(50% - 16px);min-width:0;margin:8px 6px;font-size:15px}}
+@media(max-width:600px){.ops-choice-button span{white-space:normal;overflow-wrap:anywhere}.ops-choice-button{min-width:0;min-height:64px}}
 
-.ops-archive-actions{display:flex;align-items:center;justify-content:center;gap:12px}.ops-archive-actions #opsArchiveOnly,.ops-archive-actions #opsScoreImport{flex:1;margin:0;height:52px}
-@media(max-width:600px){.ops-upload-block .ops-score-upload{width:100%;justify-content:center}.ops-archive-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ops-archive-actions #opsArchiveOnly,.ops-archive-actions #opsScoreImport{width:100%;min-width:0;font-size:14px}}
-
-/* T998 summary layout: full local AC ranking, matched row dimensions. */
-#opsSummaryPanel .ops-summary-priority-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
-#opsSummaryPanel .ops-summary-priority-list li{display:grid;grid-template-columns:32px minmax(0,1fr) 72px;align-items:center;gap:10px;min-height:72px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);text-align:center}
-#opsSummaryPanel .ops-summary-priority-rank{font-size:18px;font-weight:800;color:#a71930}
-#opsSummaryPanel .ops-summary-priority-list strong{display:block;font-size:15px;overflow-wrap:anywhere}
-#opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){display:block;margin-top:4px;font-size:12px}
-#opsSummaryPanel .ops-summary-priority-list b{font-size:17px;color:#a71930;white-space:nowrap}
-#opsSummaryPanel .ops-summary-priority-empty{display:grid;place-items:center;min-height:246px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);text-align:center}
-#opsSummaryPanel .ops-ac-summary-grid{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
-#opsSummaryPanel .ops-ac-summary-grid li{min-height:56px;border:1px solid var(--line);border-radius:10px;background:var(--ops-tint);display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:8px;padding:8px 12px;text-align:center}
-#opsSummaryPanel .ops-ac-summary-grid strong{font-size:15px;line-height:1.2}
-#opsSummaryPanel .ops-ac-summary-grid b{color:#a71930;font-size:20px}
-#opsSummaryPanel .ops-ranking-grid{align-items:stretch}#opsSummaryPanel .ops-ranking-grid>.ops-report-card{min-width:0}
+/* Fixed-month reply link selector, T998 only. */
+.ops-link-month-toolbar{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr);gap:12px;align-items:center;max-width:760px;margin:12px auto;text-align:center}.ops-link-month-toolbar label{display:grid;gap:8px;font-weight:800}.ops-link-month-toolbar input{width:100%;min-height:46px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;text-align:center}.ops-link-month-toolbar span,.ops-link-month-help{font-size:13px;line-height:1.7;color:var(--gray);text-align:center}.ops-link-month-toolbar button{min-height:46px}.ops-link-result{flex-wrap:wrap}.ops-link-result strong{flex-basis:100%;text-align:center}.ops-link-month-help{max-width:760px;margin:12px auto}@media(max-width:600px){.ops-link-month-toolbar{grid-template-columns:minmax(0,1fr)}.ops-link-result input{width:100%}}
 
 /* Shared export period comes from the main date control; links keep their own month. */
 .ops-compact-actions{border-top:0;margin-top:16px;padding-top:0}
@@ -311,8 +291,6 @@
 .ops-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:600px){.ops-export-link-row{gap:6px;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr) minmax(0,1fr)}.ops-export-link-row .action-btn,.ops-export-link-row .ops-export-bottom .action-btn,.ops-export-link-row input{font-size:12px;padding:6px 3px}}
 .ops-compact-actions .ops-link-result[hidden]{display:none!important}
-.ops-export-link-row .ops-export-bottom #opsExportSelected{width:100%!important;max-width:none!important;min-width:0!important}
-.ops-export-link-row>.ops-export-bottom{display:block!important;grid-template-columns:none!important;padding:0!important}
 
 /* Equal export/month/link cells; scoped to the summary action row. */
 #opsSummaryPanel .ops-export-link-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
@@ -321,8 +299,7 @@
 @media(max-width:600px){#opsSummaryPanel .ops-export-link-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:12px!important;padding:6px 3px}#opsSummaryPanel .ops-export-link-row #opsLinkMonth{padding:6px 0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-datetime-edit{padding:0}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{margin:0;padding:0;width:12px}}
 @media(max-width:360px){#opsSummaryPanel .ops-export-link-row :is(#opsExportSelected,#opsLinkMonth,#opsLinkCreate){font-size:11px!important}#opsSummaryPanel .ops-export-link-row #opsLinkMonth::-webkit-calendar-picker-indicator{width:10px}}
 
-
-/* 998 confirmed cards and symmetric summary layout */
+/* Compact summary for daily report capture. */
 #opsSummaryPanel .ops-kpi-cards{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:8px}
 #opsSummaryPanel .ops-kpi-card{min-height:76px;padding:7px 5px;gap:5px;border:2px solid #dfc2c7;border-radius:10px;background:var(--ops-panel,#fff)}
 #opsSummaryPanel .ops-kpi-card h4{font-size:17px;color:#087ca5;margin:0;line-height:1.3}
@@ -445,9 +422,4 @@ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .t
  #opsSummaryPanel #opsLinksPanel .ops-export-bottom,#opsSummaryPanel #opsLinksPanel .ops-month-link-controls{min-height:56px}
 }
 #opsSummaryPanel #opsDelayRank,#opsSummaryPanel #opsLineRank{margin-top:0;min-height:112px}
-#opsSummaryPanel .ops-summary-priority-list{list-style:none;padding:0;margin:0;display:grid;gap:5px}
-#opsSummaryPanel .ops-summary-priority-list li{display:grid;grid-template-columns:24px minmax(0,1fr) 72px;align-items:center;gap:6px;min-height:32px;padding:3px 7px;border:1px solid var(--line);border-radius:8px;background:var(--ops-tint);text-align:center}
-#opsSummaryPanel .ops-summary-priority-list strong{display:block;overflow-wrap:anywhere}
-#opsSummaryPanel .ops-summary-priority-list span:not(.ops-summary-priority-rank){display:block;font-size:12px}
-#opsSummaryPanel :is(.ops-summary-priority-rank,.ops-summary-priority-list b){font-weight:900;color:#b81930}
-#opsSummaryPanel .ops-summary-ties summary{text-align:center;cursor:pointer;font-size:13px;min-height:25px}
+

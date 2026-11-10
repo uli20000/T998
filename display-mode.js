@@ -25,7 +25,6 @@
       button.title = light ? '日間模式｜點擊切換夜間' : '夜間模式｜點擊切換日間';
     });
   }
-  window.addEventListener('storage', event => { if(event.key === key && ['light','dark'].includes(event.newValue)){ mode=event.newValue; apply(); } });
   apply();
   document.addEventListener('DOMContentLoaded', () => {
     apply();
@@ -36,3 +35,4 @@
     }));
   });
 })();
+

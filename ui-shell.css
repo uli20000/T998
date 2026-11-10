@@ -1,0 +1,181 @@
+/* 後台外框（UI 改版第 1 步）：側欄＋頂部列＋日夜模式 tokens。規格 docs/UI-REDESIGN-SPEC.md */
+:root{
+  --ui-font:"Microsoft JhengHei","微軟正黑體","PingFang TC","Noto Sans TC",sans-serif;
+  --ui-red:#C8102E;--ui-bg:#F6F4F0;--ui-card:#FFFFFF;--ui-side:#FFFFFF;--ui-side-hover:#F3F0EA;
+  --ui-text:#1F2328;--ui-muted:#5B6470;--ui-faint:#8C959F;--ui-line:#E6E2DA;
+  --ui-ok:#1A7F37;--ui-bad:#C8102E;--ui-warn:#9A6700;--ui-na:#8C959F;--ui-miss:#FDE7EA;
+  --ui-r:12px;--ui-shadow:0 1px 2px rgb(0 0 0/6%),0 4px 12px rgb(0 0 0/4%);
+  --ui-side-w:256px;--ui-top-h:64px;
+}
+html[data-display-mode=dark]{
+  --ui-red:#E0344F;--ui-bg:#14171B;--ui-card:#1D2127;--ui-side:#181B20;--ui-side-hover:#232830;
+  --ui-text:#E6EDF3;--ui-muted:#A8B3BF;--ui-faint:#7D8792;--ui-line:#2F353D;
+  --ui-ok:#3FB950;--ui-bad:#FF6B7A;--ui-warn:#D29922;--ui-miss:#3A1F24;
+  --ui-shadow:0 1px 2px rgb(0 0 0/40%),0 4px 12px rgb(0 0 0/30%);
+}
+
+/* 舊入口與表頭由外框取代 */
+.ui-old-header{display:none!important}
+body.ui-page-analysis{margin:0}
+body.ui-page-analysis .date-actions [data-display-mode-toggle]{display:none!important}
+body.ui-page-analysis .ui-content > .wrap{max-width:none}
+#adminApp.ui-shell,body:has(#opsModePage[style*="block"]) #adminApp.ui-shell{max-width:none;padding:0;margin:0}
+#adminApp.ui-shell > .ui-frame > .ui-main > .header,
+#adminApp.ui-shell #adminModeMenu,
+#adminApp.ui-shell [id$="BackBtn"],
+#adminApp.ui-shell .mode-back-row:not(:has(button:not([id$="BackBtn"]))){display:none!important}
+body.ui-shell-body{background:var(--ui-bg);font-variant-numeric:tabular-nums}
+
+.ui-frame{display:grid;grid-template-columns:var(--ui-side-w) minmax(0,1fr);min-height:100vh;text-align:left}
+.ui-side{background:var(--ui-side);border-right:1px solid var(--ui-line);position:sticky;top:0;height:100vh;overflow-y:auto;padding:16px 12px 24px}
+.ui-brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.ui-brand .ui-logo{background:var(--ui-red);color:#fff;font-weight:900;border-radius:8px;padding:7px 8px;font-size:13px;letter-spacing:.5px}
+.ui-brand b{display:block;font-size:16px;color:var(--ui-text)}.ui-brand small{display:block;color:var(--ui-faint);font-weight:500;font-size:13px}
+.ui-nav{display:flex;flex-direction:column;gap:2px}
+.ui-group{color:var(--ui-faint);font-size:13.5px;font-weight:700;padding:16px 12px 6px}
+.ui-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;color:var(--ui-text);font:inherit;font-size:16px;font-weight:600!important;text-align:left!important;padding:10px 12px;border-radius:8px;cursor:pointer;text-decoration:none}
+.ui-item .ui-ic{width:20px;text-align:center;flex:0 0 20px}
+.ui-item.ui-sub{padding-left:40px;font-size:15.5px;color:var(--ui-text)}
+.ui-item:hover{background:var(--ui-side-hover)}
+.ui-item.active{background:var(--ui-red);color:#fff}
+.ui-item.active.ui-sub{background:var(--ui-side-hover);color:var(--ui-red);font-weight:800!important}
+
+.ui-main{min-width:0;display:flex;flex-direction:column}
+.ui-top{height:var(--ui-top-h);background:var(--ui-card);border-bottom:1px solid var(--ui-line);display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:20}
+.ui-top .ui-collapse{border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-text);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer}
+.ui-top .ui-title{font-size:18px;font-weight:800;color:var(--ui-text)}
+.ui-top .ui-spacer{flex:1}
+.ui-top .ui-env{background:#FFF4D6;color:#9A6700;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700}
+html[data-display-mode=dark] .ui-top .ui-env{background:#3A2F12;color:#D29922}
+.ui-top .ui-theme{border:1px solid var(--ui-line);background:var(--ui-card);border-radius:8px;width:36px;height:36px;cursor:pointer}
+.ui-top #adminSessionBar{display:flex;padding:0;border:0;background:none;gap:10px;font-size:13px;color:var(--ui-muted)}
+.ui-content{width:100%;max-width:1600px;margin:0 auto;padding:24px 32px 48px}
+.ui-content .admin-mode-page{max-width:1200px;margin-left:auto;margin-right:auto}
+#centerEnvironment{position:relative;z-index:30}
+
+/* 營運頁：側欄已有分頁與主題切換，隱藏重複的分頁列、標題與按鈕 */
+#adminApp.ui-shell #opsModePage .ops-tabs,
+#adminApp.ui-shell #opsModePage > .ops-section > .section-title,
+#adminApp.ui-shell #opsModePage .ops-date-actions [data-display-mode-toggle],
+#adminApp.ui-shell #opsModePage .ops-date-actions a[href="analysis.html"]{display:none!important}
+#adminApp.ui-shell .ui-content #opsModePage{max-width:1400px}
+
+/* 收合：只留圖示 */
+.ui-frame.ui-collapsed{--ui-side-w:64px}
+.ui-collapsed .ui-brand b,.ui-collapsed .ui-brand small,.ui-collapsed .ui-group,.ui-collapsed .ui-item .ui-label{display:none}
+.ui-collapsed .ui-item,.ui-collapsed .ui-item.ui-sub{justify-content:center;padding:10px 0}
+.ui-collapsed .ui-brand{justify-content:center;padding:4px 0 18px}
+
+@media (max-width:1100px){.ui-frame:not(.ui-expanded){--ui-side-w:64px}
+  .ui-frame:not(.ui-expanded) .ui-brand b,.ui-frame:not(.ui-expanded) .ui-brand small,.ui-frame:not(.ui-expanded) .ui-group,.ui-frame:not(.ui-expanded) .ui-item .ui-label{display:none}
+  .ui-frame:not(.ui-expanded) .ui-item,.ui-frame:not(.ui-expanded) .ui-item.ui-sub{justify-content:center;padding:10px 0}}
+@media (max-width:760px){
+  .ui-frame{grid-template-columns:1fr}
+  .ui-side{position:static;height:auto;display:flex;align-items:center;gap:8px;overflow-x:auto;padding:8px 10px;border-right:0;border-bottom:1px solid var(--ui-line)}
+  .ui-brand{padding:0 6px 0 0}.ui-brand b,.ui-brand small{display:none}
+  .ui-nav{flex-direction:row;gap:4px}.ui-group{display:none}.ui-item.ui-sub{padding:8px 10px;font-size:14px;color:var(--ui-text)}
+  .ui-item{white-space:nowrap;padding:8px 10px}.ui-item .ui-label{display:inline!important}
+  .ui-top{padding:0 12px;gap:8px}.ui-top .ui-collapse{display:none}.ui-top .ui-title{font-size:16px;white-space:nowrap}.ui-top #adminSessionEmail{display:none}
+  .ui-content{padding:16px 12px 40px}
+}
+
+/* 總覽頁（第 2 步） */
+.ui-overview{display:none;color:var(--ui-text);font-weight:600}
+.uo-head{text-align:center;margin-bottom:20px}.uo-head h1{font-size:24px;font-weight:800;margin:0 0 10px}
+.uo-date{display:inline-flex;align-items:center;gap:8px}.uo-date b{min-width:120px;font-size:16px}
+.uo-date button{border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-text);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+.uo-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.uo-kpi{background:var(--ui-card);border:0;border-top:4px solid var(--ui-na);border-radius:var(--ui-r);box-shadow:var(--ui-shadow);padding:16px 10px;text-align:center!important;cursor:pointer;color:var(--ui-text);font:inherit}
+.uo-kpi span{display:block;color:var(--ui-muted);font-size:13px;text-align:center!important}.uo-kpi b{display:block;font-size:30px;font-weight:800;margin:6px 0 4px;text-align:center!important}.uo-kpi em{display:block;font-style:normal;font-size:12px;font-weight:500;color:var(--ui-faint);text-align:center!important}
+.uo-kpi.ok{border-color:var(--ui-ok)}.uo-kpi.ok b{color:var(--ui-ok)}.uo-kpi.bad{border-color:var(--ui-bad)}.uo-kpi.bad b{color:var(--ui-bad)}.uo-kpi.na b{color:var(--ui-na);font-size:20px;line-height:42px}
+.uo-grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}.uo-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:24px}
+.uo-card{background:var(--ui-card);border-radius:var(--ui-r);box-shadow:var(--ui-shadow);padding:18px 20px;text-align:left}
+.uo-card h2{font-size:17px;font-weight:800;margin:0 0 14px;text-align:center!important}.uo-card h3{font-size:14px;color:var(--ui-muted);margin:18px 0 8px;text-align:left!important}
+.uo-card *{text-align:left}
+.uo-bar-row{display:grid;grid-template-columns:90px 1fr 150px;align-items:center;gap:10px;padding:5px 0;font-size:14px}
+.uo-bar-row b{text-align:right!important;font-weight:700}
+.uo-bar{height:10px;background:var(--ui-line);border-radius:999px;overflow:hidden}.uo-bar div{height:100%;background:var(--ui-red);border-radius:999px}
+.uo-bar div.ok{background:var(--ui-ok)}.uo-bar div.warn{background:var(--ui-warn)}.uo-bar div.na{background:var(--ui-na)}
+.uo-top{list-style:none;margin:0;padding:0}.uo-top li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-bottom:1px solid var(--ui-line)}
+.uo-top li:last-child{border:0}.uo-top small{grid-column:1;color:var(--ui-faint);font-weight:500;font-size:12px}.uo-top em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-weight:800;color:var(--ui-red)}
+.uo-count{font-size:14px;color:var(--ui-muted);margin-bottom:6px}.uo-count b{font-size:28px;color:var(--ui-text);margin-right:4px}
+.uo-list{list-style:none;margin:0;padding:0}.uo-list li{padding:7px 0;border-bottom:1px solid var(--ui-line);font-size:14px}.uo-list li:last-child{border:0}.uo-list small{display:block;color:var(--ui-faint);font-weight:500;font-size:12px}
+.uo-more{margin-top:10px;border:0;background:none;color:var(--ui-red);font:inherit;font-size:14px;cursor:pointer;padding:0}
+.uo-progress{list-style:none;margin:0;padding:0;display:grid;gap:12px}.uo-progress li{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.uo-progress i{font-style:normal;border-radius:999px;padding:3px 10px;font-size:13px}.uo-progress .done{background:#DCF5E3;color:var(--ui-ok)}.uo-progress .todo{background:var(--ui-miss);color:var(--ui-bad)}
+html[data-display-mode=dark] .uo-progress .done{background:#1B3A24}
+.uo-weather-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}.uo-weather-row div{display:flex;flex-direction:column;gap:2px}.uo-weather-row small{color:var(--ui-faint);font-weight:500}
+.uo-empty{color:var(--ui-faint);font-weight:500;font-size:14px;margin:6px 0}.uo-note{color:var(--ui-faint);font-size:12px;margin:6px 0 0}
+.uo-status{text-align:center;color:var(--ui-faint);font-size:13px}
+@media (max-width:1280px){.uo-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.uo-grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.uo-grid2,.uo-grid3{grid-template-columns:1fr}.uo-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 營運頁 AC 區塊（第 3 步） */
+#adminApp.ui-shell .ui-ops-ac{margin:0 0 20px;font-weight:600;color:var(--ui-text)}
+#adminApp.ui-shell .ui-filter-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px;justify-content:flex-start}
+#adminApp.ui-shell .ui-filter-bar label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--ui-muted)}
+#adminApp.ui-shell .ui-filter-bar select{min-height:36px;border:1px solid var(--ui-line);border-radius:8px;padding:4px 10px;background:var(--ui-card);color:var(--ui-text);font:inherit}
+#adminApp.ui-shell .ui-filter-count{color:var(--ui-faint);font-size:13px}
+#adminApp.ui-shell .ui-dropzone{border:2px dashed transparent;transition:border-color .15s,background .15s}
+#adminApp.ui-shell .ui-dropzone.ui-drag{border-color:var(--ui-red);background:var(--ui-miss)}
+#adminApp.ui-shell .ui-drop-tip{color:var(--ui-faint);font-size:13px;margin:6px 0 0;text-align:center}
+#adminApp.ui-shell .ui-import-history{margin:16px 0 20px;color:var(--ui-text)}
+#adminApp.ui-shell .ui-import-history>summary{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;cursor:pointer;list-style:none;min-height:40px}
+#adminApp.ui-shell .ui-import-history>summary::-webkit-details-marker{display:none}
+#adminApp.ui-shell .ui-import-history>summary h2{margin:0}
+#adminApp.ui-shell .ui-import-history>summary::after{content:'＋';display:inline-grid;place-items:center;width:26px;height:26px;border:1px solid var(--ui-line);border-radius:50%;color:var(--ui-muted);font-size:14px}
+#adminApp.ui-shell .ui-import-history[open]>summary::after{content:'－'}
+#adminApp.ui-shell .ui-import-history[open]>summary{margin-bottom:12px}
+#adminApp.ui-shell .ui-hist-latest{color:var(--ui-muted);font-size:14px}
+#adminApp.ui-shell .ui-table{width:100%;border-collapse:collapse;font-size:14px}
+#adminApp.ui-shell .ui-table th{color:var(--ui-muted);font-weight:600;font-size:13px;text-align:left!important;padding:8px 10px;border-bottom:1px solid var(--ui-line)}
+#adminApp.ui-shell .ui-table td{padding:8px 10px;border-bottom:1px solid var(--ui-line);text-align:left!important}
+#adminApp.ui-shell .ui-table .num{text-align:right!important}
+/* 右側抽屜 */
+.ui-drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--ui-card);color:var(--ui-text);box-shadow:-8px 0 24px rgb(0 0 0/15%);z-index:60;display:flex;flex-direction:column;text-align:left;font-weight:600}
+.ui-drawer[hidden]{display:none}
+.ui-drawer-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--ui-line);font-size:17px}
+.ui-drawer-close{border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-text);border-radius:8px;width:34px;height:34px;cursor:pointer}
+.ui-drawer-body{padding:16px 20px;overflow-y:auto}
+.ui-drawer-body *{text-align:left}
+.ui-kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--ui-line);font-size:14px}.ui-kv span{color:var(--ui-faint);font-weight:500}
+.ui-drawer-body h3{font-size:14px;color:var(--ui-muted);margin:18px 0 6px}
+.ui-reason{background:var(--ui-bg);border-radius:8px;padding:10px 12px;margin:0;font-size:14px;line-height:1.6}
+.ui-rev{border-left:3px solid var(--ui-warn);padding:4px 0 4px 10px;margin:8px 0;font-size:14px}.ui-rev p{margin:4px 0;color:var(--ui-muted);font-weight:500}
+#adminApp.ui-shell #opsDelayList tbody tr{cursor:pointer}
+
+/* 第 5 步：車隊與人員頁（桌機版面一致：較寬、清單改多欄格線） */
+@media (min-width:1100px){
+  #adminApp.ui-shell .ui-content #vehicleModePage,#adminApp.ui-shell .ui-content #batteryModePage,
+  #adminApp.ui-shell .ui-content #rosterModePage,#adminApp.ui-shell .ui-content #shiftModePage,
+  #adminApp.ui-shell .ui-content #defensiveModePage,#adminApp.ui-shell .ui-content #surveyModePage{max-width:1400px}
+  #adminApp.ui-shell #vehicleList{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start}
+  #adminApp.ui-shell #vehicleList > *{margin:0!important;width:auto!important;max-width:none!important}
+  #adminApp.ui-shell #batteryReportList,#adminApp.ui-shell #defensiveAdminList{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;align-items:start}
+  #adminApp.ui-shell #batteryReportList > *,#adminApp.ui-shell #defensiveAdminList > *{margin:0!important;width:auto!important;max-width:none!important}
+  #adminApp.ui-shell #rosterList{display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:10px}
+  #adminApp.ui-shell #rosterList > *{margin:0!important}
+}
+#adminApp.ui-shell .admin-mode-page .section-title{font-size:20px;font-weight:800}
+
+/* 11/10 截圖檢查（側欄字型改在上方基本規則）：指休／在職名單小字放大；頂部登出鈕各頁一致 */
+.ui-top #authLogoutBtn{border:1px solid #e2aaa4;background:var(--danger-bg,#FDECEA);color:var(--danger,#B42318);border-radius:9px;padding:8px 14px;font:inherit;font-size:14px;font-weight:800;min-height:38px;cursor:pointer}
+.ui-top #adminSessionBar{font-size:14px}
+@media (min-width:700px){
+  #adminApp.ui-shell #shiftModePage .shift-week-option{height:70px!important;grid-template-rows:42px 28px}
+  #adminApp.ui-shell #shiftModePage .shift-week-option .shift-week-btn{height:42px!important;min-height:42px!important;font-size:14px!important;letter-spacing:0}
+  #adminApp.ui-shell #shiftModePage .shift-week-open-toggle{height:28px!important;min-height:28px!important;font-size:13px!important}
+  #adminApp.ui-shell #shiftModePage .shift-status-btn,#adminApp.ui-shell #shiftModePage .shift-toolbar-search-row>button,#adminApp.ui-shell #shiftModePage .shift-export-week{font-size:14px!important;letter-spacing:0}
+  #adminApp.ui-shell #shiftModePage .shift-purge-old-btn{font-size:13px!important;letter-spacing:0}
+  #adminApp.ui-shell .shift-test-control,#adminApp.ui-shell .shift-test-toggle{font-size:13.5px!important}
+  #adminApp.ui-shell .employee-directory-card .employee-badge{font-size:12.5px;padding:4px 7px}
+}
+#adminApp.ui-shell .employee-area-tab{font-size:14px}#adminApp.ui-shell .employee-area-tab small{font-size:12.5px}
+/* A1：D7／D25 標明計算範圍（後台＝全部餐廳；儀表板＝非獨立店），兩邊都排除第三方 FA 單 */
+.scope-note{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;background:#FFF4D6;color:#7A5200;font-size:11.5px;font-weight:700;vertical-align:middle}
+html[data-display-mode=dark] .scope-note{background:#3A2F14;color:#E3B341}
+/* 總覽＝打烊截圖給主管：只放成績、等餐、劃線，一個畫面拍得完 */
+.uo-head h1{font-size:22px}
+.uo-foot{text-align:center;color:var(--ui-faint);font-size:12.5px;margin:4px 0 0}
+#uiOverviewPage .uo-grid2{margin-bottom:12px}
+@media (max-width:760px){#uiOverviewPage .uo-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}#uiOverviewPage .uo-kpi{padding:10px 4px}#uiOverviewPage .uo-kpi b{font-size:20px;margin:4px 0 2px}#uiOverviewPage .uo-kpi.na b{font-size:14px;line-height:24px}#uiOverviewPage .uo-kpi em{font-size:11px}#uiOverviewPage .uo-kpi .scope-note{display:block;margin:2px auto 0;width:max-content}#uiOverviewPage .uo-card{padding:14px}}
