@@ -72,10 +72,11 @@
   }
   page.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;if(b.dataset.go==='analysis')location.href='analysis.html';else window.UiShell?.go(b.dataset.go);});
 
-  // 只在總覽模式顯示；第一次顯示時載入
+  // 只在總覽模式顯示；每次切回總覽都重新載入
   let loaded=false;
   const original=window.showAdminMode;
-  window.showAdminMode=showAdminMode=function(mode){original(mode);page.style.display=mode==='home'?'block':'none';if(mode==='home'&&!loaded&&E('adminApp').style.display==='block'){loaded=true;load();}};
+  window.showAdminMode=showAdminMode=function(mode){original(mode);page.style.display=mode==='home'?'block':'none';// 每次回到總覽都重讀，等餐、劃線在其他頁新增或修改後才會連動
+    if(mode==='home'&&E('adminApp').style.display==='block'){loaded=true;date=sharedDate.get()?.date||date;load();}};
   page.style.display='block';
   new MutationObserver(()=>{if(!loaded&&E('adminApp').style.display==='block'&&page.style.display!=='none'){loaded=true;load();}}).observe(E('adminApp'),{attributes:true,attributeFilter:['style']});
   if(E('adminApp').style.display==='block'){loaded=true;load();}
