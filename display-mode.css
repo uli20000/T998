@@ -32,3 +32,12 @@ html[data-display-mode="dark"] .summary-card.clickable :is(.summary-label,.summa
 html[data-display-mode="dark"] :is(.shift-week-btn.active,.shift-status-btn.active,.employee-area-tab.active,.staffing-day-tab.active,.device-admin-type-btn.active){background:#b51b35!important;color:#fff!important;border-color:#b51b35!important}
 html[data-display-mode="dark"] :is(.shift-week-btn.active,.employee-area-tab.active,.staffing-day-tab.active) *{color:#fff!important}
 html[data-display-mode="dark"] :is(.forecast-data-warning,.forecast-week-gap.is-warning,.is-warning){color:#edce80!important}
+/* 後台登入頁與登入狀態列：原本白底寫死，夜間模式文字變淺色後看不清楚 */
+html[data-display-mode="dark"] .auth-gate{background:#17191d}
+html[data-display-mode="dark"] .auth-gate::before{background:rgba(240,96,121,.10)}
+html[data-display-mode="dark"] .auth-gate::after{background:rgba(240,96,121,.07)}
+html[data-display-mode="dark"] .auth-card{background:#22262b;border-color:#4b5058;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+html[data-display-mode="dark"] .auth-brand-separator{color:#6b7078}
+html[data-display-mode="dark"] .auth-input{background:#17191d;border-color:#4b5058;color:#f1f1f1}
+html[data-display-mode="dark"] .auth-foot{border-top-color:#4b5058}
+html[data-display-mode="dark"] .admin-session-bar{background:#22262b;border-bottom-color:#4b5058}

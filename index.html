@@ -926,7 +926,7 @@
  .shift-add-slot,.shift-slot-remove,.shift-unavailable{width:100%;min-width:0;height:40px;min-height:40px;padding:4px 5px;font-size:12px}
 }
 </style>
-<link rel="stylesheet" href="front-shell.css?v=20261111-c2">
+<link rel="stylesheet" href="front-shell.css?v=20261111-c3">
 </head>
 
 <body>
@@ -1638,7 +1638,7 @@
 </div>
 
 
-<script src="config/998-business.js?v=20261111-c2"></script><script src="center-ui.js?v=20261111-c2"></script>
+<script src="config/998-business.js?v=20261111-c3"></script><script src="center-ui.js?v=20261111-c3"></script>
 <script src="rider-rules.js"></script>
 <script src="rider-rpc-adapter.js"></script>
 <script>
@@ -1659,7 +1659,7 @@ const db =
     SUPABASE_KEY
   );
 
-// T998 前台名單使用公開查詢權限，避免沿用同一瀏覽器的後台登入。
+// T998 前台名單與指休（開放週、測試模式、送出）使用公開權限，避免沿用同一瀏覽器的後台登入。
 const rosterDb = window.CENTER_CONFIG.center === "998" && window.CENTER_CONFIG.environment === "production"
   ? window.CenterRuntime.createClient(SUPABASE_URL, SUPABASE_KEY, {anonymous:true})
   : db;
@@ -4537,8 +4537,8 @@ function getShiftSubmissionCycle(){
 }
 async function loadShiftSubmissionSettings(){
   const [weeksResult,testResult]=await Promise.all([
-    db.from("weekly_shift_open_weeks").select("week_start").eq("is_open",true).gte("week_start",shiftCurrentMonday()).order("week_start",{ascending:true}),
-    db.rpc("shift_test_mode_enabled")
+    rosterDb.from("weekly_shift_open_weeks").select("week_start").eq("is_open",true).gte("week_start",shiftCurrentMonday()).order("week_start",{ascending:true}),
+    rosterDb.rpc("shift_test_mode_enabled")
   ]);
   if(weeksResult.error)throw weeksResult.error;if(testResult.error)throw testResult.error;
   shiftOpenWeeks=[...new Set((weeksResult.data||[]).map(row=>row.week_start))].map(week_start=>({week_start}));
@@ -4717,7 +4717,7 @@ async function submitShiftAvailability(){
   const payload={employee_id:verifiedShiftEmployee.id,week_start:cycle.weekStart,...values,notes:notes||null};
   shiftSubmitBtn.disabled=true;shiftSubmitMessage.textContent="送出中…";
   try{
-    const r=await db.from("weekly_shift_availability").insert(payload);if(r.error)throw r.error;
+    const r=await rosterDb.from("weekly_shift_availability").insert(payload);if(r.error)throw r.error;
     shiftSuccessData.textContent=`${verifiedShiftEmployee.full_name}｜${verifiedShiftEmployee.area_code} 區｜${shiftRangeLabel(cycle.weekStart)}`;
     shiftForm.style.display="none";shiftSuccess.classList.add("show");shiftSubmitMessage.textContent="";
   }catch(e){shiftSubmitMessage.textContent=`送出失敗：${e.message||"請確認指休表仍為開放狀態並稍後重試。"}`;}
@@ -4794,7 +4794,7 @@ document.getElementById("shiftSuccessHomeBtn").addEventListener("click",showHome
 
 </script>
 
-<script src="front-shell.js?v=20261111-c2"></script>
+<script src="front-shell.js?v=20261111-c3"></script>
 </body>
 </html>
 
