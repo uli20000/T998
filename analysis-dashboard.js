@@ -460,7 +460,7 @@
   function alertsPage(ctx,r){
     const days=state.period==='day'?S.dates(M.addDays(r.end,-6),r.end):S.dates(r.start,r.end);
     const alerts=I.alerts({cells:ctx.cells,weeks:ctx.weeks,days:S.dates(M.addDays(r.end,-13),r.end),targets,independent:ctx.independent,excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,weekRule:rules().alertWeeks,dayRule:rules().alertDays});
-    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate});
+    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,inScope:M.storeInScope});
     const lastWeek=ctx.weeks.at(-1);
     const alertItem=a=>'<li class="ins-item ins-'+a.level+'"><span class="ins-dot" aria-hidden="true">'+levelDot[a.level]+'</span><div><b>'+escape(a.title)+'</b><p>'+escape(a.detail)+'</p>'+(a.link?'<div class="ins-actions">'+insightLink(a.link,'看影響度排名')+'</div>':'')+'</div></li>',SHOW=8,alertHtml=alerts.length?'<ul class="ins-list">'+alerts.slice(0,SHOW).map(alertItem).join('')+'</ul>'+(alerts.length>SHOW?'<details class="ins-more"><summary>其他 '+(alerts.length-SHOW)+' 項</summary><ul class="ins-list">'+alerts.slice(SHOW).map(alertItem).join('')+'</ul></details>':''):'<div class="empty">沒有連續未達標的項目</div>';
     const anomalyHtml=anomalies.length?'<ul class="ins-list">'+anomalies.map(a=>'<li class="ins-item '+(a.bad?'ins-orange':'ins-blue')+'"><span class="ins-dot" aria-hidden="true">'+a.icon+'</span><div><b>'+escape(a.title)+'</b><p>'+escape([...a.others.map(f=>f.text),...a.reasons].join('；'))+'。</p><div class="ins-actions"><button type="button" class="ins-link" data-ins-day="'+a.date+'">看當天</button></div></div></li>').join('')+'</ul>':'<div class="empty">'+(days.length>1?'這段期間':'這天')+'沒有偏離平常的日子</div>';
@@ -493,10 +493,11 @@
   }
   function weeklyPage(ctx,r){
     if(state.period!=='week')return '<div class="ins-switch"><p>週報草稿以「週」產生。</p><button type="button" class="ins-link primary" data-ins-period="week">切換到週</button></div>';
-    const week={start:r.start,end:r.end,label:S.weekLabel(r.start)},weeks=ctx.weeks.slice(-5);
-    const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate});
+    const week={start:r.start,end:r.end,label:S.weekLabel(r.start)},weeks=ctx.weeks.slice(-3);
+    const sssg=weeks.map(w=>{const x=weeklySales.find(y=>y.start===w.start);return x?{value:x.value,stores:x.stores||[]}:null;});
+    const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,inScope:M.storeInScope});
     const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
-    const draft=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays}});
+    const draft=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},inScope:M.storeInScope,sssg});
     state.weeklyDraft=draft;
     const title=M.BUSINESS.centerName?('T'+M.BUSINESS.center+' 營運週報｜'+week.label+'（'+week.start.slice(5).replace('-','/')+'–'+week.end.slice(5).replace('-','/')+'）'):'營運週報｜'+week.label,cn=['一','二','三','四','五','六'];
     const fmtV=(v,f)=>f==='pct'?pct(v):fmt(v,2);
@@ -507,7 +508,7 @@
         '<div class="wk-blk wk-fill"><b>＊根源 <span class="wk-you">要你填</span></b>'+(clues.length?'<div class="wk-clue">系統線索（參考用，不代表原因）：'+escape(clues.join('；'))+'</div>':'')+'<textarea name="root_cause" rows="2" placeholder="在這裡寫根源……">'+escape(n.root_cause||'')+'</textarea></div>'+
         '<div class="wk-blk wk-fill"><b>＊制定行動 <span class="wk-you">要你填</span></b>'+(fu?'<div class="wk-prev">上週行動（'+escape(S.weekLabel(M.addDays(week.start,-7)))+' 記錄，系統比對前後數字）：'+escape(fu.text)+' → '+escape(fu.center.label)+' '+fmtV(fu.center.before,fu.center.fmt)+' → '+fmtV(fu.center.after,fu.center.fmt)+(fu.center.before!==null&&fu.center.after!==null?'（'+(fu.center.fmt==='pct'?((fu.center.after-fu.center.before)>=0?'+':'−')+Math.abs((fu.center.after-fu.center.before)*100).toFixed(1)+' 點':'')+'）':'')+'</div>':'')+'<textarea name="action_plan" rows="2" placeholder="在這裡寫本週行動……">'+escape(n.action_plan||'')+'</textarea></div>'+
         '<div class="wk-save"><button type="submit" class="ins-link primary">儲存這段</button><span class="wk-status" role="status">'+(n.updated_at?'上次儲存 '+escape(String(n.updated_at).slice(5,16).replace('T',' ')):'')+'</span></div></form>';
-      return '<section class="wk-sec'+(sec.met?' wk-met':'')+'"><h3>'+(cn[i]||i+1)+'、'+escape(sec.label)+(sec.met?' <span class="wk-ok">達標</span>':'')+'</h3>'+parts+fill+'</section>';
+      return '<section class="wk-sec'+(sec.met&&sec.judged!==false?' wk-met':'')+'"><h3>'+(cn[i]||i+1)+'、'+escape(sec.label)+(sec.met&&sec.judged!==false?' <span class="wk-ok">達標</span>':'')+'</h3>'+parts+fill+'</section>';
     }).join('');
     return '<div class="wk-tools"><button type="button" class="ins-link" data-wk="regen">重新產生</button><span class="wk-status" id="wkToolStatus" role="status"></span></div>'+
       '<article class="wk-doc"><h2>'+escape(title)+'</h2><div class="wk-meta">系統產生 '+escape(new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()))+'｜<span class="wk-auto">自動</span>＝系統產生　<span class="wk-you">要你填</span>＝根源與行動</div><p class="wk-head">'+escape(draft.headline)+'</p>'+(draft.missing.length?'<p class="wk-meta">本週無法判斷：'+escape(draft.missing.join('、'))+'。</p>':'')+sections+'</article>'+
@@ -813,7 +814,7 @@
     if(state.metric==='staff'){const id0=state.request;box.innerHTML='<div class="empty">整理排班與派單中…</div>';try{const html=await staffPage(r);if(id0!==state.request||state.metric!=='staff')return;box.innerHTML=html;bindInsights(null,r);}catch(error){box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}return;}
     if(state.metric==='targets'){const id0=state.request;box.innerHTML='<div class="empty">讀取目標值中…</div>';const html=await targetsPage();if(id0!==state.request||state.metric!=='targets')return;box.innerHTML=html;bindInsights(null,r);bindV2(r);return;}
     const id=state.request,metric=state.metric;box.innerHTML='<div class="empty">讀取前幾週成績中…</div>';
-    try{const ctx=await insightContext(r);if(id!==state.request||metric!==state.metric)return;const html=metric==='alerts'?alertsPage(ctx,r):metric==='weekly'?weeklyPage(ctx,r):metric==='store'?await storePage(ctx,r):await actionsPage(ctx,r);if(id!==state.request||metric!==state.metric)return;box.innerHTML=html;bindInsights(ctx,r);bindV2(r);}
+    try{const ctx=await insightContext(r);if(metric==='weekly'){try{await readWeeklySales(ctx.weeks.slice(-3).map(w=>({range:w})));}catch(e){}}if(id!==state.request||metric!==state.metric)return;const html=metric==='alerts'?alertsPage(ctx,r):metric==='weekly'?weeklyPage(ctx,r):metric==='store'?await storePage(ctx,r):await actionsPage(ctx,r);if(id!==state.request||metric!==state.metric)return;box.innerHTML=html;bindInsights(ctx,r);bindV2(r);}
     catch(error){if(id===state.request)box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}
   }
   if(typeof window.addEventListener==='function')window.addEventListener('hashchange',()=>{const tab=(location.hash.match(/^#tab=(\w+)$/)||[])[1];if(!tab||!(INSIGHT_TABS.has(tab)||labels[tab])||!state.data)return;state.metric=tab;if(tab==='weekly'&&state.period!=='week'){state.period='week';loadReport();return;}syncMetricTab();renderMetric(state.data,state.previous,range());});
