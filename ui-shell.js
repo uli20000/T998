@@ -20,6 +20,13 @@
     {key:'ops:line',label:'劃線簽名',ic:'✍️',mode:'ops',tab:'line',sub:true},
     {key:'ops:summary',label:'報表匯出',ic:'📊',mode:'ops',tab:'summary',sub:true},
     {key:'analysis',label:'分析儀表板',ic:'📈',href:'analysis.html'},
+    {key:'analysis:alerts',label:'預警',ic:'🔔',href:'analysis.html#tab=alerts',sub:true},
+    {key:'analysis:impact',label:'影響度排名',ic:'🎯',href:'analysis.html#tab=impact',sub:true},
+    {key:'analysis:weekly',label:'週報草稿',ic:'📝',href:'analysis.html#tab=weekly',sub:true},
+    {key:'analysis:drill',label:'明細與熱圖',ic:'🔍',href:'analysis.html#tab=drill',sub:true},
+    {key:'analysis:store',label:'餐廳頁',ic:'🏪',href:'analysis.html#tab=store',sub:true},
+    {key:'analysis:staff',label:'排班與派單',ic:'🗓️',href:'analysis.html#tab=staff',sub:true},
+    {key:'analysis:actions',label:'行動追蹤',ic:'✅',href:'analysis.html#tab=actions',sub:true},
     {group:'車隊與設備'},
     {key:'vehicle',label:'車輛／巡檢',ic:'🛵',btn:'vehicleModeBtn',sub:true},
     {key:'battery',label:'電池／紀錄器',ic:'🔋',btn:'batteryModeBtn',sub:true},
@@ -27,7 +34,9 @@
     {key:'roster',label:'在職名單',ic:'👥',btn:'rosterModeBtn',sub:true},
     {key:'shift',label:'指休',ic:'🗓️',btn:'shiftModeBtn',sub:true},
     {key:'defensive',label:'防禦駕駛',ic:'🛡️',btn:'defensiveModeBtn',sub:true},
-    {key:'survey',label:'意向調查',ic:'📋',btn:'surveyModeBtn',sub:true}
+    {key:'survey',label:'意向調查',ic:'📋',btn:'surveyModeBtn',sub:true},
+    {group:'設定'},
+    {key:'analysis:targets',label:'目標值',ic:'⚙️',href:'analysis.html#tab=targets',sub:true}
   ];
   const TITLES=Object.fromEntries(NAV.filter(n=>n.key).map(n=>[n.key,n.label]));
 
@@ -71,11 +80,20 @@
     frame.classList.toggle(narrow?'ui-expanded':'ui-collapsed');
   });
 
+  // 手機（≤760px，儀表板 v2 E1）：底部四個分頁；「更多」打開完整選單，選了項目就收起
+  const tabbar=document.createElement('nav');tabbar.className='ui-tabbar';tabbar.setAttribute('aria-label','手機分頁');
+  const TABS=[['home','🏠','總覽',isAdmin?null:'admin.html'],['analysis:impact','🎯','排名','analysis.html#tab=impact'],['analysis:weekly','📝','週報','analysis.html#tab=weekly'],['more','☰','更多',null]];
+  tabbar.innerHTML=TABS.map(([k,ic,l,href])=>(href?'<a href="'+href+'"':'<button type="button"')+' data-tab="'+k+'"'+(k==='more'?' aria-expanded="false"':'')+'><span aria-hidden="true">'+ic+'</span>'+l+(href?'</a>':'</button>')).join('');
+  frame.after(tabbar);
+  const setMore=open=>{frame.classList.toggle('ui-more-open',open);tabbar.querySelector('[data-tab="more"]').setAttribute('aria-expanded',String(open));};
+  tabbar.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(!t)return;const k=t.dataset.tab;if(k==='more'){setMore(!frame.classList.contains('ui-more-open'));return;}setMore(false);if(k==='home'&&isAdmin)go(NAV[0]);});
+  nav.addEventListener('click',e=>{if(e.target.closest('.ui-item'))setMore(false);});
   function mark(key){
+    tabbar.querySelectorAll('[data-tab]').forEach(t=>{const on=t.dataset.tab===key;t.classList.toggle('active',on);if(t.tagName==='A'||t.dataset.tab==='home'){if(on)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current');}});
     nav.querySelectorAll('.ui-item').forEach(b=>b.classList.toggle('active',b.dataset.uiKey===key));
     const t=E('uiPageTitle');if(t)t.textContent=TITLES[key]||'';
   }
-  if(isAnalysis){mark('analysis');window.UiShell={mark};return;}
+  if(isAnalysis){mark((/^#tab=(alerts|impact|weekly|store|actions|targets|drill|staff)$/.test(location.hash)?'analysis:'+location.hash.slice(5):null)||'analysis');window.UiShell={mark};return;}
 
   function go(n){
     if(n.mode==='home'){showAdminMode('home');return;}

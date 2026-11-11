@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="normal">
-<script src="display-mode.js?v=20261111-c4"></script>
+<script src="display-mode.js?v=20261111-v2f"></script>
 <meta name="theme-color" content="#f4f0e8">
 <title>KFC｜台南-T998 巡檢後台</title>
 
@@ -1289,9 +1289,9 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 .ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
 @media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
 </style>
-<link rel="stylesheet" href="operations-report.css?v=20261111-c4">
-<link rel="stylesheet" href="display-mode.css?v=20261111-c4">
-<link rel="stylesheet" href="ui-shell.css?v=20261111-c4">
+<link rel="stylesheet" href="operations-report.css?v=20261111-v2f">
+<link rel="stylesheet" href="display-mode.css?v=20261111-v2f">
+<link rel="stylesheet" href="ui-shell.css?v=20261111-v2f">
 </head>
 
 <body>
@@ -1777,7 +1777,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
   </form>
 </div>
 
-<script src="config/998-business.js?v=20261111-c4"></script><script src="center-ui.js?v=20261111-c4"></script>
+<script src="config/998-business.js?v=20261111-v2f"></script><script src="center-ui.js?v=20261111-v2f"></script>
 <script>
 
 const SUPABASE_URL =
@@ -5249,15 +5249,18 @@ function t998RenderShiftWeekButtons(weeks){
     </div>`;
   }).join('');
 }
+let t998ShiftLoadVersion=0;
 async function t998LoadShiftAdmin(){
+  const loadVersion=window.CENTER_CONFIG?.center==="996"?++t998ShiftLoadVersion:null;
   const weeks=t998WeekChoices();const old=t998ShiftWeekSelect.value;const oldExport=document.getElementById("shiftExportWeekSelect")?.value;
   t998ShiftWeekSelect.innerHTML=weeks.map(w=>`<option value="${w.start}">${w.label}</option>`).join('');if(weeks.some(w=>w.start===old))t998ShiftWeekSelect.value=old;
   const exportSelect=document.getElementById("shiftExportWeekSelect");
   if(exportSelect){exportSelect.innerHTML=weeks.map(w=>`<option value="${w.start}">${w.dateLabel}</option>`).join('');exportSelect.value=weeks.some(w=>w.start===oldExport)?oldExport:t998ShiftWeekSelect.value;}
   t998ShiftAdminList.innerHTML='<div class="loading">載入中…</div>';t998ShiftSummary.textContent="";t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="loading">計算中…</div>';
   try{
-    // T998 缺少週次紀錄時視為關閉，由負責人勾選後才儲存。
-    if(window.CENTER_CONFIG?.center!=="998"){
+    // T996／T998 缺少設定的週次預設視為關閉，只有負責人勾選時才寫入。
+    // 2026-11-11 使用者決定：管理員登入即可管理，不再先查共用密碼解鎖狀態（資料庫 is_employee_shift_modules_unlocked() 改為只看管理員）。
+    if(loadVersion===null&&window.CENTER_CONFIG?.center!=="998"){
       const seed=await db.from("weekly_shift_open_weeks").upsert(weeks.map(w=>({week_start:w.start,is_open:false})),{onConflict:"week_start",ignoreDuplicates:true});
       if(seed.error)throw seed.error;
     }
@@ -5267,6 +5270,7 @@ async function t998LoadShiftAdmin(){
       db.from("staffing_settings").select("target_tplh,max_third_party_usage_pct,forecast_weeks,shift_test_mode").eq("singleton",true).maybeSingle(),
       db.from("weekly_shift_open_weeks").select("week_start,is_open").in("week_start",weeks.map(w=>w.start))
     ]);
+    if(loadVersion!==null&&loadVersion!==t998ShiftLoadVersion)return;
     if(er.error)throw er.error;if(sr.error)throw sr.error;if(settings.error)throw settings.error;if(openWeeks.error)throw openWeeks.error;
     t998Employees=er.data||[];if(settings.data)t998StaffingSettings=settings.data;
     t998ShiftOpenWeeks=new Set((openWeeks.data||[]).filter(row=>row.is_open).map(row=>row.week_start));
@@ -5275,8 +5279,8 @@ async function t998LoadShiftAdmin(){
     t998ShiftRows=t998Employees.map(e=>({employee:e,shift:latest.get(String(e.id))||null}));
     const forecastRows=t998Employees.map(e=>({employee:e,shift:latest.get(String(e.id))||null}));
     const testToggle=document.getElementById("shiftTestModeToggle");if(testToggle){testToggle.checked=Boolean(t998StaffingSettings.shift_test_mode);t998SyncShiftToggleVisual(testToggle);}
-    t998RenderShiftAdmin();await t998RenderStaffingRecommendation(t998ShiftWeekSelect.value,forecastRows);
-  }catch(e){t998ShiftRows=[];t998ShiftAdminList.innerHTML=`<div class="empty">讀取失敗：${esc(e.message||"請確認權限")}</div>`;t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="empty">人力資料讀取失敗</div>';}
+    t998RenderShiftAdmin();await t998RenderStaffingRecommendation(t998ShiftWeekSelect.value,forecastRows,loadVersion);
+  }catch(e){if(loadVersion!==null&&loadVersion!==t998ShiftLoadVersion)return;t998ShiftRows=[];t998ShiftAdminList.innerHTML=`<div class="empty">讀取失敗：${esc(e.message||"請確認權限")}</div>`;t998StaffingSummary.innerHTML="";t998StaffingWeekGap.hidden=true;t998StaffingForecastDataWarning.hidden=true;t998StaffingDayTabs.innerHTML="";t998StaffingList.innerHTML='<div class="empty">人力資料讀取失敗</div>';}
 }
 async function t998SetShiftWeekOpen(input){
   if(!input)return;
@@ -5382,10 +5386,11 @@ async function t998LoadAllPaged(table,select,fromDate,toDate,periodCode,orderCol
   }return out;
 }
 function t998MapAdd(map,key,value){map.set(key,(map.get(key)||0)+Number(value||0));}
-async function t998RenderStaffingRecommendation(weekStart,shiftRows){
+async function t998RenderStaffingRecommendation(weekStart,shiftRows,loadVersion=null){
   if(!t998AreaMapLoaded)await t998LoadAreaMap();
   const F=window.OpsForecast,weeks=F.SETTINGS.weeks;
   const powerbiData=await F.load(db,weekStart,t998DateAdd(weekStart,6));
+  if(loadVersion!==null&&loadVersion!==t998ShiftLoadVersion)return;
   const prepared=F.prepare({...powerbiData,mapping:t998AreaMap,inScope:window.OpsMetrics.storeInScope});
   const dayNames=['週一','週二','週三','週四','週五','週六','週日'];
   const dayForecasts=dayNames.map((day,offset)=>prepared.forecast(t998DateAdd(weekStart,offset)));
@@ -5867,7 +5872,7 @@ function t998OpenPasswordDialog(mode,targetMode){
 function t998ClosePasswordDialog(){
   t998ProtectedModal.style.display="none";t998ClearPasswordDialog();t998ProtectedTargetMode=null;
 }
-// 2026-11-10 使用者決定：在職名單與指休不再使用共用密碼，管理員登入即可進入（資料庫權限仍限管理員）。
+// 2026-11-11 使用者決定：在職名單與指休不使用共用密碼，管理員登入即可進入（資料庫權限仍限管理員）。
 async function t998EnterProtectedModule(mode){
   showAdminMode(mode);
 }
@@ -6319,18 +6324,19 @@ async function opsArchiveScoreSourceFiles(pair){
 
 
 
-<script src="operations-calendar.js?v=20261111-c4"></script>
+<script src="operations-calendar.js?v=20261111-v2f"></script>
 <script src="config/business-schema.js"></script>
-<script src="config/998-business.js?v=20261111-c4"></script>
+<script src="config/998-business.js?v=20261111-v2f"></script>
 <script src="score-read-source.js"></script>
-<script src="operations-forecast.js?v=20261111-c4"></script>
-<script src="operations-metrics.js?v=20261111-c4"></script>
-<script src="operations-summary.js?v=20261111-c4"></script>
-<script src="operations-report.js?v=20261111-c4"></script>
-<script src="operations-entry.js?v=20261111-c4"></script>
-<script src="ui-shell.js?v=20261111-c4"></script>
-<script src="ui-overview.js?v=20261111-c4"></script>
-<script src="ui-ops.js?v=20261111-c4"></script>
+<script src="operations-forecast.js?v=20261111-v2f"></script>
+<script src="operations-metrics.js?v=20261111-v2f"></script>
+<script src="operations-summary.js?v=20261111-v2f"></script>
+<script src="operations-report.js?v=20261111-v2f"></script>
+<script src="operations-entry.js?v=20261111-v2f"></script>
+<script src="ui-shell.js?v=20261111-v2f"></script>
+<script src="kpi-settings.js?v=20261111-v2f"></script>
+<script src="ui-overview.js?v=20261111-v2f"></script>
+<script src="ui-ops.js?v=20261111-v2f"></script>
 </body>
 </html>
 

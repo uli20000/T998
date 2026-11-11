@@ -63,6 +63,7 @@
   async function load(){
     const id=++req,wd='日一二三四五六'[new Date(date+'T12:00:00Z').getUTCDay()];E('uoDate').textContent=date+'（'+wd+'）';E('uoTitle').textContent='T'+((window.CENTER_CONFIG&&window.CENTER_CONFIG.center)||(window.CenterBusinessConfig||{}).center||'')+' '+((window.CenterBusinessConfig||{}).centerName||'外送中心')+'｜營運成績';E('uoStatus').textContent='讀取中…';E('uoFoot').textContent='';
     try{
+      if(window.KpiSettings&&typeof db!=='undefined'){try{await window.KpiSettings.load(db);}catch(e){}}
       const o=await window.OpsReport.overview(date,'day');if(id!==req)return;
       renderKpis(o);renderWait(o);renderLine(o);
       const now=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
