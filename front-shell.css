@@ -110,4 +110,7 @@ body.front-v2 .success-title{font-size:24px}
 body.front-v2 .success-data > div{font-size:17px}
 .fv-banner b{font-size:18px}
 .fv-banner p{font-size:16px}
-@media(max-width:380px){body.front-v2 .header{padding:12px}body.front-v2 .header .title{font-size:16px}body.front-v2 .header .date{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis}body.front-v2 .mode-menu{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:14px}body.front-v2 .mode-btn{gap:6px;padding:16px 8px}body.front-v2 .mode-btn .icon{font-size:24px}body.front-v2 .mode-btn .main{font-size:16px}}
+@media(max-width:600px){body.front-v2 .header{padding:12px}body.front-v2 .header .title{font-size:16px}body.front-v2 .header .date{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis}body.front-v2 .mode-menu{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:14px}body.front-v2 .mode-btn{gap:6px;padding:16px 8px}body.front-v2 .mode-btn .icon{font-size:24px}body.front-v2 .mode-btn .main{font-size:16px}}
+/* 手機整頁放大：頁面寬度跟著螢幕（device-width），內容等比放大，左右剛好切齊 */
+@media(max-width:600px){body.front-v2{zoom:1.2}}
+@media(max-width:374px){body.front-v2{zoom:1.1}}
