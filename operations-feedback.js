@@ -59,12 +59,16 @@
     if(!out.length)throw new Error('此 4128 檔沒有'+CENTER_LABEL+'且可辨識前三碼店號的資料。');
     return out;
   }
+  // GES 篩選固定：服務方式＝外送、加盟商組織＝Central1，只改日期。新版匯出檔不附篩選說明：
+  // 沒寫服務方式就視為外送；有寫但不是外送／Delivery 才擋。沒寫日期範圍就用匯入區選的日期。
+  function manualGesRange(){const a=$('gesRangeStart')?.value||'',b=$('gesRangeEnd')?.value||'';if(!/^\d{4}-\d{2}-\d{2}$/.test(a)||!/^\d{4}-\d{2}-\d{2}$/.test(b)||a>b)return null;return {start:a,end:b};}
   function parseGes(matrix,file,stores){
     const filterText=matrix.slice(0,16).map(row=>row.map(x=>String(x??'')).join(' ')).join(' ');
-    if(!/服務方式\s*:\s*Delivery/i.test(filterText))throw new Error('GES 檔的服務方式不是 Delivery，未匯入。');
-    const dateMatch=filterText.match(/日期範圍\s*:\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?\s*至\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?/);
-    if(!dateMatch)throw new Error('GES 檔找不到日期範圍；請使用含「日期範圍」的匯出檔。');
-    const start=`${dateMatch[1]}-${String(dateMatch[2]).padStart(2,'0')}-${String(dateMatch[3]).padStart(2,'0')}`,end=`${dateMatch[4]}-${String(dateMatch[5]).padStart(2,'0')}-${String(dateMatch[6]).padStart(2,'0')}`;
+    if(/服務方式\s*[:：]/.test(filterText)&&!/服務方式\s*[:：]\s*(Delivery|外送)/i.test(filterText))throw new Error('GES 檔的服務方式不是外送（Delivery），未匯入。');
+    const dateMatch=filterText.match(/日期範圍\s*[:：]\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?\s*至\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?/);
+    const manual=dateMatch?null:manualGesRange();
+    if(!dateMatch&&!manual)throw new Error('GES 檔沒有寫日期範圍；請先在上方選 GES 日期範圍，再重新選檔。');
+    const start=dateMatch?`${dateMatch[1]}-${String(dateMatch[2]).padStart(2,'0')}-${String(dateMatch[3]).padStart(2,'0')}`:manual.start,end=dateMatch?`${dateMatch[4]}-${String(dateMatch[5]).padStart(2,'0')}-${String(dateMatch[6]).padStart(2,'0')}`:manual.end;
     const headerRow=matrix.findIndex(row=>row.some(x=>clean(x)==='餐廳')&&row.some(x=>clean(x)==='# 回應數')&&row.some(x=>clean(x)==='問卷 OSAT'));
     if(headerRow<0)throw new Error('找不到 GES 餐廳／回應數／問卷 OSAT 欄位。');
     const headers=matrix[headerRow].map(clean),ix={restaurant:indexOf(headers,'餐廳'),count:indexOf(headers,'# 回應數'),one:indexOf(headers,'1SAT'),survey:indexOf(headers,'問卷 OSAT'),google:indexOf(headers,'Google OSAT'),delivery:indexOf(headers,'外送平台 OSAT'),accuracy:indexOf(headers,'餐點正確性'),environment:indexOf(headers,'整體餐廳環境'),service:indexOf(headers,'服務'),speed:indexOf(headers,'服務速度'),food:indexOf(headers,'餐點好吃度')};
@@ -75,31 +79,38 @@
       out.push(rowRecord('GES',keyParts([start,end,restaurant]),file,row));
     }
     if(!out.length)throw new Error('GES 檔沒有餐廳彙總列。');
+    out.manualRange=!dateMatch;
     return out;
   }
   async function parseFile(file){
     if(!window.XLSX)throw new Error('Excel 元件尚未載入，請重新整理後再試。');
     const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});if(!workbook.SheetNames.length)throw new Error('活頁簿沒有工作表。');
     const all=[];for(const sheetName of workbook.SheetNames){const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:'',raw:true});if(matrix.length)all.push({sheetName,matrix});}
-    const flat=all.flatMap(x=>x.matrix);let rows,type;
+    const flat=all.flatMap(x=>x.matrix);let rows,type,manualRange=false;
     const stores=await restaurantDirectory();
     if(flat.some(r=>r.some(x=>clean(x)==='訂單編號')&&r.some(x=>clean(x)==='工作單號'))){type='4128';rows=await parse4128(flat,file,stores);}
     else if(flat.some(r=>r.some(x=>clean(x)==='建議種類')&&r.some(x=>clean(x)==='被抱怨型態')&&r.some(x=>clean(x)==='重點')&&r.some(x=>clean(x)==='項目1'))){type='0800';rows=await parse0800(flat,file);}
-    else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';rows=parseGes(flat,file,stores);}
+    else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';rows=parseGes(flat,file,stores);manualRange=!!rows.manualRange;}
     else throw new Error('無法辨識檔案類型；請選 0800、4128 或 GES 格式。');
     const uniq=new Map(rows.map(r=>[r.source_type+'|'+r.source_key,r]));rows=[...uniq.values()];
     const start=rows.map(r=>r.record_date||r.period_start).filter(Boolean).sort()[0],end=rows.map(r=>r.record_date||r.period_end).filter(Boolean).sort().at(-1);
-    return {file,type,rows,start,end,unmapped:rows.filter(r=>r.source_type==='4128'&&r.restaurant_name.startsWith('未配對店號')).length};
+    return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>r.source_type==='4128'&&r.restaurant_name.startsWith('未配對店號')).length};
   }
   function render(errors=[]){
-    const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:x.start===x.end?x.start:`${x.start}～${x.end}`,count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];
+    const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:(x.start===x.end?x.start:`${x.start}～${x.end}`)+(x.manualRange?'（手動選）':''),count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];
     $('opsFeedbackPreview').innerHTML=rows.length?'<table class="ops-table"><thead><tr><th>檔案</th><th>類型</th><th>日期／期間</th><th>符合篩選筆數</th><th>未配對店號</th><th>狀態</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escape(x.file)+'</td><td>'+escape(x.type)+'</td><td>'+escape(x.period)+'</td><td>'+escape(x.count)+'</td><td>'+escape(x.unmapped)+'</td><td>'+escape(x.status)+'</td></tr>').join('')+'</tbody></table>':'';
     $('opsFeedbackImport').disabled=!prepared.length;
   }
+  // 預設日期：上一週週一～週日（台北時間）
+  {const now=new Date(Date.now()+8*3600000),dow=(now.getUTCDay()+6)%7,mon=new Date(now);mon.setUTCDate(now.getUTCDate()-dow-7);const sun=new Date(mon);sun.setUTCDate(mon.getUTCDate()+6);const iso=d=>d.toISOString().slice(0,10);if($('gesRangeStart')&&!$('gesRangeStart').value)$('gesRangeStart').value=iso(mon);if($('gesRangeEnd')&&!$('gesRangeEnd').value)$('gesRangeEnd').value=iso(sun);}
   document.addEventListener('change',async event=>{
+    // 改了 GES 日期：已選的檔案重新辨識
+    if(event.target.closest('#gesRangeStart,#gesRangeEnd')){const f=$('opsFeedbackFiles');if(f&&f.files&&f.files.length)f.dispatchEvent(new Event('change',{bubbles:true}));return;}
     const root=event.target.closest('#opsFeedbackFiles');if(!root)return;
     prepared.length=0;$('opsFeedbackImport').disabled=true;$('opsFeedbackMessage').textContent='讀取與篩選檔案中…';const errors=[];
     for(const file of [...(root.files||[])])try{prepared.push(await parseFile(file));}catch(e){errors.push({file:file.name,error:e.message||'無法讀取'});}
+    // 同一批裡兩個 GES 檔的日期範圍相同：同一週同一家店只有一筆，後面的會蓋掉前面的，所以擋下
+    {const seen=new Set();for(let i=0;i<prepared.length;i++){const x=prepared[i];if(x.type!=='GES')continue;const k=x.start+'|'+x.end;if(seen.has(k)){errors.push({file:x.file.name,error:'和另一個 GES 檔的日期範圍相同（'+x.start+'～'+x.end+'），會互相覆蓋；請一次只選一週的 GES 檔，或改日期後再選。'});prepared.splice(i,1);i--;}else seen.add(k);}}
     render(errors);$('opsFeedbackMessage').textContent=errors.length?`完成辨識；${errors.length} 個檔案未匯入。`:prepared.length?`已辨識 ${prepared.length} 個檔案，共 ${prepared.reduce((n,x)=>n+x.rows.length,0)} 筆符合條件資料。`:'請選取 0800、4128 或 GES Excel 檔案。';
   });
   document.addEventListener('click',async event=>{
