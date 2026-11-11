@@ -9,6 +9,12 @@
   if(!menu||document.body.classList.contains('front-v2'))return;
   document.body.classList.add('front-v2');
 
+  // 鎖定縮放：iOS Safari／LINE 內建瀏覽器不理會 user-scalable=no，另外擋雙指縮放與連點放大
+  ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+  document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+  let lastTouchEnd=0;
+  document.addEventListener('touchend',e=>{const now=Date.now();if(now-lastTouchEnd<=300&&!e.target.closest('input,textarea,select'))e.preventDefault();lastTouchEnd=now;},{passive:false});
+
   // 首頁
   const hello=document.createElement('div');hello.className='fv-hello';hello.textContent='今天要做什麼？';
   menu.prepend(hello);

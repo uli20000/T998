@@ -83,3 +83,29 @@ body.front-v2 .success-panel .back-home-btn{width:auto;min-height:40px;height:au
 
 /* 姓名欄與其他欄位一樣靠左（原版置中） */
 body.front-v2 #claimantName,body.front-v2 #reporterName,body.front-v2 #surveyRespondentName,body.front-v2 #defensiveName,body.front-v2 .name-search-wrap input{text-align:left}
+
+/* 手機專用：鎖定縮放，預設字級放大（外送員只用手機開） */
+html:has(body.front-v2){touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body.front-v2 *{touch-action:pan-x pan-y}
+body.front-v2 .header .title{font-size:18px;white-space:nowrap}
+body.front-v2 .fv-hello{font-size:17px}
+body.front-v2 .fv-other{font-size:15px}
+body.front-v2 .mode-btn{padding:18px 14px}
+body.front-v2 .mode-btn .icon{font-size:30px}
+body.front-v2 .mode-btn .main{font-size:18px}
+body.front-v2 #claimModeBtn .icon,body.front-v2 #returnModeBtn .icon{font-size:50px}
+body.front-v2 #claimModeBtn .main,body.front-v2 #returnModeBtn .main{font-size:27px}
+body.front-v2 .fv-sub{font-size:14px}
+body.front-v2 .intro .back-home-btn,body.front-v2 .success-panel .back-home-btn{font-size:16px;min-height:44px}
+body.front-v2 #introTitle{font-size:24px}
+body.front-v2 #introText{font-size:15px}
+body.front-v2 .card .label{font-size:15px}
+body.front-v2 .card input[type=text],body.front-v2 .card input[type=number],body.front-v2 .card input:not([type]),body.front-v2 .card select{font-size:18px}
+body.front-v2 .check-name{font-size:17px}
+body.front-v2 .option{font-size:16px;padding:9px 16px}
+body.front-v2 .fv-check-count small,body.front-v2 .fv-hint{font-size:14px}
+body.front-v2 .success-title{font-size:24px}
+body.front-v2 .success-data > div{font-size:17px}
+.fv-banner b{font-size:18px}
+.fv-banner p{font-size:16px}
+@media(max-width:380px){body.front-v2 .header{padding:12px}body.front-v2 .header .title{font-size:16px}body.front-v2 .header .date{font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis}body.front-v2 .mode-menu{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:14px}body.front-v2 .mode-btn{gap:6px;padding:16px 8px}body.front-v2 .mode-btn .icon{font-size:24px}body.front-v2 .mode-btn .main{font-size:16px}}
