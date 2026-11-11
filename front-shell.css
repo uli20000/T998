@@ -85,8 +85,10 @@ body.front-v2 .success-panel .back-home-btn{width:auto;min-height:40px;height:au
 body.front-v2 #claimantName,body.front-v2 #reporterName,body.front-v2 #surveyRespondentName,body.front-v2 #defensiveName,body.front-v2 .name-search-wrap input{text-align:left}
 
 /* 手機專用：鎖定縮放，預設字級放大（外送員只用手機開） */
-html:has(body.front-v2){touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body.front-v2 *{touch-action:pan-x pan-y}
+html:has(body.front-v2){touch-action:pan-y;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body.front-v2{overflow-x:clip;touch-action:pan-y;max-width:100vw}
+body.front-v2 *{touch-action:pan-y}
+body.front-v2 .table-wrap,body.front-v2 .table-container,body.front-v2 .table-wrap *,body.front-v2 .table-container *{touch-action:pan-x pan-y}
 body.front-v2 .header .title{font-size:18px;white-space:nowrap}
 body.front-v2 .fv-hello{font-size:17px}
 body.front-v2 .fv-other{font-size:15px}
