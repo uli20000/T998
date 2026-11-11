@@ -1659,8 +1659,8 @@ const db =
     SUPABASE_KEY
   );
 
-// T998 前台名單與指休（開放週、測試模式、送出）使用公開權限，避免沿用同一瀏覽器的後台登入。
-const rosterDb = window.CENTER_CONFIG.center === "998" && window.CENTER_CONFIG.environment === "production"
+// T998／T981 前台名單與指休（開放週、測試模式、送出）使用公開權限，避免沿用同一瀏覽器的後台登入。
+const rosterDb = ["998","981"].includes(window.CENTER_CONFIG.center) && window.CENTER_CONFIG.environment === "production"
   ? window.CenterRuntime.createClient(SUPABASE_URL, SUPABASE_KEY, {anonymous:true})
   : db;
 

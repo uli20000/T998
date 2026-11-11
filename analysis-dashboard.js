@@ -110,7 +110,7 @@
   function feedbackGroups(data,source){const map=new Map();for(const x of data.feedback||[]){if(x.source_type!==source)continue;const key=x.restaurant_name||'未分類餐廳',v=map.get(key)||{name:key,code:x.store_code||'',count:0,rows:[]};v.count++;v.rows.push(x);if(!v.code&&x.store_code)v.code=x.store_code;map.set(key,v);}return [...map.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'zh-Hant'));}
   function feedbackSidebarRows(data){const first=(source)=>feedbackGroups(data,source)[0];const a=first('0800'),b=first('4128'),ges=(data.feedback||[]).filter(x=>x.source_type==='GES'&&x.osat_survey!==null&&x.osat_survey!==undefined).sort((x,y)=>Number(x.osat_survey)-Number(y.osat_survey));return [{label:'0800',name:a?.name||'尚無資料',value:a?fmt(a.count)+' 筆':'—'},{label:'4128',name:b?.name||'尚無資料',value:b?fmt(b.count)+' 筆':'—'},{label:'GES OSAT最低',name:ges[0]?.restaurant_name||'尚無資料',value:ges[0]?pct(ges[0].osat_survey):'—'}];}
   function renderMetricTabs(){
-    const labels=[['sstg','SG／TG'],['d7','D7／D25'],['fa','TPLH／FA'],['waiting','等餐'],['feedback','GES／080'],['alerts','🔔 預警'],['impact','🎯 影響度'],['weekly','📝 週報草稿'],['store','🏪 餐廳頁'],['actions','✅ 行動追蹤'],['drill','🔍 明細熱圖'],['staff','🗓️ 排班派單']];
+    const labels=[['sstg','SG／TG'],['d7','D7／D25'],['fa','TPLH／FA'],['waiting','等餐'],['feedback','GES／080'],['alerts','🔔 預警'],['impact','🎯 影響度'],['weekly','📝 週報草稿'],['store','🏪 餐廳頁'],['actions','✅ 行動追蹤'],['drill','🔍 明細熱圖'],['staff','👷 排班派單']];
     const nav=$('metricTabs');
     if(!nav.dataset.bound){nav.addEventListener('click',event=>{const button=event.target.closest('[data-metric]');if(!button)return;state.metric=button.dataset.metric;syncMetricTab();try{renderMetric(state.data,state.previous,range());}catch(error){status('此成績頁載入失敗：'+(error.message||error),true);}});nav.dataset.bound='true';}
     nav.innerHTML=labels.map(([key,label])=>'<button type="button" class="'+(state.metric===key?'active':'')+'" data-metric="'+key+'" aria-pressed="'+(state.metric===key)+'">'+label+'</button>').join('');nav.classList.remove('hidden');
@@ -509,7 +509,7 @@
         '<div class="wk-save"><button type="submit" class="ins-link primary">儲存這段</button><span class="wk-status" role="status">'+(n.updated_at?'上次儲存 '+escape(String(n.updated_at).slice(5,16).replace('T',' ')):'')+'</span></div></form>';
       return '<section class="wk-sec'+(sec.met?' wk-met':'')+'"><h3>'+(cn[i]||i+1)+'、'+escape(sec.label)+(sec.met?' <span class="wk-ok">達標</span>':'')+'</h3>'+parts+fill+'</section>';
     }).join('');
-    return '<div class="wk-tools"><button type="button" class="ins-link" data-wk="regen">重新產生</button><button type="button" class="ins-link" data-wk="copy">複製文字</button><button type="button" class="ins-link primary" data-wk="print">列印／存成 PDF</button><span class="wk-status" id="wkToolStatus" role="status"></span></div>'+
+    return '<div class="wk-tools"><button type="button" class="ins-link" data-wk="regen">重新產生</button><span class="wk-status" id="wkToolStatus" role="status"></span></div>'+
       '<article class="wk-doc"><h2>'+escape(title)+'</h2><div class="wk-meta">系統產生 '+escape(new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()))+'｜<span class="wk-auto">自動</span>＝系統產生　<span class="wk-you">要你填</span>＝根源與行動</div><p class="wk-head">'+escape(draft.headline)+'</p>'+(draft.missing.length?'<p class="wk-meta">本週無法判斷：'+escape(draft.missing.join('、'))+'。</p>':'')+sections+'</article>'+
       '<p class="ins-foot">根源和行動存在「週行動追蹤」，和 D7／D25、TPLH／FA、SG／TG、等餐分頁下方的表單是同一筆紀錄。D7／D25 只算非獨立店。</p>';
   }
@@ -802,7 +802,7 @@
   }
   function closeExportMenu(){$('exportSheet')?.classList.add('hidden');$('export')?.focus();}
   async function renderInsight(r){
-    window.UiShell?.mark?.('analysis:'+state.metric);
+    window.UiShell?.mark?.(state.metric==='targets'?'analysis:targets':'analysis');
     const titles={alerts:'預警與異常日',impact:'影響度排名：還差幾單才達標',weekly:'週報草稿',store:'餐廳頁：近 8 週所有指標',actions:'行動追蹤與自訂比較',targets:'目標值設定',drill:'明細與熱圖',staff:'排班與派單'};
     $('metricTitle').textContent=titles[state.metric];$('metricSubtitle').textContent=periodLabel(r);
     $('biUploadFooter').classList.add('hidden');$('feedbackUploadFooter').classList.add('hidden');renderMetricTabs();syncMetricTab();

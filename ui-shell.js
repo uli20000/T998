@@ -16,17 +16,10 @@
     {key:'home',label:'總覽',ic:'🏠',mode:'home'},
     {group:'營運'},
     {key:'ops:scores',label:'成績匯入',ic:'📥',mode:'ops',tab:'scores',sub:true},
-    {key:'ops:delay',label:'等餐',ic:'⏱️',mode:'ops',tab:'delay',sub:true},
+    {key:'ops:delay',label:'等餐紀錄',ic:'⏱️',mode:'ops',tab:'delay',sub:true},
     {key:'ops:line',label:'劃線簽名',ic:'✍️',mode:'ops',tab:'line',sub:true},
     {key:'ops:summary',label:'報表匯出',ic:'📊',mode:'ops',tab:'summary',sub:true},
     {key:'analysis',label:'分析儀表板',ic:'📈',href:'analysis.html'},
-    {key:'analysis:alerts',label:'預警',ic:'🔔',href:'analysis.html#tab=alerts',sub:true},
-    {key:'analysis:impact',label:'影響度排名',ic:'🎯',href:'analysis.html#tab=impact',sub:true},
-    {key:'analysis:weekly',label:'週報草稿',ic:'📝',href:'analysis.html#tab=weekly',sub:true},
-    {key:'analysis:drill',label:'明細與熱圖',ic:'🔍',href:'analysis.html#tab=drill',sub:true},
-    {key:'analysis:store',label:'餐廳頁',ic:'🏪',href:'analysis.html#tab=store',sub:true},
-    {key:'analysis:staff',label:'排班與派單',ic:'🗓️',href:'analysis.html#tab=staff',sub:true},
-    {key:'analysis:actions',label:'行動追蹤',ic:'✅',href:'analysis.html#tab=actions',sub:true},
     {group:'車隊與設備'},
     {key:'vehicle',label:'車輛／巡檢',ic:'🛵',btn:'vehicleModeBtn',sub:true},
     {key:'battery',label:'電池／紀錄器',ic:'🔋',btn:'batteryModeBtn',sub:true},
@@ -80,9 +73,9 @@
     frame.classList.toggle(narrow?'ui-expanded':'ui-collapsed');
   });
 
-  // 手機（≤760px，儀表板 v2 E1）：底部四個分頁；「更多」打開完整選單，選了項目就收起
+  // 手機（≤760px，儀表板 v2 E1）：底部三個分頁（儀表板內的工具只在頁內分頁列，不重複放）；「更多」打開完整選單，選了項目就收起
   const tabbar=document.createElement('nav');tabbar.className='ui-tabbar';tabbar.setAttribute('aria-label','手機分頁');
-  const TABS=[['home','🏠','總覽',isAdmin?null:'admin.html'],['analysis:impact','🎯','排名','analysis.html#tab=impact'],['analysis:weekly','📝','週報','analysis.html#tab=weekly'],['more','☰','更多',null]];
+  const TABS=[['home','🏠','總覽',isAdmin?null:'admin.html'],['analysis','📈','儀表板',isAnalysis?null:'analysis.html'],['more','☰','更多',null]];
   tabbar.innerHTML=TABS.map(([k,ic,l,href])=>(href?'<a href="'+href+'"':'<button type="button"')+' data-tab="'+k+'"'+(k==='more'?' aria-expanded="false"':'')+'><span aria-hidden="true">'+ic+'</span>'+l+(href?'</a>':'</button>')).join('');
   frame.after(tabbar);
   const setMore=open=>{frame.classList.toggle('ui-more-open',open);tabbar.querySelector('[data-tab="more"]').setAttribute('aria-expanded',String(open));};
@@ -93,7 +86,7 @@
     nav.querySelectorAll('.ui-item').forEach(b=>b.classList.toggle('active',b.dataset.uiKey===key));
     const t=E('uiPageTitle');if(t)t.textContent=TITLES[key]||'';
   }
-  if(isAnalysis){mark((/^#tab=(alerts|impact|weekly|store|actions|targets|drill|staff)$/.test(location.hash)?'analysis:'+location.hash.slice(5):null)||'analysis');window.UiShell={mark};return;}
+  if(isAnalysis){mark(location.hash==='#tab=targets'?'analysis:targets':'analysis');addEventListener('hashchange',()=>mark(location.hash==='#tab=targets'?'analysis:targets':'analysis'));window.UiShell={mark};return;}
 
   function go(n){
     if(n.mode==='home'){showAdminMode('home');return;}

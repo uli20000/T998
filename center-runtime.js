@@ -10,7 +10,7 @@
     });
   }
   root.CenterRuntime={
-    createClient(url,key,{anonymous=false}={}){
+    createClient(url,key,options){
       const config=root.CENTER_CONFIG;
       if(config?.environment!=='production'||url!==config.supabaseUrl||key!==config.publishableKey||config.schema!=='public')
         throw new Error('正式環境設定不符，已停止連線');
@@ -26,7 +26,8 @@
         };
       }
       if(config.productionConfirmed!==true)throw new Error('正式部署尚未確認，已停止連線');
-      if(anonymous){
+      // anonymous：前台名單專用連線（998／981），不讀寫後台登入狀態
+      if(options?.anonymous){
         return root.supabase.createClient(url,key,{auth:{
           storageKey:'t'+config.center+'-public-roster',
           persistSession:false,
@@ -35,7 +36,7 @@
         }});
       }
       // 沿用 supabase-js 預設的登入儲存位置（跟各中心舊站相同），切換後不必重新登入
-      return root.supabase.createClient(url,key);
+      return root.supabase.createClient(url,key,options);
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
