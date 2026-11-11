@@ -230,7 +230,7 @@
   /** C1 時段 × 星期熱圖。orders：{date, hour, code, fa, d7, d25, wait}；hour 為落單時間的小時（台灣時間），沒有時間的單另計 skipped。
    *  口徑同上：D7／D25 只算非獨立店的非 FA 單；FA 佔比、等餐用全部單。單數少於 minOrders 的格子不給值，避免一兩張單就變紅。 */
   const WEEKDAYS=['一','二','三','四','五','六','日'];
-  function heatmap(orders,metric,{independent=new Set(),minOrders=5}={}){
+  function heatmap(orders,metric,{independent=new Set(),minOrders=5,hourList=null}={}){
     if(!METRICS[metric])throw new Error('不支援的指標：'+metric);
     const grid=new Map(),hours=new Set(),all=blank({});let skipped=0;
     const add=(t,o)=>{t.tc++;if(o.fa)t.fa++;else if(!independent.has(String(o.code||''))){const d7=String(o.d7||'').toUpperCase(),d25=String(o.d25||'').toUpperCase();if(d7==='Y')t.d7Y++;if(d7==='N')t.d7N++;if(d25==='Y')t.d25Y++;if(d25==='N')t.d25N++;}if(o.wait)t.wait++;};
@@ -242,7 +242,8 @@
       add(t,o);add(all,o);hours.add(h);
     }
     const base=x=>metric==='d7'||metric==='d25'?x[metric+'Y']+x[metric+'N']:x.tc;
-    const list=[...hours].sort((a,b)=>a-b);
+    // hourList：固定顯示的小時欄（外送時段），沒有就列出有訂單的小時
+    const list=hourList?hourList.slice():[...hours].sort((a,b)=>a-b);
     const rows=WEEKDAYS.map((label,wd)=>({weekday:label,cells:list.map(h=>{const t=grid.get(wd+'|'+h)||blank({}),n=base(t),enough=metric==='waiting'?t.tc>0:n>=minOrders;return {hour:h,n,tc:t.tc,value:enough?value(t,metric):null};})}));
     const overall=value(all,metric);
     // 明顯差的格子：達成率比整體低（FA 比整體高）至少 5 點；等餐取筆數最多。最多 3 格。
