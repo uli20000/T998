@@ -19,7 +19,7 @@
     {key:'ops:delay',label:'等餐紀錄',ic:'⏱️',mode:'ops',tab:'delay',sub:true},
     {key:'ops:line',label:'劃線簽名',ic:'✍️',mode:'ops',tab:'line',sub:true},
     {key:'ops:summary',label:'報表匯出',ic:'📊',mode:'ops',tab:'summary',sub:true},
-    {key:'analysis',label:'分析儀表板',ic:'📈',href:'analysis.html'},
+    {key:'analysis',label:'分析儀表板',ic:'📈',href:'analysis.html',sub:true},
     {group:'車隊與設備'},
     {key:'vehicle',label:'車輛／巡檢',ic:'🛵',btn:'vehicleModeBtn',sub:true},
     {key:'battery',label:'電池／紀錄器',ic:'🔋',btn:'batteryModeBtn',sub:true},
