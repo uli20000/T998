@@ -61,14 +61,19 @@
   }
   // GES 篩選固定：服務方式＝外送、加盟商組織＝Central1，只改日期。新版匯出檔不附篩選說明：
   // 沒寫服務方式就視為外送；有寫但不是外送／Delivery 才擋。沒寫日期範圍就用匯入區選的日期。
-  function manualGesRange(){const a=$('gesRangeStart')?.value||'',b=$('gesRangeEnd')?.value||'';if(!/^\d{4}-\d{2}-\d{2}$/.test(a)||!/^\d{4}-\d{2}-\d{2}$/.test(b)||a>b)return null;return {start:a,end:b};}
+  // GES 一律以週（週一～週日）為單位；月資料由儀表板把該月每週加權匯總
+  const isoDay=d=>d.toISOString().slice(0,10),plusDays=(date,n)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return isoDay(d);};
+  const isMonday=date=>new Date(date+'T12:00:00Z').getUTCDay()===1;
+  function isoWeek(date){const d=new Date(date+'T12:00:00Z'),day=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-day+3);const first=new Date(Date.UTC(d.getUTCFullYear(),0,4));return 1+Math.round(((d-first)/86400000-3+((first.getUTCDay()+6)%7))/7);}
+  function manualGesRange(){const a=$('gesWeek')?.value||'';if(!/^\d{4}-\d{2}-\d{2}$/.test(a)||!isMonday(a))return null;return {start:a,end:plusDays(a,6)};}
   function parseGes(matrix,file,stores){
     const filterText=matrix.slice(0,16).map(row=>row.map(x=>String(x??'')).join(' ')).join(' ');
     if(/服務方式\s*[:：]/.test(filterText)&&!/服務方式\s*[:：]\s*(Delivery|外送)/i.test(filterText))throw new Error('GES 檔的服務方式不是外送（Delivery），未匯入。');
     const dateMatch=filterText.match(/日期範圍\s*[:：]\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?\s*至\s*(20\d{2})年(\d{1,2})月(\d{1,2})日?/);
     const manual=dateMatch?null:manualGesRange();
-    if(!dateMatch&&!manual)throw new Error('GES 檔沒有寫日期範圍；請先在上方選 GES 日期範圍，再重新選檔。');
+    if(!dateMatch&&!manual)throw new Error('GES 檔沒有寫日期；請先在上方選是哪一週，再重新選檔。');
     const start=dateMatch?`${dateMatch[1]}-${String(dateMatch[2]).padStart(2,'0')}-${String(dateMatch[3]).padStart(2,'0')}`:manual.start,end=dateMatch?`${dateMatch[4]}-${String(dateMatch[5]).padStart(2,'0')}-${String(dateMatch[6]).padStart(2,'0')}`:manual.end;
+    if(!isMonday(start)||end!==plusDays(start,6))throw new Error(`GES 請匯入單週資料（週一～週日）；這個檔是 ${start}～${end}。月資料系統會自動由每週匯總，不用另外匯入。`);
     const headerRow=matrix.findIndex(row=>row.some(x=>clean(x)==='餐廳')&&row.some(x=>clean(x)==='# 回應數')&&row.some(x=>clean(x)==='問卷 OSAT'));
     if(headerRow<0)throw new Error('找不到 GES 餐廳／回應數／問卷 OSAT 欄位。');
     const headers=matrix[headerRow].map(clean),ix={restaurant:indexOf(headers,'餐廳'),count:indexOf(headers,'# 回應數'),one:indexOf(headers,'1SAT'),survey:indexOf(headers,'問卷 OSAT'),google:indexOf(headers,'Google OSAT'),delivery:indexOf(headers,'外送平台 OSAT'),accuracy:indexOf(headers,'餐點正確性'),environment:indexOf(headers,'整體餐廳環境'),service:indexOf(headers,'服務'),speed:indexOf(headers,'服務速度'),food:indexOf(headers,'餐點好吃度')};
@@ -97,15 +102,16 @@
     return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>r.source_type==='4128'&&r.restaurant_name.startsWith('未配對店號')).length};
   }
   function render(errors=[]){
-    const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:(x.start===x.end?x.start:`${x.start}～${x.end}`)+(x.manualRange?'（手動選）':''),count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];
+    const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:(x.start===x.end?x.start:`${x.start}～${x.end}`)+(x.manualRange?'（手動選週）':''),count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];
     $('opsFeedbackPreview').innerHTML=rows.length?'<table class="ops-table"><thead><tr><th>檔案</th><th>類型</th><th>日期／期間</th><th>符合篩選筆數</th><th>未配對店號</th><th>狀態</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escape(x.file)+'</td><td>'+escape(x.type)+'</td><td>'+escape(x.period)+'</td><td>'+escape(x.count)+'</td><td>'+escape(x.unmapped)+'</td><td>'+escape(x.status)+'</td></tr>').join('')+'</tbody></table>':'';
     $('opsFeedbackImport').disabled=!prepared.length;
   }
   // 預設日期：上一週週一～週日（台北時間）
-  {const now=new Date(Date.now()+8*3600000),dow=(now.getUTCDay()+6)%7,mon=new Date(now);mon.setUTCDate(now.getUTCDate()-dow-7);const sun=new Date(mon);sun.setUTCDate(mon.getUTCDate()+6);const iso=d=>d.toISOString().slice(0,10);if($('gesRangeStart')&&!$('gesRangeStart').value)$('gesRangeStart').value=iso(mon);if($('gesRangeEnd')&&!$('gesRangeEnd').value)$('gesRangeEnd').value=iso(sun);}
+  {const sel=$('gesWeek');if(sel&&!sel.options.length){const now=new Date(Date.now()+8*3600000),dow=(now.getUTCDay()+6)%7,mon=new Date(now);mon.setUTCDate(now.getUTCDate()-dow);const thisMon=isoDay(mon);
+    for(let i=1;i<=12;i++){const s0=plusDays(thisMon,-7*i),e0=plusDays(s0,6),md=x=>Number(x.slice(5,7))+'/'+Number(x.slice(8,10));const o=document.createElement('option');o.value=s0;o.textContent=`W${isoWeek(s0)}（${md(s0)}–${md(e0)}）`+(i===1?' 上週':'');sel.appendChild(o);}sel.value=plusDays(thisMon,-7);}}
   document.addEventListener('change',async event=>{
     // 改了 GES 日期：已選的檔案重新辨識
-    if(event.target.closest('#gesRangeStart,#gesRangeEnd')){const f=$('opsFeedbackFiles');if(f&&f.files&&f.files.length)f.dispatchEvent(new Event('change',{bubbles:true}));return;}
+    if(event.target.closest('#gesWeek')){const f=$('opsFeedbackFiles');if(f&&f.files&&f.files.length)f.dispatchEvent(new Event('change',{bubbles:true}));return;}
     const root=event.target.closest('#opsFeedbackFiles');if(!root)return;
     prepared.length=0;$('opsFeedbackImport').disabled=true;$('opsFeedbackMessage').textContent='讀取與篩選檔案中…';const errors=[];
     for(const file of [...(root.files||[])])try{prepared.push(await parseFile(file));}catch(e){errors.push({file:file.name,error:e.message||'無法讀取'});}
