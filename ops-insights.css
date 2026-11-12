@@ -56,12 +56,23 @@ tr.ins-cut td{border-bottom:2px dashed var(--red)}
 .wk-prev{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:14px;font-weight:500;line-height:1.6}
 .wk-save{display:flex;gap:10px;align-items:center;margin-top:8px}
 .wk-status{color:var(--muted);font-size:13px;font-weight:500}
+.wk-pre{white-space:pre-line}
+.wk-bad,.wk-na{display:inline-block;font-size:12.5px;padding:1px 9px;border-radius:999px;vertical-align:2px}
+.wk-bad{background:#fde3e1;color:#b3261e}.wk-na{background:var(--bg);color:var(--muted)}
+.wk-missing{margin:10px 0 0;padding:8px 12px;border-radius:8px;background:#fff4d6;color:#7a5200;font-size:14px;font-weight:600}
+.wk-cands{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted);font-weight:500}
+.wk-cand{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.wk-cand:hover{border-color:#0b57d0;color:#0b57d0}
+.wk-bottom{margin-top:12px}
+.wk-view{white-space:pre-wrap;word-break:break-word;margin:12px 0 0;font:inherit;font-size:15.5px;line-height:1.8;font-weight:500;color:var(--ink)}
+html[data-display-mode="dark"] .wk-bad{background:#4a1714;color:#ffb4ab}
+html[data-display-mode="dark"] .wk-missing{background:#3d2f0b;color:#f3cf72}
 html[data-display-mode="dark"] .wk-ok{background:#12351f;color:#7ee2a8}
 html[data-display-mode="dark"] .wk-auto{background:#13294b;color:#9cc2ff}
 html[data-display-mode="dark"] .wk-you{background:#3d2f0b;color:#f3cf72}
 @media(max-width:900px){.ins-head{grid-template-columns:repeat(2,minmax(0,1fr))}.ins-grid2{grid-template-columns:1fr}.wk-doc{padding:18px 16px}}
 @media print{
-  .ui-side,.ui-top,.dashboard-date-toolbar,.metric-upload-row,#periodPicker,#status,.wk-tools,.wk-save,.ins-foot,#metricTitle,#metricSubtitle,.ins-link,.metric-import-footer,header{display:none!important}
+  .ui-side,.ui-top,.dashboard-date-toolbar,.metric-upload-row,#periodPicker,#status,.wk-tools,.wk-save,.wk-cands,.ins-foot,#metricTitle,#metricSubtitle,.ins-link,.metric-import-footer,header{display:none!important}
   body,.ui-main,.ui-content,.panel{background:#fff!important;box-shadow:none!important;border:0!important}
   .wk-doc{border:0;padding:0}.wk-fill{background:#fff}.wk-fill textarea{border:0;padding:0;resize:none}
 }
