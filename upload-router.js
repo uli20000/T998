@@ -31,7 +31,7 @@
       }
     }
     // TC plus actual-hours in one workbook is supported by the existing unified staffing importer.
-    const types=[...hits].filter(x=>x!=='actuals'||!hits.has('TC'));
+    const types=[...hits].filter(x=>!hits.has('TC')||!['actuals','BI'].includes(x));
     if(types.length!==1)throw new Error(types.length?'同檔含多種匯入格式，請分開匯出':'無法辨識內容；請確認欄位與檔案格式');
     const type=types[0],route=['ByDate','ByOrder'].includes(type)?'scores':['TC','actuals'].includes(type)?'staffing':type==='BI'?'bi':'feedback';
     if(route==='scores'){

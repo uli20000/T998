@@ -158,7 +158,12 @@
   // Resume a destination only after the existing sign-in gate has opened.
   async function start(){
     try{
-      queue=await restore();render();message.textContent='T'+center+'｜自動分配至目前中心';
+      queue=await restore();
+      // Recheck files rejected by the previous mixed-format classifier after this update.
+      if(queue.some(g=>g.items.some(i=>i.error?.includes('同檔含多種匯入格式')))){
+        const retryFiles=queue.flatMap(g=>g.items.map(i=>i.file));queue=[];await selectFiles(retryFiles);
+      }
+      render();message.textContent='T'+center+'｜自動分配至目前中心';
       const wanted=sessionStorage.getItem(activeKey);if(!wanted)return;
       const group=queue.find(x=>x.id===wanted);if(!group)return;
       const gate=E(isAdmin?'adminApp':'dashboard');
