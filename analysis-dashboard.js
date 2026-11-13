@@ -98,7 +98,7 @@
       if(!byStore.has(key))byStore.set(key,{key,code:s.code,name:s.restaurant_name,area:s.area,tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,lateY:0,lateN:0,lateKnown:0,wait:0,qtSum:0,qtN:0,nonFa:0,prior:0,priorN:0,activeDays:0});
       if(!byDayStore.has(date+'|'+key))byDayStore.set(date+'|'+key,{date,code:s.code,name:s.restaurant_name,tc:0});
     }
-    for(const day of byDayStore.values()){day.prior=source.priorYear(day.name,day.date);const key=day.code||M.clean(day.name),store=byStore.get(key);if(store){store.activeDays++;if(day.prior!==null){store.prior+=day.prior;store.priorN++;}}}
+    for(const day of byDayStore.values()){day.prior=window.OpsForecast?.isNewStore?.(day.code,day.date,day.name)?null:source.priorYear(day.name,day.date);const key=day.code||M.clean(day.name),store=byStore.get(key);if(store){store.activeDays++;if(day.prior!==null){store.prior+=day.prior;store.priorN++;}}}
     return [...byStore.values()].map(x=>{const wait=delayByStore.get(x.key)?.count||0;return {...x,prior:x.priorN===x.activeDays?x.prior:null,delayRows:delayByStore.get(x.key)?.rows||[],sstg:x.priorN===x.activeDays&&x.prior>0?x.tc/x.prior-1:null,d7:x.d7Y+x.d7N?x.d7Y/(x.d7Y+x.d7N):null,d25:x.d25Y+x.d25N?x.d25Y/(x.d25Y+x.d25N):null,faShare:x.tc?x.fa/x.tc:null,lateShare:x.lateKnown?x.lateY/x.lateKnown:null,wait,waitRatio:x.tc?wait/x.tc:null,qt:x.qtN?x.qtSum/x.qtN:null};}).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
   }
   function dailyStoreAnalytics(data,r){
@@ -198,7 +198,9 @@
     if(metric==='sstg'){
       const target=targets.sstg,rate=summary?.sstg,issue=!focus?'本期沒有可用的 SSTG 餐廳資料。':rate===null||rate===undefined?`${focus.name} SSTG 資料可用，但去年同期涵蓋不足，暫無法判定整體目標。`:target===null?'SSTG 目標待核對。':rate<target?`${focus.name} SSTG 最低；整體 SSTG 未達 ${goalSstg(target)} 目標。`:`${focus.name} 為最低 SSTG；整體已達 ${goalSstg(target)} 目標。`;
       const evidence=focus?`${periodLabel(r)}：整體 SSTG ${pct(rate)}（TC ${fmt(summary.tc)}、去年同期 ${fmt(summary.prior)}）；${focus.name} SSTG ${pct(focus.sstg)}（TC ${fmt(focus.tc)}、去年同期 ${fmt(focus.prior)}）。`:`${periodLabel(r)}：沒有可比較的去年同期單數，無法計算 SSTG。`;
-      return {issue,evidence};
+      const mm=model(data,r),subs=mm.baselineSubstitutions||[],newS=mm.newStores||[],md2=d=>d.slice(5).replace('-','/');
+      const notes=[subs.length?`比較日遇停班改用鄰近週：${subs.map(x=>md2(x.original)+'→'+(x.used?md2(x.used):'資料不足')).join('、')}`:'',newS.length?`新店不列入 SSTG：${newS.join('、')}`:''].filter(Boolean);
+      return {issue,evidence:notes.length?evidence+'（'+notes.join('；')+'）':evidence};
     }
     if(metric==='fa'){
       const faRate=summary?.faShare,tplh=summary?.tplh,issue=!focus?'本期沒有可用的 FA 餐廳資料。':faRate===null||faRate===undefined||tplh===null||tplh===undefined?`FA／TPLH 資料不完整，暫不判定達標；${focus.name} FA ${fmt(focus.fa)}／TC ${fmt(focus.tc)}（${pct(focus.faShare)}）為非獨立店最高。`:targets.faShareMax===null||targets.tplh===null?'FA／TPLH 目標待核對。':faRate>targets.faShareMax||tplh<targets.tplh?`整體 FA 佔比 ${pct(faRate)} 或 TPLH ${fmt(tplh,2)} 未達目標；${focus.name} FA ${fmt(focus.fa)}／TC ${fmt(focus.tc)}（${pct(focus.faShare)}）為非獨立店最高。`:`整體 FA 佔比與 TPLH 達標；${focus.name} FA 佔比最高，列為追蹤對象。`;

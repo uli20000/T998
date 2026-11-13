@@ -51,9 +51,9 @@
     if(mapped)return mapped;
     const ac=String(p.AC||'').match(new RegExp(BUSINESS.center+'[-\\s]?([A-Z0-9]+)$','i'));return ac&&AREAS.some(([code])=>code===ac[1].toUpperCase())?ac[1].toUpperCase():'?';
   }
-  function empty(){return {tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,qtSum:0,qtN:0,d7Seconds:0,d7TimeN:0,d25Seconds:0,d25TimeN:0,prior:0,priorN:0};}
+  function empty(){return {tc:0,fa:0,newTc:0,newFa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,qtSum:0,qtN:0,d7Seconds:0,d7TimeN:0,d25Seconds:0,d25TimeN:0,prior:0,priorN:0};}
   function add(target,source){for(const k of Object.keys(empty()))target[k]+=source[k]||0;return target;}
-  function derived(x){const nonfa=x.tc-x.fa,forecast=null;return {...x,nonfa,forecast,forecastHours:forecast===null?null:forecast/FORECAST_TPLH,faShare:ratio(x.fa,x.tc),sstg:x.priorN&&x.prior>0?x.tc/x.prior-1:null,sstgExFA:x.priorN&&x.prior>0?nonfa/x.prior-1:null,tcAchievement:ratio(x.tc,forecast),d7:ratio(x.d7Y,x.d7Y+x.d7N),d25:ratio(x.d25Y,x.d25Y+x.d25N),qt:ratio(x.qtSum,x.qtN),d7Avg:ratio(x.d7Seconds,x.d7TimeN),d25Avg:ratio(x.d25Seconds,x.d25TimeN)};}
+  function derived(x){const nonfa=x.tc-x.fa,forecast=null;return {...x,nonfa,forecast,forecastHours:forecast===null?null:forecast/FORECAST_TPLH,faShare:ratio(x.fa,x.tc),sstg:x.priorN&&x.prior>0?(x.tc-x.newTc)/x.prior-1:null,sstgExFA:x.priorN&&x.prior>0?(nonfa-(x.newTc-x.newFa))/x.prior-1:null,tcAchievement:ratio(x.tc,forecast),d7:ratio(x.d7Y,x.d7Y+x.d7N),d25:ratio(x.d25Y,x.d25Y+x.d25N),qt:ratio(x.qtSum,x.qtN),d7Avg:ratio(x.d7Seconds,x.d7TimeN),d25Avg:ratio(x.d25Seconds,x.d25TimeN)};}
   function buildOrders({rows,batches,history,mapping,catalog,reports,start,end,powerbiData}){
     rows=scopeData({rows,batches}).rows;
     const rangeAreas=areasForDate(start);
@@ -66,6 +66,8 @@
       if(b.report_type==='ByOrder'){
         a.tc++;const fa=String(p['自動/手動']||'').trim()==='第三方';if(fa)a.fa++;
         else{const f7=String(p.D7||'').toUpperCase(),f25=String(p.D25||'').toUpperCase();if(f7==='Y')a.d7Y++;if(f7==='N')a.d7N++;if(f25==='Y')a.d25Y++;if(f25==='N')a.d25N++;}
+        // 新店單量照算 TC，但 SSTG 只比同店：另記新店單數，計算 SSTG 時扣除。
+        if(F.isNewStore(row.store_code,b.report_date,row.restaurant_name)){a.newTc++;if(fa)a.newFa++;}
         day.orders.push({...row,area_code:code,fa});
       }else{
         const qt=number(p.QT),t7=duration(p['留店時間']),t25=duration(p['外送達成時間（D30)']);
@@ -76,14 +78,16 @@
     const priorSource=F.prepare({history:powerbiData?.history||history,mapping,catalog,batches:powerbiData?.batches||batches,reports:powerbiData?.reports||reports,inScope:storeInScope});
     for(const day of days.values()){
       const eligible=priorSource.eligible(day.date),covered=new Set();
-      day.baselineDate=F.comparisonDate(day.date);day.baselineMissingAreas=new Set();
+      day.baselineDate=F.priorDate(day.date);day.baselineSubstitution=F.priorSubstitution(day.date);day.baselineMissingAreas=new Set();day.newStores=[];let expected=0;
       for(const store of eligible){
         const a=day.areas.get(store.area);if(!a)continue;
+        if(F.isNewStore(store.code,day.date,store.name)){day.newStores.push(store.name);continue;}
+        expected++;
         const value=priorSource.priorYear(store.name,day.date);
         if(value===null){day.baselineMissingAreas.add(store.area);continue;}
         a.prior+=value;a.priorN++;covered.add(store.name);
       }
-      day.baselineCount=covered.size;day.baselineComplete=eligible.length>0&&covered.size===eligible.length;
+      day.baselineCount=covered.size;day.baselineComplete=expected>0&&covered.size===expected;
     }
     const areas=new Map(rangeAreas.map(([a])=>[a,empty()]));if([...days.values()].some(d=>d.areas.has('?')))areas.set('?',empty());
     const total=empty(),hourTotals=new Map(rangeAreas.map(([a])=>[a,{hours:0,count:0}]));let totalHours=0,transferOut=0,transferIn=0,completeHours=true,hasHours=false;
@@ -105,7 +109,7 @@
     }
     const summary=derived(total),actualHours=hasHours&&completeHours?totalHours-transferOut+transferIn:null;
     if(missingBaselineDays.length){summary.forecast=null;summary.forecastHours=null;summary.prior=null;summary.sstg=null;summary.sstgExFA=null;summary.tcAchievement=null;}
-    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.types.has('ByOrder')||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays};
+    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.types.has('ByOrder')||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays,baselineSubstitutions:[...days.values()].filter(d=>!d.scoreExcluded&&d.types.has('ByOrder')).map(d=>d.baselineSubstitution).filter(Boolean),newStores:[...new Set([...days.values()].flatMap(d=>d.newStores||[]))]};
   }
   function build(args){
     const v=buildOrders(args),{start,end,mapping,catalog}=args;
