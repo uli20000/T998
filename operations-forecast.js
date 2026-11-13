@@ -14,8 +14,12 @@
   const CLOSURES=new Set((BUSINESS.closureDays||[]).map(String));
   const OPEN_DATES=BUSINESS.storeOpenDates||{};
   const closureDay=date=>CLOSURES.has(date);
-  function priorDate(date){const c=comparisonDate(date);if(!closureDay(c))return c;for(const alt of [addDays(c,-7),addDays(c,7)])if(!closureDay(alt))return alt;return null;}
-  function priorSubstitution(date){const c=comparisonDate(date),p=priorDate(date);return p===c?null:{date,original:c,used:p,reason:'比較日為停班日'};}
+  // 店別停班（例：某縣市停班但同中心其他縣市照常）：設定 storeClosureDays {日期:[店號]}，只有該店改用鄰近週。
+  const STORE_CLOSURES=BUSINESS.storeClosureDays||{};
+  const code3s=code=>{const t=String(code??'').trim();return /^\d+$/.test(t)?t.padStart(3,'0'):t;};
+  const closedFor=(date,code)=>closureDay(date)||(!!code&&(STORE_CLOSURES[date]||[]).map(code3s).includes(code3s(code)));
+  function priorDate(date,code){const c=comparisonDate(date);if(!closedFor(c,code))return c;for(const alt of [addDays(c,-7),addDays(c,7)])if(!closedFor(alt,code))return alt;return null;}
+  function priorSubstitution(date,code){const c=comparisonDate(date),p=priorDate(date,code);return p===c?null:{date,original:c,used:p,reason:code?'該店比較日為停班日':'比較日為停班日'};}
   // 新店：開店日晚於去年比較日的店，不列入 SSTG（同店比較）。開店日在中心設定 storeOpenDates（店號→日期）。
   const code3=code=>{const t=String(code??'').trim();return /^\d+$/.test(t)?t.padStart(3,'0'):t;};
   const NAME_TO_CODE=new Map((BUSINESS.restaurants||[]).map(r=>[clean(r.restaurant_name),code3(r.store_code)]));
@@ -35,8 +39,9 @@
     const suspectDates=new Set();
     for(const date of dmsDates){const list=eligible(date);if(list.length&&list.every(s=>{const h=index.get(date+'|'+s.name);return h&&number(h.total_tc)===0;}))suspectDates.add(date);}
     function actual(name,date){const key=date+'|'+clean(name),h=index.get(key);if(!h||conflicts.has(key)||suspectDates.has(date))return null;const tc=number(h.total_tc),self=number(h.tc_ex_third_party);return tc===null||tc<0?null:{tc,self:self!==null&&self>=0&&self<=tc?self:null,fa:self!==null&&self>=0&&self<=tc?tc-self:null,row:h};}
+    const codeByName=new Map(stores.map(s=>[s.name,s.code]));
     function priorYear(name,date){
-      const previous=priorDate(date);if(!previous)return null;const value=actual(name,previous);
+      const previous=priorDate(date,codeByName.get(clean(name)));if(!previous)return null;const value=actual(name,previous);
       return value?value.tc:null;
     }
     const reportMap=new Map(reports.map(r=>[String(r.record_date).slice(0,10),r]));

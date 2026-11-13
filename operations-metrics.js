@@ -83,6 +83,7 @@
         const a=day.areas.get(store.area);if(!a)continue;
         if(F.isNewStore(store.code,day.date,store.name)){day.newStores.push(store.name);continue;}
         expected++;
+        {const ss=F.priorSubstitution(day.date,store.code);if(ss&&ss.used!==day.baselineDate)(day.storeSubstitutions||=[]).push({...ss,store:store.name});}
         const value=priorSource.priorYear(store.name,day.date);
         if(value===null){day.baselineMissingAreas.add(store.area);continue;}
         a.prior+=value;a.priorN++;covered.add(store.name);
@@ -109,7 +110,7 @@
     }
     const summary=derived(total),actualHours=hasHours&&completeHours?totalHours-transferOut+transferIn:null;
     if(missingBaselineDays.length){summary.forecast=null;summary.forecastHours=null;summary.prior=null;summary.sstg=null;summary.sstgExFA=null;summary.tcAchievement=null;}
-    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.types.has('ByOrder')||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays,baselineSubstitutions:[...days.values()].filter(d=>!d.scoreExcluded&&d.types.has('ByOrder')).map(d=>d.baselineSubstitution).filter(Boolean),newStores:[...new Set([...days.values()].flatMap(d=>d.newStores||[]))]};
+    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.types.has('ByOrder')||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays,baselineSubstitutions:[...days.values()].filter(d=>!d.scoreExcluded&&d.types.has('ByOrder')).flatMap(d=>[d.baselineSubstitution,...(d.storeSubstitutions||[])]).filter(Boolean),newStores:[...new Set([...days.values()].flatMap(d=>d.newStores||[]))]};
   }
   function build(args){
     const v=buildOrders(args),{start,end,mapping,catalog}=args;

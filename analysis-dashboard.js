@@ -199,7 +199,7 @@
       const target=targets.sstg,rate=summary?.sstg,issue=!focus?'本期沒有可用的 SSTG 餐廳資料。':rate===null||rate===undefined?`${focus.name} SSTG 資料可用，但去年同期涵蓋不足，暫無法判定整體目標。`:target===null?'SSTG 目標待核對。':rate<target?`${focus.name} SSTG 最低；整體 SSTG 未達 ${goalSstg(target)} 目標。`:`${focus.name} 為最低 SSTG；整體已達 ${goalSstg(target)} 目標。`;
       const evidence=focus?`${periodLabel(r)}：整體 SSTG ${pct(rate)}（TC ${fmt(summary.tc)}、去年同期 ${fmt(summary.prior)}）；${focus.name} SSTG ${pct(focus.sstg)}（TC ${fmt(focus.tc)}、去年同期 ${fmt(focus.prior)}）。`:`${periodLabel(r)}：沒有可比較的去年同期單數，無法計算 SSTG。`;
       const mm=model(data,r),subs=mm.baselineSubstitutions||[],newS=mm.newStores||[],md2=d=>d.slice(5).replace('-','/');
-      const notes=[subs.length?`比較日遇停班改用鄰近週：${subs.map(x=>md2(x.original)+'→'+(x.used?md2(x.used):'資料不足')).join('、')}`:'',newS.length?`新店不列入 SSTG：${newS.join('、')}`:''].filter(Boolean);
+      const notes=[subs.length?`比較日遇停班改用鄰近週：${subs.map(x=>(x.store?x.store+' ':'')+md2(x.original)+'→'+(x.used?md2(x.used):'資料不足')).join('、')}`:'',newS.length?`新店不列入 SSTG：${newS.join('、')}`:''].filter(Boolean);
       return {issue,evidence:notes.length?evidence+'（'+notes.join('；')+'）':evidence};
     }
     if(metric==='fa'){
