@@ -117,20 +117,29 @@
     const forecastDetails=[];
     const today=args.today||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const sumForecast=rows=>rows.length&&rows.every(x=>x.totalTc!==null)?rows.reduce((n,x)=>n+x.totalTc,0):null;
-    const decorate=(base,forecasts)=>{
+    // 預估不計入缺去年 TC 的店時，達成率的實際 TC 也同步扣除這些店，避免分子分母範圍不同而灌高達成率。
+    const decorate=(base,forecasts,uncounted=0)=>{
       const forecast=sumForecast(forecasts),forecastHours=forecast===null?null:forecast/FORECAST_TPLH;
-      return {...base,forecast,forecastHours,tcAchievement:ratio(base.tc,forecast)};
+      return {...base,forecast,forecastHours,uncountedTc:uncounted,tcAchievement:ratio(base.tc-uncounted,forecast)};
     };
+    const storeKey=(code,name)=>{const c=String(code??'').trim();return [c?'c:'+(/^\d+$/.test(c)?c.padStart(3,'0'):c):null,name?'n:'+clean(name):null].filter(Boolean);};
+    function uncountedOrders(day,forecasts){
+      const keys=new Set();for(const f of forecasts)if(f.totalTc!==null)for(const st of f.missingPriorStores||[])for(const k of storeKey(st.code,st.name))keys.add(k);
+      const byArea=new Map();let total=0;if(!keys.size)return {total,byArea};
+      for(const o of day.orders){if(storeKey(o.store_code,o.restaurant_name).some(k=>keys.has(k))){total++;byArea.set(o.area_code,(byArea.get(o.area_code)||0)+1);}}
+      return {total,byArea};
+    }
     for(const day of v.days.values()){
       const f=prepared.forecast(day.date);
       if(day.scoreExcluded)for(const x of f)x.excluded=true;
       forecastDetails.push(...f);
       day.tcComplete=day.types.has('ByOrder')&&!day.scoreExcluded;
-      day.metrics=decorate(day.metrics,f);
+      const unc=uncountedOrders(day,f);day.uncountedTc=unc.total;day.uncountedByArea=unc.byArea;
+      day.metrics=decorate(day.metrics,f,unc.total);
       day.attainmentEligible=day.tcComplete&&day.date<=today;
       if(!day.attainmentEligible)day.metrics.tcAchievement=null;
       day.metrics.hoursAchievement=ratio(day.actualHours,day.metrics.forecastHours);
-      for(const [area,base] of day.areas){const value=derived(base);if(day.baselineMissingAreas.has(area)){value.prior=null;value.sstg=null;value.sstgExFA=null;}const decorated=decorate(value,f.filter(x=>x.area===area));if(!day.attainmentEligible)decorated.tcAchievement=null;day.areas.set(area,decorated);}
+      for(const [area,base] of day.areas){const value=derived(base);if(day.baselineMissingAreas.has(area)){value.prior=null;value.sstg=null;value.sstgExFA=null;}const decorated=decorate(value,f.filter(x=>x.area===area),unc.byArea.get(area)||0);if(!day.attainmentEligible)decorated.tcAchievement=null;day.areas.set(area,decorated);}
     }
     const includedForecasts=forecastDetails.filter(x=>!x.excluded);
     v.summary=decorate(v.summary,includedForecasts);
@@ -140,11 +149,11 @@
     const attainmentDays=[...v.days.values()].filter(day=>day.attainmentEligible);
     const attainmentForecasts=forecastDetails.filter(x=>!x.excluded&&v.days.get(x.date)?.attainmentEligible);
     v.summary.attainmentForecast=sumForecast(attainmentForecasts);
-    v.summary.attainmentActual=attainmentDays.length?attainmentDays.reduce((sum,day)=>sum+day.metrics.tc,0):null;
+    v.summary.attainmentActual=attainmentDays.length?attainmentDays.reduce((sum,day)=>sum+day.metrics.tc-(day.uncountedTc||0),0):null;
     v.summary.tcAchievement=ratio(v.summary.attainmentActual,v.summary.attainmentForecast);
     for(const [area,value] of v.areas){
       value.attainmentForecast=sumForecast(attainmentForecasts.filter(x=>x.area===area));
-      value.attainmentActual=attainmentDays.length?attainmentDays.reduce((sum,day)=>sum+(day.areas.get(area)?.tc||0),0):null;
+      value.attainmentActual=attainmentDays.length?attainmentDays.reduce((sum,day)=>sum+(day.areas.get(area)?.tc||0)-(day.uncountedByArea?.get(area)||0),0):null;
       value.tcAchievement=ratio(value.attainmentActual,value.attainmentForecast);
     }
     v.forecastDetails=forecastDetails;
@@ -155,6 +164,8 @@
     if([...v.days.values()].some(day=>day.date>today))v.forecastWarnings.push('預估達成率僅計算截至今日已匯入 ByOrder 的日期；今日採整日預估');
     const missing=includedForecasts.filter(x=>x.totalTc===null);
     if(missing.length)v.forecastWarnings.push('去年對應週TC缺漏：'+missing.length+'組區域／日期無法預估');
+    const partialNames=[...new Set(includedForecasts.filter(x=>x.totalTc!==null).flatMap(x=>(x.missingPriorStores||[]).map(st=>st.name||st.code)))];
+    if(partialNames.length)v.forecastWarnings.push('預估未計入缺去年TC的店，達成率的實際TC同步扣除：'+partialNames.join('、'));
     if(prepared.conflicts.size)v.forecastWarnings.push('Power BI重複鍵內容衝突：'+prepared.conflicts.size+'筆，待核對');
     return v;
   }
