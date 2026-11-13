@@ -5006,7 +5006,6 @@ async function unlockAdmin(session){
   if(!session?.user?.email){ lockAdmin(); return; }
   const email = String(session.user.email).trim().toLowerCase();
   if(adminApp.style.display==='block'&&adminSessionEmail.textContent===`已登入：${email}`)return;
-  const isEnteringAdmin=adminApp.style.display!=='block';
   const allow = await db.from("admin_allowlist").select("email").ilike("email", email).eq("active", true).maybeSingle();
   if(allow.error){
     await db.auth.signOut();
@@ -5018,6 +5017,8 @@ async function unlockAdmin(session){
     lockAdmin("此帳號尚未授權使用本區後台。");
     return;
   }
+  // Another concurrent session check may already have opened the app while this query awaited.
+  const isEnteringAdmin=adminApp.style.display!=='block';
   authGate.style.display = "none";
   adminApp.style.display = "block";
   adminSessionBar.style.display = "flex";
