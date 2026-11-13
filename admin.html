@@ -6163,7 +6163,9 @@ async function opsParseScoreFile(file){
     const restaurantRaw=String(payload[restaurantHeader]??"").trim();
     const codeMatch=(type==="ByDate"?restaurantRaw:orderNo).match(/(?:TWI|TWB)(\d{3})/i);
     const storeCode=codeMatch?codeMatch[1]:"";
-    const restaurantName=type==="ByDate"?restaurantRaw.split(/[/／]/)[0].trim():restaurantRaw;
+    const sourceRestaurantName=type==="ByDate"?restaurantRaw.split(/[/／]/)[0].trim():restaurantRaw;
+    const canonicalStore=(window.CenterBusinessConfig?.restaurants||[]).find(x=>String(x.store_code).padStart(3,"0")===storeCode);
+    const restaurantName=canonicalStore?.restaurant_name||sourceRestaurantName;
     const dateValue=cells[headers.indexOf(dateHeader)],dateText=opsDateIso(dateValue)||fileDate;
     rows.push({row_number:index+2,record_date:dateText,store_code:storeCode,restaurant_name:restaurantName,order_number:orderNo,payload});
   });
