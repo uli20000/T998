@@ -12,15 +12,32 @@
   const key=scope+'|'+tab,activeKey='upload-active|'+scope;
   const isAdmin=!!E('adminApp'),labels={scores:'每日成績',staffing:'TC／工時',bi:'BI 週 SSSG',feedback:'GES／0800／4128'};
   let queue=[],busy=false,storage;
-  const panel=document.createElement('section');panel.className='us-panel';panel.setAttribute('aria-label','自動分配上傳區');
-  panel.innerHTML='<button type="button" class="us-mini" aria-label="展開上傳區" title="展開上傳區">📥</button><h2>上傳區</h2><label class="us-picker"><span>＋ 選檔或拖放</span><input type="file" multiple accept=".xlsx,.xls,.xlsm,.csv" aria-label="上傳並自動分配檔案"></label><p>成績・TC・工時・BI・GES／客訴</p><p class="us-message" role="status" aria-live="polite"></p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button>';
-  side.querySelector('.ui-nav').before(panel);
+  const panel=document.createElement('section');panel.className='us-panel us-drawer';panel.id='fileUploadDrawer';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','檔案上傳');
+  panel.innerHTML='<div class="us-head"><span></span><h2>檔案上傳</h2><button type="button" class="us-close" aria-label="關閉上傳區">✕</button></div><label class="us-picker"><span>＋ 選檔或拖放</span><input type="file" multiple accept=".xlsx,.xls,.xlsm,.csv" aria-label="上傳並自動分配檔案"></label><p>成績・TC・工時・BI・GES／客訴</p><p class="us-message" role="status" aria-live="polite"></p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button>';
+  const trigger=document.createElement('button');trigger.type='button';trigger.className='ui-item us-trigger';
+  trigger.innerHTML='<span class="ui-ic" aria-hidden="true">📤</span><span class="ui-label">檔案上傳</span>';
+  trigger.setAttribute('aria-controls',panel.id);trigger.setAttribute('aria-expanded','false');
+  side.append(trigger);document.body.append(panel);
+  function toggleDrawer(open){
+    if(open&&!gateOpen())return;
+    panel.hidden=!open;trigger.setAttribute('aria-expanded',String(open));
+    if(open){
+      const mobile=matchMedia('(max-width:760px)').matches;
+      panel.style.left=(mobile?12:Math.min(side.getBoundingClientRect().right+12,innerWidth-400))+'px';
+      if(mobile){side.closest('.ui-frame').classList.remove('ui-more-open');document.querySelector('.ui-tabbar [data-tab="more"]')?.setAttribute('aria-expanded','false');}
+      panel.querySelector('input').focus();
+    }
+  }
+  trigger.onclick=()=>toggleDrawer(panel.hidden);
+  panel.querySelector('.us-close').onclick=()=>{toggleDrawer(false);trigger.focus();};
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){toggleDrawer(false);trigger.focus();}});
+  document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!trigger.contains(e.target))toggleDrawer(false);});
+  addEventListener('resize',()=>{if(!panel.hidden)toggleDrawer(true);});
   const gate=E(isAdmin?'adminApp':'dashboard');
   const gateOpen=()=>!gate.hidden&&!gate.classList.contains('hidden')&&gate.style.display!=='none';
-  const syncGate=()=>{panel.hidden=!gateOpen();};syncGate();
+  const syncGate=()=>{trigger.hidden=!gateOpen();if(!gateOpen())toggleDrawer(false);};syncGate();
   new MutationObserver(syncGate).observe(gate,{attributes:true,attributeFilter:['class','style','hidden']});
   const picker=panel.querySelector('input'),drop=panel.querySelector('.us-picker'),message=panel.querySelector('.us-message'),list=panel.querySelector('.us-list'),clear=panel.querySelector('.us-clear');
-  panel.querySelector('.us-mini').onclick=()=>{const frame=side.closest('.ui-frame');frame.classList.remove('ui-collapsed');frame.classList.add('ui-expanded');picker.focus();};
   function openStorage(){
     if(storage)return storage;
     storage=new Promise((resolve,reject)=>{
@@ -53,7 +70,7 @@
     }
     setBusy(busy);
   }
-  function fail(e){message.textContent='處理失敗：'+(e.message||e)+'；原檔保留，請重試。';}
+  function fail(e){message.textContent='處理失敗：'+(e.message||e)+'；原檔保留，請重試。';if(gateOpen())toggleDrawer(true);}
   function importBusy(){return ['opsScoreFiles','biFiles'].some(id=>E(id)?.disabled)||E('staffingImportBtn')?.disabled===true||/^(讀取與篩選|匯入資料中|匯入中)/.test(E('opsFeedbackMessage')?.textContent||'');}
   async function selectFiles(files){
     if(busy)return;
@@ -114,6 +131,7 @@
     try{await openGroup(group);}finally{setBusy(false);}
   }
   async function openGroup(group){
+    toggleDrawer(false);
     const adminRoute=['scores','staffing'].includes(group.route);
     if(adminRoute!==isAdmin){
       await persist(queue);sessionStorage.setItem(activeKey,group.id);

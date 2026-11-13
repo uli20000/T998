@@ -1292,7 +1292,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 <link rel="stylesheet" href="operations-report.css?v=20261113-v2q">
 <link rel="stylesheet" href="display-mode.css?v=20261113-v2q">
 <link rel="stylesheet" href="ui-shell.css?v=20261113-v2q">
-<link rel="stylesheet" href="upload-sidebar.css?v=20261113-v2r">
+<link rel="stylesheet" href="upload-sidebar.css?v=20261113-v2t">
 </head>
 
 <body>
@@ -5655,7 +5655,7 @@ function t998CompareImportRows(incoming,existing,keyFields){
   for(const row of incoming){
     if(keyFields.some(field=>row[field]===null||row[field]===undefined||String(row[field]).trim()==='')){result.errors++;continue;}
     const old=map.get(key(row));if(!old){result.added++;continue;}
-    const different=Object.keys(row).filter(field=>!ignored.has(field)&&row[field]!==undefined).some(field=>{
+    const different=Object.keys(row).filter(field=>!ignored.has(field)&&row[field]!==undefined&&!(row[field]===null&&['prior_year_tc','tc_ex_third_party','prior_year_date'].includes(field))).some(field=>{
       const value=row[field],before=old[field];
       return typeof value==='number'?(before===null||before===undefined||String(before).trim()===''||Number(before)!==value):value!==before;
     });
@@ -5685,7 +5685,7 @@ async function t998ImportCompleteWorkbookV4(){
   t998TcImportBtn.disabled=true;t998TcImportMessage.textContent="分析 Excel…";let batchId=null;
   const missing=[];
   const missingTcDates=new Set();
-  const missingText=()=>missing.length?'\n缺值明細（'+missing.length+' 項）\n'+missing.join('\n'):'';
+  const missingText=(limit=20)=>missing.length?'\n缺值明細（'+missing.length+' 項）\n'+missing.slice(0,limit).join('\n')+(missing.length>limit?'\n另 '+(missing.length-limit)+' 項，完整來源列號保留於匯入批次紀錄。':''):'';
   const readCount=(value,where,field)=>{
     if(value==null||String(value).trim()==='')return null;
     const n=Number(String(value).replace(/,/g,''));
@@ -5725,7 +5725,15 @@ async function t998ImportCompleteWorkbookV4(){
           if(!name||/^total$/i.test(name)||/^grand\s*total$/i.test(name)||/套用的篩選|篩選條件/.test(name))return;
           const date=t998ExcelDateToISO(field(row,dateNames).value);if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||new Date(date+'T12:00:00Z').toISOString().slice(0,10)!==date){counter.badDates++;return;}
           const numericFields=[totalNames,excludedNames,uberNames,pandaNames,hoursNames,tplhNames,exTplhNames,rateNames,priorNames];
-          const badFields=numericFields.map(names=>field(row,names)).filter(x=>x.present&&(x.value===null||String(x.value).trim()===''||!Number.isFinite(Number(String(x.value).replace(/[,%]/g,'')))||Number(String(x.value).replace(/[,%]/g,''))<0));
+          const badFields=numericFields.map(names=>field(row,names)).filter(x=>{
+            if(!x.present)return false;
+            const blank=x.value===null||String(x.value).trim()==='';
+            // Store TC exports leave optional fields blank. Preserve missing values, never invent zero.
+            if(blank)return !(hasStore&&hasTc);
+            const value=Number(String(x.value).replace(/[,%]/g,''));
+            if(hasStore&&hasTc&&excludedNames.includes(x.name)&&Number.isFinite(value)&&value<0)return false;
+            return !Number.isFinite(value)||value<0;
+          });
           if(hasCenterMetrics&&!field(row,totalNames).present)badFields.push({name:'中心實際TC（缺欄）'});
           if(badFields.length){validationErrors.push(`${file.name}／${sheetName} 第 ${index+2} 列：${badFields.map(x=>x.name).join('、')} 空白或無效`);return;}
           if(hasCenterMetrics){
@@ -5755,13 +5763,15 @@ async function t998ImportCompleteWorkbookV4(){
             }else{
               const priorTc=readCount(prior.value,where,'去年 TC');
               if(priorTc===null)missing.push(where+'｜去年 TC 空白');
-              const selfTc=readCount(excluded.value,where,'扣除第三方 TC');
+              const rawSelf=excluded.value===null||String(excluded.value).trim()===''?null:Number(String(excluded.value).replace(/,/g,''));
+              const invalidSelf=rawSelf!==null&&(rawSelf<0||rawSelf>totalTc);
+              const selfTc=invalidSelf?null:readCount(excluded.value,where,'扣除第三方 TC');
               const vendors=[field(row,uberNames),field(row,pandaNames)].filter(x=>x.present);
-              const vendorCounts=selfTc===null?vendors.map(x=>readCount(x.value,where,x.name)):[];
-              const thirdParty=selfTc!==null?totalTc-selfTc:
+              const vendorCounts=selfTc===null&&!invalidSelf?vendors.map(x=>readCount(x.value,where,x.name)):[];
+              let thirdParty=invalidSelf?null:selfTc!==null?totalTc-selfTc:
                 vendorCounts.length&&vendorCounts.every(x=>x!==null)?vendorCounts.reduce((sum,x)=>sum+x,0):null;
-              if(thirdParty!==null&&(thirdParty<0||thirdParty>totalTc))throw new Error(where+' 的自送／第三方 TC 與總 TC 不一致。');
-              if(thirdParty===null)missing.push(where+'｜扣除第三方 TC 空白');
+              if(thirdParty!==null&&(thirdParty<0||thirdParty>totalTc))thirdParty=null;
+              if(thirdParty===null)missing.push(where+(invalidSelf?'｜來源自送／第三方 TC 與總 TC 不一致，保留總 TC，分拆待確認':'｜扣除第三方 TC 空白或分拆不完整'));
               const item={restaurant_name:name,area_code:area,record_date:date,period_code:period,
                 source_sheet:sheetName,source_row:sourceRow,prior_year_tc:priorTc,total_tc:totalTc,
                 tc_ex_third_party:thirdParty===null?null:totalTc-thirdParty,third_party_tc_import:thirdParty,
@@ -5777,8 +5787,9 @@ async function t998ImportCompleteWorkbookV4(){
           }
           if(hasStoreActual){
             const h=field(row,hoursNames),t=field(row,tplhNames),p=field(row,rateNames);const item={restaurant_name:name,area_code:area,record_date:date};
-            if(h.present)item.actual_work_hours=t998NumericZero(h.value,counter);if(t.present)item.actual_tplh=t998NumericZero(t.value,counter);
-            if(p.present){item.third_party_usage_pct=t998PercentValue(p.value,counter);if(item.third_party_usage_pct>100)throw new Error(`${sheetName} 第 ${index+2} 列第三方使用率超過 100%`);}
+            if(h.present&&h.value!==null&&String(h.value).trim()!=='')item.actual_work_hours=t998NumericZero(h.value,counter);if(t.present&&t.value!==null&&String(t.value).trim()!=='')item.actual_tplh=t998NumericZero(t.value,counter);
+            if(p.present&&p.value!==null&&String(p.value).trim()!==''){item.third_party_usage_pct=t998PercentValue(p.value,counter);if(item.third_party_usage_pct>100)throw new Error(`${sheetName} 第 ${index+2} 列第三方使用率超過 100%`);}
+            if(!["actual_work_hours","actual_tplh","third_party_usage_pct"].some(k=>Object.hasOwn(item,k)))return;
             const key=`${name}|${date}`,old=actualMap.get(key);if(!old)actualMap.set(key,item);
             else for(const k of ["actual_work_hours","actual_tplh","third_party_usage_pct"]){if(item[k]===undefined)continue;if(old[k]!==undefined&&Number(old[k])!==Number(item[k]))actualConflicts.push(`${name} ${date} ${k}`);else old[k]=item[k];}
           }
@@ -5811,7 +5822,7 @@ async function t998ImportCompleteWorkbookV4(){
     t998TcImportMessage.textContent=`${preview}｜${labels.join("｜")}｜${dates.start}–${dates.end}${audit}${missingText()}`;
     if(counts.errors)throw new Error('必要欄位有錯誤，未寫入任何資料');
     if(!confirm(`${preview}\n匯入 ${labels.join("、")} 共 ${all.length} 列？\n${dates.start} 至 ${dates.end}${audit}${missing.length?"\n缺值 "+missing.length+" 項，明細在匯入區。":""}\n確認後將依來源覆寫；預覽為目前讀取快照。`))return;
-    batchId=await t998CreateImportBatch(files.map(f=>f.name).join(" + "),all,`雙檔歷史資料：${labels.join("；")}${audit}${missingText()}`);
+    batchId=await t998CreateImportBatch(files.map(f=>f.name).join(" + "),all,`雙檔歷史資料：${labels.join("；")}${audit}${missingText(Infinity)}`);
     tcRows.forEach(x=>x.import_batch_id=batchId);actualRows.forEach(x=>x.import_batch_id=batchId);centerRows.forEach(x=>x.import_batch_id=batchId);
     if(tcRows.length)await t998UpsertChunks("staffing_tc_history",tcRows,"restaurant_name,record_date,period_code",t998TcImportMessage);
     if(actualRows.length)await t998UpsertChunks("staffing_daily_actuals",actualRows,"restaurant_name,record_date",t998TcImportMessage);
@@ -6341,7 +6352,7 @@ async function opsArchiveScoreSourceFiles(pair){
 <script src="ui-overview.js?v=20261113-v2q"></script>
 <script src="ui-ops.js?v=20261113-v2q"></script>
 <script src="upload-router.js?v=20261113-v2s"></script>
-<script src="upload-sidebar.js?v=20261113-v2s"></script>
+<script src="upload-sidebar.js?v=20261113-v2t"></script>
 </body>
 </html>
 
