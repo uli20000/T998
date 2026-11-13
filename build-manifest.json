@@ -1,7 +1,7 @@
 {
   "center": "998",
   "environment": "production",
-  "sourceCommit": "f36f3fea5d5fae22ddb890a3072916e0a21a48b4",
+  "sourceCommit": "7e800d5c052f64eabf497198e7a1e0ce6b991483",
   "sourceDirty": true,
   "dryRun": false,
   "features": {
@@ -13,7 +13,7 @@
     "archiveDedup": false,
     "scoreRevisions": false
   },
-  "generatedAt": "2026-11-13T09:22:04.608Z",
+  "generatedAt": "2026-11-13T10:12:52.273Z",
   "files": [
     "admin.html",
     "analysis-dashboard.js",
@@ -52,6 +52,9 @@
     "ui-ops.js",
     "ui-overview.js",
     "ui-shell.css",
-    "ui-shell.js"
+    "ui-shell.js",
+    "upload-router.js",
+    "upload-sidebar.css",
+    "upload-sidebar.js"
   ]
 }

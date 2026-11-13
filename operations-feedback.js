@@ -109,7 +109,7 @@
   // 預設日期：上一週週一～週日（台北時間）
   {const sel=$('gesWeek');if(sel&&!sel.options.length){const now=new Date(Date.now()+8*3600000),dow=(now.getUTCDay()+6)%7,mon=new Date(now);mon.setUTCDate(now.getUTCDate()-dow);const thisMon=isoDay(mon);
     for(let i=1;i<=12;i++){const s0=plusDays(thisMon,-7*i),e0=plusDays(s0,6),md=x=>Number(x.slice(5,7))+'/'+Number(x.slice(8,10));const o=document.createElement('option');o.value=s0;o.textContent=`W${isoWeek(s0)}（${md(s0)}–${md(e0)}）`+(i===1?' 上週':'');sel.appendChild(o);}sel.value=plusDays(thisMon,-7);}}
-  document.addEventListener('change',async event=>{
+  async function prepareFeedbackSelection(event){
     // 改了 GES 日期：已選的檔案重新辨識
     if(event.target.closest('#gesWeek')){const f=$('opsFeedbackFiles');if(f&&f.files&&f.files.length)f.dispatchEvent(new Event('change',{bubbles:true}));return;}
     const root=event.target.closest('#opsFeedbackFiles');if(!root)return;
@@ -118,7 +118,9 @@
     // 同一批裡兩個 GES 檔的日期範圍相同：同一週同一家店只有一筆，後面的會蓋掉前面的，所以擋下
     {const seen=new Set();for(let i=0;i<prepared.length;i++){const x=prepared[i];if(x.type!=='GES')continue;const k=x.start+'|'+x.end;if(seen.has(k)){errors.push({file:x.file.name,error:'和另一個 GES 檔的日期範圍相同（'+x.start+'～'+x.end+'），會互相覆蓋；請一次只選一週的 GES 檔，或改日期後再選。'});prepared.splice(i,1);i--;}else seen.add(k);}}
     render(errors);$('opsFeedbackMessage').textContent=errors.length?`完成辨識；${errors.length} 個檔案未匯入。`:prepared.length?`已辨識 ${prepared.length} 個檔案，共 ${prepared.reduce((n,x)=>n+x.rows.length,0)} 筆符合條件資料。`:'請選取 0800、4128 或 GES Excel 檔案。';
-  });
+  }
+  document.addEventListener('change',prepareFeedbackSelection);
+  window.UploadImportAdapters=Object.assign(window.UploadImportAdapters||{},{prepareFeedback:()=>prepareFeedbackSelection({target:$('opsFeedbackFiles')})});
   document.addEventListener('click',async event=>{
     const button=event.target.closest('#opsFeedbackImport');if(!button||!prepared.length)return;const root=$('opsFeedbackFiles');if(!root)return;$('opsFeedbackImport').disabled=true;$('opsFeedbackMessage').textContent='匯入資料中…';let done=0,total=prepared.reduce((n,x)=>n+x.rows.length,0);
     try{

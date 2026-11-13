@@ -1292,6 +1292,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 <link rel="stylesheet" href="operations-report.css?v=20261113-v2q">
 <link rel="stylesheet" href="display-mode.css?v=20261113-v2q">
 <link rel="stylesheet" href="ui-shell.css?v=20261113-v2q">
+<link rel="stylesheet" href="upload-sidebar.css?v=20261113-v2r">
 </head>
 
 <body>
@@ -1696,12 +1697,12 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
       </div>
     </details>
   </section>
-  <section class="section">
+  <section id="staffingImportSection" class="section" hidden>
     <details class="shift-fold">
       <summary class="section-title">匯入歷史資料</summary>
       <div class="shift-fold-content">
         <div class="staffing-panel" style="width:100%">
-          <label class="staffing-file-picker" for="staffingImportFile"><span id="staffingImportFileLabel">選擇 Excel（可多選）</span><input id="staffingImportFile" type="file" accept=".xlsx,.xls" multiple aria-label="一次選取 TC 與中心實際資料 Excel"></label>
+          <label class="staffing-file-picker" for="staffingImportFile" data-upload-picker hidden><span id="staffingImportFileLabel">選擇 Excel（可多選）</span><input id="staffingImportFile" type="file" accept=".xlsx,.xls" multiple aria-label="一次選取 TC 與中心實際資料 Excel"></label>
           <button id="staffingImportBtn" class="action-btn" type="button" style="width:100%;margin-top:9px">分析並匯入</button>
           <div id="staffingImportMessage" class="staffing-upload-preview" role="status" aria-live="polite"></div>
         </div>
@@ -6191,7 +6192,7 @@ function opsRenderPreparedScoreFiles(errors=[]){
   $("opsScoreImport").disabled=!opsScorePair();
 }
 let opsScoreSelectionGeneration=0;
-opsScoreFileInput.addEventListener("change",async()=>{
+async function opsPrepareScoreSelection(){
   if(window.CENTER_CONFIG?.features?.scoreRevisions===true){try{scoreRevisionWorkflow.cancel();}catch(e){$("opsScoreMessage").textContent=e.message;opsRevisionControls();return;}opsRevisionControls();}
   opsPreparedScoreFiles=[];$("opsScoreImport").disabled=true;$("opsScoreMessage").textContent="讀取與辨識檔案中…";
   const selection=++opsScoreSelectionGeneration,files=[...(opsScoreFileInput.files||[])],errors=[],prepared=[];
@@ -6204,7 +6205,9 @@ opsScoreFileInput.addEventListener("change",async()=>{
   opsPreparedScoreFiles=prepared;
   opsRenderPreparedScoreFiles(errors);
   const pair=opsScorePair();$("opsScoreMessage").textContent=errors.length?"辨識完成；"+errors.length+" 個檔案格式不符或無法讀取。":pair?"兩份檔案日期一致，共 "+pair.dates.length+" 天，可匯入。":"請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";
-});
+}
+opsScoreFileInput.addEventListener("change",opsPrepareScoreSelection);
+window.UploadImportAdapters={prepareScores:opsPrepareScoreSelection};
 $("opsScoreImport").onclick=async()=>{
   if(window.CENTER_CONFIG?.features?.scoreRevisions===true){await opsReviewScoreRevision();return;}
   const pair=opsScorePair();if(!pair){$("opsScoreMessage").textContent="請選擇一份 ByDate 與一份 ByOrder 檔案，且兩份檔案的日期範圍需一致。";return;}
@@ -6333,10 +6336,12 @@ async function opsArchiveScoreSourceFiles(pair){
 <script src="operations-summary.js?v=20261113-v2q"></script>
 <script src="operations-report.js?v=20261113-v2q"></script>
 <script src="operations-entry.js?v=20261113-v2q"></script>
-<script src="ui-shell.js?v=20261113-v2q"></script>
+<script src="ui-shell.js?v=20261113-v2r"></script>
 <script src="kpi-settings.js?v=20261113-v2q"></script>
 <script src="ui-overview.js?v=20261113-v2q"></script>
 <script src="ui-ops.js?v=20261113-v2q"></script>
+<script src="upload-router.js?v=20261113-v2r"></script>
+<script src="upload-sidebar.js?v=20261113-v2r"></script>
 </body>
 </html>
 

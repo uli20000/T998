@@ -15,7 +15,7 @@
   const NAV=[
     {key:'home',label:'總覽',ic:'🏠',mode:'home'},
     {group:'營運'},
-    {key:'ops:scores',label:'成績匯入',ic:'📥',mode:'ops',tab:'scores',sub:true},
+    {key:'ops:scores',label:'每日成績',ic:'📥',mode:'ops',tab:'scores',sub:true},
     {key:'ops:delay',label:'等餐紀錄',ic:'⏱️',mode:'ops',tab:'delay',sub:true},
     {key:'ops:line',label:'劃線簽名',ic:'✍️',mode:'ops',tab:'line',sub:true},
     {key:'ops:summary',label:'報表匯出',ic:'📊',mode:'ops',tab:'summary',sub:true},
