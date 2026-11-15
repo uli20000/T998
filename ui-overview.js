@@ -29,7 +29,7 @@
   let date=sharedDate.get()?.date||opsToday(),req=0;
 
   const page=document.createElement('section');page.id='uiOverviewPage';page.className='ui-overview';
-  page.innerHTML='<div class="uo-head"><h1 id="uoTitle">營運成績</h1><div class="uo-date"><button type="button" data-d="-1" aria-label="前一天">‹</button><b id="uoDate"></b><button type="button" data-d="1" aria-label="後一天">›</button><button type="button" data-d="0">今天</button></div></div>'+
+  page.innerHTML='<div class="uo-head"><h1 id="uoTitle">營運成績</h1><div class="uo-date"><button type="button" data-d="-1" aria-label="前一天">‹</button><b id="uoDate"></b><button type="button" data-d="1" aria-label="後一天">›</button><button type="button" data-d="0">今日</button></div></div>'+
     '<div id="uoKpis" class="uo-kpis"></div>'+
     '<div class="uo-grid2"><article class="uo-card"><h2>等餐（依 AC）</h2><div id="uoWait"></div></article><article class="uo-card"><h2>劃線簽名（依 AC）</h2><div id="uoLine"></div></article></div>'+
     '<p id="uoFoot" class="uo-foot"></p><p id="uoStatus" class="uo-status" role="status"></p>';

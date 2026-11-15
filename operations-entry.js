@@ -123,7 +123,7 @@
   E('opsGlobalDate').onchange=()=>dateControl.set(E('opsGlobalDate').value||opsToday());
   E('opsGlobalPeriodTabs').querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{state.choicesOpen=true;dateControl.set(dateControl.date,b.dataset.period);});
   E('opsGlobalPeriodChoices').onclick=e=>{const b=e.target.closest('[data-choice-date]');if(!b)return;dateControl.set(b.dataset.choiceDate);};
-  E('opsGlobalPrev').onclick=()=>shiftPeriod(-1);E('opsGlobalNext').onclick=()=>shiftPeriod(1);
+  E('opsGlobalPrev').onclick=()=>shiftPeriod(-1);E('opsGlobalNext').onclick=()=>shiftPeriod(1);E('opsGlobalToday').onclick=()=>dateControl.set(opsToday());
   E('opsGlobalRefresh').onclick=()=>refreshActive(true);
   E('opsDelaySearch').oninput=renderDelay;E('opsLineSearch').oninput=renderLine;
   E('opsLineStats').onclick=e=>{const b=e.target.closest('[data-line-filter]');if(!b)return;state.lineFilter=state.lineFilter===b.dataset.lineFilter?'all':b.dataset.lineFilter;renderLine();};

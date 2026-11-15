@@ -252,6 +252,8 @@
 #opsModePage .ops-date-nav{display:flex;align-items:center;gap:5px}
 #opsModePage .ops-date-nav button{width:38px;min-width:38px;padding:4px;font-size:22px;font-weight:900}
 #opsModePage .ops-date-nav input{min-width:0}
+#opsModePage .ops-date-nav .ops-today-btn{width:auto;min-width:64px;padding:4px 12px;font-size:16px;font-weight:800;white-space:nowrap}
+.ops-month-choices .ops-choice-button{flex-direction:row;gap:8px}
 @media(max-width:760px){
  #opsModePage .ops-line-analysis-grid{grid-template-columns:1fr}
  #opsModePage .ops-line-view-tools{grid-template-columns:1fr;gap:7px}
