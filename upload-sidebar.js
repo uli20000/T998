@@ -1,4 +1,4 @@
-/* Current-center upload queue. Files stay in this browser until removed from the queue.
+/* Current-center upload page (full content area) and queue. Files stay in this browser until removed from the queue.
  * Routes to existing importers; selecting files never writes to the server. */
 (function(){
   'use strict';
@@ -12,32 +12,56 @@
   const key=scope+'|'+tab,activeKey='upload-active|'+scope;
   const isAdmin=!!E('adminApp'),labels={scores:'每日成績',staffing:'TC／工時',bi:'BI 週 SSSG',feedback:'GES／0800／4128'};
   let queue=[],busy=false,storage;
-  const panel=document.createElement('section');panel.className='us-panel us-drawer';panel.id='fileUploadDrawer';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','檔案上傳');
-  panel.innerHTML='<div class="us-head"><span></span><h2>檔案上傳</h2><button type="button" class="us-close" aria-label="關閉上傳區">✕</button></div><label class="us-picker"><span>＋ 選檔或拖放</span><input type="file" multiple accept=".xlsx,.xls,.xlsm,.csv" aria-label="上傳並自動分配檔案"></label><p>成績・TC・工時・BI・GES／客訴</p><p class="us-message" role="status" aria-live="polite"></p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button>';
+  // 獨立上傳頁：佔用主內容區（側欄、頂部列保留），不插進總覽或其他頁面。
+  const frame=side.closest('.ui-frame'),main=frame.querySelector('.ui-main'),content=main.querySelector('.ui-content');
+  const TYPES=[['scores','每日成績','ByDate＋ByOrder 各一份，日期範圍相同'],['staffing','TC／工時','每日 TC、實際工時，可放同一個 Excel'],['bi','BI 週 SSSG','含 SSSG%_wk 的 Power BI 週檔，可用 CSV'],['feedback','GES／0800／4128','GES 問卷、0800 客訴、4128 工單']];
+  const page=document.createElement('section');page.className='us-page';page.id='fileUploadPage';page.hidden=true;page.setAttribute('aria-labelledby','usPageTitle');
+  page.innerHTML='<div class="us-page-head"><button type="button" class="us-back">‹ 返回</button><h1 id="usPageTitle" tabindex="-1">檔案上傳</h1><span class="us-center">T'+center+'</span></div>'+
+    '<div class="us-grid">'+
+      '<section class="us-card us-pick"><h2>選擇檔案</h2><label class="us-picker"><b>＋ 選擇檔案或拖放到這裡</b><small>可一次選多個 Excel／CSV，系統依內容自動分配</small><input type="file" multiple accept=".xlsx,.xls,.xlsm,.csv" aria-label="上傳並自動分配檔案"></label>'+
+        '<p class="us-message" role="status" aria-live="polite"></p>'+
+        '<ul class="us-types">'+TYPES.map(([k,l,d])=>'<li data-route="'+k+'"><b>'+l+'</b><small>'+d+'</small><em></em></li>').join('')+'</ul></section>'+
+      '<section class="us-card us-queue"><h2>待辦檔案</h2><p class="us-empty us-queue-empty">尚未選擇檔案</p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button></section>'+
+    '</div>'+
+    '<section class="us-card us-workspace" id="uploadWorkspace"><h2>核對與匯入</h2><p id="uploadWorkspaceStatus" class="us-ws-status" role="status"></p><p class="us-empty us-ws-empty">在待辦檔案按「開啟核對」後，預覽比對與匯入結果會留在這裡。</p><div class="us-slot"></div></section>';
   const trigger=document.createElement('button');trigger.type='button';trigger.className='ui-item us-trigger';
   trigger.innerHTML='<span class="ui-ic" aria-hidden="true">📤</span><span class="ui-label">檔案上傳</span>';
-  trigger.setAttribute('aria-controls',panel.id);trigger.setAttribute('aria-expanded','false');
-  side.append(trigger);document.body.append(panel);
-  function toggleDrawer(open){
+  trigger.setAttribute('aria-controls',page.id);trigger.setAttribute('aria-expanded','false');
+  side.append(trigger);main.append(page);
+  const slot=page.querySelector('.us-slot');
+  // 借用既有匯入區塊（原元素、原事件）；離開上傳頁時放回原位，再進來時接回，結果一併保留。
+  let borrowed=[],pageTitle='',pageActive=[];
+  function attachBorrowed(){for(const b of borrowed){slot.append(b.node);if(b.reveal){b.node.hidden=false;b.node.classList.remove('hidden');}}slot.hidden=!borrowed.length;page.querySelector('.us-ws-empty').hidden=!!borrowed.length;}
+  function detachBorrowed(){for(const b of borrowed){b.mark.after(b.node);b.node.hidden=b.hidden;b.node.className=b.cls;}}
+  function borrow(nodes,reveal){
+    detachBorrowed();for(const b of borrowed)b.mark.remove();
+    borrowed=nodes.filter(Boolean).map(node=>{const mark=document.createComment('upload-page');node.before(mark);return {node,mark,hidden:node.hidden,cls:node.className,reveal};});
+    attachBorrowed();
+  }
+  function closeMore(){frame.classList.remove('ui-more-open');document.querySelector('.ui-tabbar [data-tab="more"]')?.setAttribute('aria-expanded','false');}
+  function setPage(open,{restoreTitle=true,focus=true}={}){
     if(open&&!gateOpen())return;
-    panel.hidden=!open;trigger.setAttribute('aria-expanded',String(open));
+    if(open===!page.hidden)return;
+    page.hidden=!open;main.classList.toggle('us-page-open',open);trigger.classList.toggle('active',open);trigger.setAttribute('aria-expanded',String(open));
+    const title=E('uiPageTitle');
     if(open){
-      const mobile=matchMedia('(max-width:760px)').matches;
-      panel.style.left=(mobile?12:Math.min(side.getBoundingClientRect().right+12,innerWidth-400))+'px';
-      if(mobile){side.closest('.ui-frame').classList.remove('ui-more-open');document.querySelector('.ui-tabbar [data-tab="more"]')?.setAttribute('aria-expanded','false');}
-      panel.querySelector('input').focus();
+      pageTitle=title?.textContent||'';if(title)title.textContent='檔案上傳';
+      pageActive=[...side.querySelectorAll('.ui-nav .ui-item.active')];pageActive.forEach(x=>x.classList.remove('active'));
+      closeMore();attachBorrowed();scrollTo(0,0);if(focus)page.querySelector('h1').focus({preventScroll:true});
+    }else{
+      detachBorrowed();if(restoreTitle){if(title)title.textContent=pageTitle;pageActive.forEach(x=>x.classList.add('active'));}pageActive=[];scrollTo(0,0);
     }
   }
-  trigger.onclick=()=>toggleDrawer(panel.hidden);
-  panel.querySelector('.us-close').onclick=()=>{toggleDrawer(false);trigger.focus();};
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){toggleDrawer(false);trigger.focus();}});
-  document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!trigger.contains(e.target))toggleDrawer(false);});
-  addEventListener('resize',()=>{if(!panel.hidden)toggleDrawer(true);});
+  trigger.onclick=()=>setPage(page.hidden);
+  page.querySelector('.us-back').onclick=()=>{setPage(false);trigger.focus({preventScroll:true});};
+  // 點側欄其他項目或手機分頁就離開上傳頁（標題交給外框重設）
+  side.addEventListener('click',e=>{const item=e.target.closest('.ui-item');if(item&&item!==trigger&&!page.hidden)setPage(false,{restoreTitle:false});});
+  document.querySelector('.ui-tabbar')?.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t&&t.dataset.tab!=='more'&&!page.hidden)setPage(false,{restoreTitle:t.dataset.tab!=='home'});});
   const gate=E(isAdmin?'adminApp':'dashboard');
   const gateOpen=()=>!gate.hidden&&!gate.classList.contains('hidden')&&gate.style.display!=='none';
-  const syncGate=()=>{trigger.hidden=!gateOpen();if(!gateOpen())toggleDrawer(false);};syncGate();
+  const syncGate=()=>{trigger.hidden=!gateOpen();if(!gateOpen())setPage(false);};syncGate();
   new MutationObserver(syncGate).observe(gate,{attributes:true,attributeFilter:['class','style','hidden']});
-  const picker=panel.querySelector('input'),drop=panel.querySelector('.us-picker'),message=panel.querySelector('.us-message'),list=panel.querySelector('.us-list'),clear=panel.querySelector('.us-clear');
+  const picker=page.querySelector('.us-picker input'),drop=page.querySelector('.us-picker'),message=page.querySelector('.us-message'),list=page.querySelector('.us-list'),clear=page.querySelector('.us-clear');
   function openStorage(){
     if(storage)return storage;
     storage=new Promise((resolve,reject)=>{
@@ -56,21 +80,23 @@
   }
   function setBusy(value){busy=value;picker.disabled=value;clear.disabled=value;list.querySelectorAll('button').forEach(b=>b.disabled=value);}
   function render(){
-    list.replaceChildren();clear.hidden=!queue.length;
+    list.replaceChildren();clear.hidden=!queue.length;page.querySelector('.us-queue-empty').hidden=!!queue.length;
+    for(const li of page.querySelectorAll('.us-types li')){const n=queue.filter(g=>!g.error&&g.route===li.dataset.route).length;li.classList.toggle('us-has',n>0);li.querySelector('em').textContent=n?'待辦 '+n+' 批':'';}
     for(const group of queue){
       const card=document.createElement('div');card.className='us-item'+(group.error?' us-error':'');
       const title=document.createElement('strong');title.textContent=labels[group.route]||'未分配';card.append(title);
-      for(const item of group.items){const name=document.createElement('span');name.textContent=item.file.name;card.append(name);}
-      const status=document.createElement('span');status.textContent=group.error||group.status||('T'+center+'・已分配，待核對');card.append(status);
-      if(!group.error){const button=document.createElement('button');button.type='button';button.className='us-open';button.textContent=group.route==='bi'?'開啟核對／確認匯入':'開啟核對';button.onclick=()=>activate(group).catch(fail);card.append(button);}
+      for(const item of group.items){const name=document.createElement('span');name.className='us-file';name.textContent=item.file.name;card.append(name);}
+      const status=document.createElement('span');status.className='us-status';status.textContent=group.error||group.status||('T'+center+'・已分配，待核對');card.append(status);
+      const actions=document.createElement('div');actions.className='us-actions';
+      if(!group.error){const button=document.createElement('button');button.type='button';button.className='us-open';button.textContent=group.route==='bi'?'開啟核對／確認匯入':'開啟核對';button.onclick=()=>activate(group).catch(fail);actions.append(button);}
       const remove=document.createElement('button');remove.type='button';remove.textContent='移除待辦';remove.onclick=async()=>{
         if(importBusy()){message.textContent='匯入處理中，請等候結果後再移除。';return;}
         const next=queue.filter(x=>x.id!==group.id);try{await persist(next);queue=next;render();}catch(e){fail(e);}
-      };card.append(remove);list.append(card);
+      };actions.append(remove);card.append(actions);list.append(card);
     }
     setBusy(busy);
   }
-  function fail(e){message.textContent='處理失敗：'+(e.message||e)+'；原檔保留，請重試。';if(gateOpen())toggleDrawer(true);}
+  function fail(e){message.textContent='處理失敗：'+(e.message||e)+'；原檔保留，請重試。';if(gateOpen())setPage(true,{focus:false});}
   function importBusy(){return ['opsScoreFiles','biFiles'].some(id=>E(id)?.disabled)||E('staffingImportBtn')?.disabled===true||/^(讀取與篩選|匯入資料中|匯入中)/.test(E('opsFeedbackMessage')?.textContent||'');}
   async function selectFiles(files){
     if(busy)return;
@@ -113,16 +139,7 @@
   }
   function reveal(node){
     for(let p=node?.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
-    node?.scrollIntoView({behavior:'smooth',block:'center'});
-  }
-  function getWorkspace(){
-    let workspace=E('uploadWorkspace');
-    if(!workspace){
-      workspace=document.createElement('section');workspace.id='uploadWorkspace';workspace.className='us-workspace';
-      workspace.innerHTML='<h2>檔案核對與匯入</h2><p id="uploadWorkspaceStatus" role="status"></p>';
-      (isAdmin?document.querySelector('#adminApp .ui-content'):E('dashboard')).prepend(workspace);
-    }
-    return workspace;
+    node?.scrollIntoView({behavior:'smooth',block:'start'});
   }
   async function activate(group){
     if(busy||importBusy())throw new Error('有檔案正在處理，請稍後再試');
@@ -131,37 +148,27 @@
     try{await openGroup(group);}finally{setBusy(false);}
   }
   async function openGroup(group){
-    toggleDrawer(false);
     const adminRoute=['scores','staffing'].includes(group.route);
     if(adminRoute!==isAdmin){
       await persist(queue);sessionStorage.setItem(activeKey,group.id);
       location.href=adminRoute?'admin.html':'analysis.html';return;
     }
-    side.closest('.ui-frame').classList.remove('ui-more-open');
-    document.querySelector('.ui-tabbar [data-tab="more"]')?.setAttribute('aria-expanded','false');
+    setPage(true,{focus:false});
+    const workspace=E('uploadWorkspace'),files='T'+center+'｜'+labels[group.route]+'｜'+group.items.map(x=>x.file.name).join('、');
     if(isAdmin){
-      if(group.route==='scores'){
-        if(E('uploadWorkspace'))E('uploadWorkspace').hidden=true;
-        window.UiShell.go('ops:scores');
-      }else{
-        const workspace=getWorkspace();workspace.hidden=false;
-        workspace.append(E('staffingImportFile').closest('.staffing-panel'));
-        E('uploadWorkspaceStatus').textContent='T'+center+'｜'+group.items.map(x=>x.file.name).join('、');
-      }
       const input=E(group.route==='scores'?'opsScoreFiles':'staffingImportFile');
+      borrow([input.closest(group.route==='scores'?'.ops-upload-block':'.staffing-panel')],false);
+      E('uploadWorkspaceStatus').textContent=files;
       sendFiles(input,group.items,group.route!=='scores');
       if(group.route==='scores')await window.UploadImportAdapters.prepareScores();
-      reveal(group.route==='scores'?input:E('uploadWorkspace'));
     }else{
-      // Reuse the real controls in a visible workspace, independent of report loading.
-      const workspace=getWorkspace();
+      // Reuse the real controls in the upload page, independent of report loading.
       const footer=E(group.route==='bi'?'biUploadFooter':'feedbackUploadFooter');
-      for(const id of ['biUploadFooter','feedbackUploadFooter']){const other=E(id);if(other&&other!==footer&&workspace.contains(other))other.hidden=true;}
-      workspace.append(footer);footer.hidden=false;footer.classList.remove('hidden');
+      borrow([footer],true);
       const input=E(group.route==='bi'?'biFiles':'opsFeedbackFiles');
       sendFiles(input,group.items,false);
       if(group.route==='feedback')await window.UploadImportAdapters.prepareFeedback();
-      E('uploadWorkspaceStatus').textContent='T'+center+'｜'+group.items.map(x=>x.file.name).join('、');
+      E('uploadWorkspaceStatus').textContent=files;
       if(group.route==='bi'){
         let button=E('uploadBiConfirm');
         if(!button){button=document.createElement('button');button.id='uploadBiConfirm';button.type='button';button.className='bi-upload-button';button.textContent='確認匯入 BI 週檔';footer.prepend(button);
@@ -169,9 +176,9 @@
         E('biStatus').textContent='已分配到 BI 週 SSSG；尚未匯入。請確認目前中心與來源檔案，再按確認匯入。';
         E('biPreview').replaceChildren();
       }
-      reveal(workspace);
     }
-    group.status='已開啟核對；匯入結果請看主畫面';await persist(queue);render();
+    reveal(workspace);
+    group.status='已開啟核對；預覽與結果在「核對與匯入」';await persist(queue);render();
   }
   // Resume a destination only after the existing sign-in gate has opened.
   async function start(){
