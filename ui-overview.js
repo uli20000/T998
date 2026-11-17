@@ -17,7 +17,8 @@
   const min=(value,target)=>value>=target,max=(value,target)=>value<=target;
   const percent=value=>num(value*100,Number.isInteger(value*100)?0:1)+'%';
   const KPI=[
-    {key:'tc',label:'TC',fmt:v=>num(v),target:s=>s.forecast,targetText:s=>s.forecast==null?'預估資料不足':'預估 '+num(s.forecast),ok:(v,s)=>s.forecast==null?null:v>=s.forecast},
+    // 期間還沒過完：比「截至今日（有單量日期）的預估」，不比整期預估
+    {key:'tc',label:'TC',fmt:v=>num(v),target:s=>s.cmpForecast,targetText:s=>s.cmpForecast==null?'預估資料不足':(s.toDate?'截至今日預估 ':'預估 ')+num(s.cmpForecast),ok:(v,s)=>s.cmpForecast==null?null:(s.toDate?s.attainmentActual??v:v)>=s.cmpForecast},
     {key:'sstg',label:'SSTG',fmt:pct,...goal('sstg',v=>(v>0?'+':'')+percent(v),min)},
     {key:'d7',label:'D7',scope:'全部餐廳',fmt:pct,...goal('d7',percent,min)},
     {key:'d25',label:'D25',scope:'全部餐廳',fmt:pct,...goal('d25',percent,min)},
@@ -49,6 +50,7 @@
   // 單量類指標：尚未上傳 Power BI 的日期用 DMS 暫估
   const TC_KPIS=new Set(['tc','sstg','tplh','faShare'])
   function renderKpis(o){
+    const toDate=o.range&&o.range.end>opsToday();o.summary={...o.summary,toDate,cmpForecast:toDate?o.summary.attainmentForecast:o.summary.forecast};
     E('uoKpis').innerHTML=KPI.map(k=>{
       const v=o.hasScores||k.key==='tc'&&o.summary.tc?o.summary[k.key]:null,shown=v==null?null:k.fmt(v),ok=shown==null?null:k.ok(v,o.summary);
       const cls=shown==null?'na':ok===null?'':ok?'ok':'bad';
