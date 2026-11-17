@@ -64,17 +64,24 @@ tr.ins-cut td{border-bottom:2px dashed var(--red)}
 .wk-cand{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .wk-cand:hover{border-color:#0b57d0;color:#0b57d0}
 .wk-bottom{margin-top:12px}
+.wk-sum{margin-top:16px;padding:14px 16px;border:1.5px solid #f0c9c5;border-radius:12px;background:color-mix(in srgb,#fff5f4 70%,var(--paper))}
+.wk-sum>h3{margin:0 0 6px;font-size:19px}
+.wk-sum-item{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.wk-sum-item h4{margin:0 0 4px;font-size:17px}
+.wk-mute{color:var(--muted);font-weight:500;font-size:13px}
+.wk-mirror p{color:var(--ink)}
 .wk-view{white-space:pre-wrap;word-break:break-word;margin:12px 0 0;font:inherit;font-size:15.5px;line-height:1.8;font-weight:500;color:var(--ink)}
 html[data-display-mode="dark"] .wk-bad{background:#4a1714;color:#ffb4ab}
 html[data-display-mode="dark"] .wk-missing{background:#3d2f0b;color:#f3cf72}
 html[data-display-mode="dark"] .wk-ok{background:#12351f;color:#7ee2a8}
 html[data-display-mode="dark"] .wk-auto{background:#13294b;color:#9cc2ff}
 html[data-display-mode="dark"] .wk-you{background:#3d2f0b;color:#f3cf72}
+html[data-display-mode="dark"] .wk-sum{background:color-mix(in srgb,#4a1714 25%,var(--paper));border-color:#6b2a24}
 @media(max-width:900px){.ins-head{grid-template-columns:repeat(2,minmax(0,1fr))}.ins-grid2{grid-template-columns:1fr}.wk-doc{padding:18px 16px}}
 @media print{
   .ui-side,.ui-top,.dashboard-date-toolbar,.metric-upload-row,#periodPicker,#status,.wk-tools,.wk-save,.wk-cands,.ins-foot,#metricTitle,#metricSubtitle,.ins-link,.metric-import-footer,header{display:none!important}
   body,.ui-main,.ui-content,.panel{background:#fff!important;box-shadow:none!important;border:0!important}
-  .wk-doc{border:0;padding:0}.wk-fill{background:#fff}.wk-fill textarea{border:0;padding:0;resize:none}
+  .wk-doc{border:0;padding:0}.wk-sum{background:#fff}.wk-fill{background:#fff}.wk-fill textarea{border:0;padding:0;resize:none}
 }
 .ins-table{font-size:14px}.ins-table td,.ins-table th{padding-left:6px;padding-right:6px}
 .ins-table td.ins-name{min-width:0;white-space:nowrap}

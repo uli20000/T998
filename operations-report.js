@@ -54,7 +54,8 @@
     E('opsSummaryMetrics').innerHTML='<h3 class="ops-summary-period">'+escape(periodTitle(selectedDate(),period()))+'</h3><div class="ops-kpi-cards">'+primary.map(key=>card(all.find(row=>row[0]===key))).join('')+'</div><details class="ops-secondary"><summary>其他指標</summary><div class="ops-kpi-cards ops-secondary-cards">'+all.filter(row=>!primary.includes(row[0])).map(card).join('')+'</div></details>';
   }
   function warnings(v,isDay,date){
-    const messages=[...v.forecastWarnings];if(v.missingPairs.length)messages.push('尚缺另一份成績檔：'+v.missingPairs.map(x=>x.slice(5)).join('、'));
+    const list=xs=>xs.length>8?xs.slice(0,8).map(x=>x.slice(5)).join('、')+' 等 '+xs.length+' 天':xs.map(x=>x.slice(5)).join('、');
+    const messages=[...v.forecastWarnings];if(!isDay&&(v.missingTcDays||[]).length)messages.unshift('尚無單量的日期不計入數字：'+list(v.missingTcDays));if(v.missingPairs.length)messages.push('尚缺另一份成績檔：'+v.missingPairs.map(x=>x.slice(5)).join('、'));
     if(v.missingHourDays.length)messages.push(isDay?'尚有 '+v.days.get(date).missingAreas+' 區未填工時':'尚有 '+v.missingHourDays.length+' 天工時未填完整');
     if(v.hoursWithoutScores.length)messages.push('有工時但尚無成績：'+v.hoursWithoutScores.map(x=>x.slice(5)).join('、'));
     if(v.invalidHourDays.length)messages.push('調出工時超過可用工時：'+v.invalidHourDays.map(x=>x.slice(5)).join('、'));
@@ -130,8 +131,13 @@
     const ranked=[...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
     const pending=new Map(),orders=new Map();
     for(const row of records){if(row.record_date<r.start||row.record_date>r.end||row.status==='completed')continue;const name=acByStore.get(String(row.store_code));if(name)pending.set(name,(pending.get(name)||0)+1);}
-    if(v)for(const day of v.days.values())for(const order of day.orders){const name=acByStore.get(String(order.store_code));if(name)orders.set(name,(orders.get(name)||0)+1);}
-    return ranked.map(([name,count])=>({name,count,pending:pending.get(name)||0,rate:orders.get(name)?count/orders.get(name):null}));
+    // 等餐／TC 分母用有效單量：Power BI 為準（缺店用 DMS 補），尚未上傳 Power BI 的日子用 DMS；分子只算有單量的日期
+    const scored=new Set(),waits=new Map();
+    if(v)for(const day of v.days.values()){if(!day.tcSource||day.scoreExcluded)continue;scored.add(day.date);
+      if(day.storeTc)for(const x of day.storeTc){const name=acByStore.get(String(x.code));if(name)orders.set(name,(orders.get(name)||0)+(Number(x.tc)||0));}
+      else for(const order of day.orders){const name=acByStore.get(String(order.store_code));if(name)orders.set(name,(orders.get(name)||0)+1);}}
+    for(const row of records){if(!scored.has(row.record_date)||M.NON_DELIVERY_STORES.has(String(row.store_code)))continue;const name=acByStore.get(String(row.store_code));if(name)waits.set(name,(waits.get(name)||0)+1);}
+    return ranked.map(([name,count])=>({name,count,pending:pending.get(name)||0,rate:orders.get(name)?(waits.get(name)||0)/orders.get(name):null}));
   }
   function renderAcWaitSummary(records,r,v){
     E('opsDelayAcSummary').innerHTML='<table class="ops-summary-ac-table"><thead><tr><th>AC</th><th>登記</th><th>待回覆</th><th>等餐／TC</th></tr></thead><tbody>'+acWaitData(records,r,v).map(x=>'<tr><td>'+escape(x.name)+'</td><td>'+x.count+' 筆</td><td>'+x.pending+'</td><td>'+pct(x.rate)+'</td></tr>').join('')+'</tbody></table>';
@@ -159,7 +165,7 @@
     return rows.length?'<ol class="ops-summary-priority-list">'+rows.map((x,i)=>'<li><span class="ops-summary-priority-rank">'+(i+1)+'</span><div><strong>'+escape(x.store_code)+' '+escape(x.restaurant_name)+'</strong><span>'+details(x)+'</span></div><b>'+metric(x)+'</b></li>').join('')+'</ol>':'<div class="ops-summary-priority-empty">'+empty+'</div>';
   }
   function render(){
-    if(!state.cache)return;const d=selectedDate(),p=period(),v=model(d,p),messages=warnings(v,p==='day',d),target=E(state.context==='summary'?'opsSummaryWarnings':'opsReportWarnings');target.textContent=messages.join('；');target.hidden=state.context==='summary'||!messages.length;
+    if(!state.cache)return;const d=selectedDate(),p=period(),v=model(d,p),messages=warnings(v,p==='day',d),target=E(state.context==='summary'?'opsSummaryWarnings':'opsReportWarnings');target.textContent=messages.join('；');target.hidden=!messages.length;
     if(state.context==='summary')renderSummary(d,v);else renderScores(d,v);renderWeather();
   }
   function monthHourRows(date,data=state.cache){
@@ -213,7 +219,7 @@
     for(const date of S.dates(r.start,r.end)){
       const v=model(date,'day',data),d=v.days.get(date),s=v.summary,active=d.tcComplete&&!d.scoreExcluded;
       forecastRows.push(...v.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,需求工時:x.excluded?null:x.recommended,不計成績:x.excluded?"是":"否",預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join("、"),去年對應日期:x.baselineDate,成長倍率:1.06,前8週平均:x.averageTc,前8週成長率:x.recentGrowth,切換門檻:x.switchThreshold,有效週數:x.historyWeeks,目標週數:x.targetWeeks,採用日期:x.baselineDate,排除日期:x.excludedSamples.map(s=>s.date+" "+s.reason).join("、")})));
-      daily.push({TC來源:d.tcSource==='powerbi'?'Power BI':d.tcSource==='dms'?'DMS 暫估（尚未上傳 Power BI）':'',預估工時:s.forecastHours,預估工時達成率:s.hoursAchievement,日期:date,週次:S.week(date).year+'-'+S.weekLabel(date),不計成績:d.scoreExcluded?'是':'否',特殊事項:d.report?.special_notes||'',去年單:s.prior,預估單:s.forecast,實際單:active?s.tc:null,FA:active?s.fa:null,SSTG:active?s.sstg:null,預估達成率:active?s.tcAchievement:null,合計工時:d.scoreExcluded?null:s.totalHours,調出工時:d.scoreExcluded?null:s.transferOut,調入工時:d.scoreExcluded?null:s.transferIn,實際工時:d.scoreExcluded?null:s.actualHours,TPLH:active?s.tplh:null,第三方佔比:active?s.faShare:null,D7:!d.scoreExcluded?s.d7:null,D25:!d.scoreExcluded?s.d25:null,D7達成單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d7Y:null,D7有效單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d7Y+s.d7N:null,D25達成單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d25Y:null,D25有效單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d25Y+s.d25N:null,ByDate已匯入:d.types.has('ByDate')?'是':'否',ByOrder已匯入:d.types.has('ByOrder')?'是':'否',工時完整:d.scoreExcluded?'不計':d.actualHours!==null?'是':'否',去年單完整:d.baselineComplete?'是':'否'});
+      daily.push({TC來源:d.tcSource==='powerbi'?'Power BI':d.tcSource==='dms'?'DMS 暫估（尚未上傳 Power BI）':d.tcSource==='mixed'?'Power BI＋DMS 暫估（'+(d.pbiMissingStores||[]).join('、')+' 缺 Power BI）':'',預估工時:s.forecastHours,預估工時達成率:s.hoursAchievement,日期:date,週次:S.week(date).year+'-'+S.weekLabel(date),不計成績:d.scoreExcluded?'是':'否',特殊事項:d.report?.special_notes||'',去年單:s.prior,預估單:s.forecast,實際單:active?s.tc:null,FA:active?s.fa:null,SSTG:active?s.sstg:null,預估達成率:active?s.tcAchievement:null,合計工時:d.scoreExcluded?null:s.totalHours,調出工時:d.scoreExcluded?null:s.transferOut,調入工時:d.scoreExcluded?null:s.transferIn,實際工時:d.scoreExcluded?null:s.actualHours,TPLH:active?s.tplh:null,第三方佔比:active?s.faShare:null,D7:!d.scoreExcluded?s.d7:null,D25:!d.scoreExcluded?s.d25:null,D7達成單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d7Y:null,D7有效單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d7Y+s.d7N:null,D25達成單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d25Y:null,D25有效單:d.types.has('ByOrder')&&!d.scoreExcluded?s.d25Y+s.d25N:null,ByDate已匯入:d.types.has('ByDate')?'是':'否',ByOrder已匯入:d.types.has('ByOrder')?'是':'否',工時完整:d.scoreExcluded?'不計':d.actualHours!==null?'是':'否',去年單完整:d.baselineComplete?'是':'否'});
       for(const [a,label] of [...M.areasForDate(date),...(v.areas.has('?')?[['?','未分類']]:[])]){const x=v.areas.get(a);areas.push({日期:date,不計成績:d.scoreExcluded?'是':'否',特殊事項:d.report?.special_notes||'',區域代碼:a,區域:label,TC:active?x.tc:null,FA:active?x.fa:null,FA佔比:!d.scoreExcluded?x.faShare:null,D7:!d.scoreExcluded?x.d7:null,D25:!d.scoreExcluded?x.d25:null,區域工時:d.scoreExcluded?null:M.number(d.report?.area_hours?.[a]),D7達成單:d.types.has('ByOrder')&&!d.scoreExcluded?x.d7Y:null,D7有效單:d.types.has('ByOrder')&&!d.scoreExcluded?x.d7Y+x.d7N:null,D25達成單:d.types.has('ByOrder')&&!d.scoreExcluded?x.d25Y:null,D25有效單:d.types.has('ByOrder')&&!d.scoreExcluded?x.d25Y+x.d25N:null});}
     }
     appendTable(wb,'預估樣本',forecastRows,['日期','區域','預估TC','需求工時','預估依據','去年TC','去年對應日期','成長倍率','前8週平均','前8週成長率','切換門檻','有效週數','目標週數','不計成績','採用日期','排除日期']);
@@ -225,8 +231,8 @@
     try{
       await state.saveQueue;if(state.saveError)throw new Error('工時尚未儲存成功，請先重新儲存');
       const d=selectedDate(),r=S.range(d,p);if(r.start>opsToday())throw new Error('所選日期尚未到');if(r.end>opsToday())r.end=opsToday();notify('匯出中…','summary');
-      const [data,records]=await Promise.all([loadRange(r,true),loadRecords(r),loadWeatherRange(r)]);const v=M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...r}),wb=XLSX.utils.book_new(),hasScores=[...v.days.values()].some(x=>x.types.has('ByOrder')&&!x.scoreExcluded);
-      const summary=[['起始日期',r.start],['結束日期',r.end],['成績已匯入日數',[...v.days.values()].filter(x=>x.types.size===2).length],...metricsRows(v.summary).map(([k,value,unit])=>[k,!hasScores&&!['去年單數','預估單數','預估工時','實際工時'].includes(k)?null:value,unit])];
+      const [data,records]=await Promise.all([loadRange(r,true),loadRecords(r),loadWeatherRange(r)]);const v=M.build({...data,mapping:new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),catalog:state.catalog,...r}),wb=XLSX.utils.book_new(),hasScores=[...v.days.values()].some(x=>x.tcSource&&!x.scoreExcluded);
+      const summary=[['起始日期',r.start],['結束日期',r.end],['有單量日數',[...v.days.values()].filter(x=>x.tcSource&&!x.scoreExcluded).length],['DMS 成績已匯入日數',[...v.days.values()].filter(x=>x.types.size===2).length],...metricsRows(v.summary).map(([k,value,unit])=>[k,!hasScores&&!['去年單數','預估單數','預估工時','實際工時'].includes(k)?null:value,unit])];
       const ws=XLSX.utils.aoa_to_sheet([['營運總覽','數值','單位'],...summary,['TC來源',v.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+v.provisionalDays.join('、'):'Power BI'],['D7／D25來源','DMS（ByOrder）'],['預估公式',window.OpsForecast.FORMULA],['資料提示',v.forecastWarnings.join('；')]]);ws['!cols']=[{wch:24},{wch:22},{wch:12}];summary.forEach((r,i)=>{if(r[2]==='%'&&ws['B'+(i+2)])ws['B'+(i+2)].z='0.0%';});XLSX.utils.book_append_sheet(wb,ws,'營運總覽');appendScores(wb,data,r);
       appendTable(wb,'劃線簽名',S.lineExport(state.stores,records.line,r.start,r.end,opsToday()),['日期','店號','餐廳','是否登記','劃線','簽名','登記時間','更新時間']);
       appendTable(wb,'等餐紀錄',records.delay.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單編號:x.order_number,狀態:x.status==='completed'?'已回覆':'待回覆',等餐原因:x.reason||'',登記時間:x.created_at,回覆時間:x.responded_at||''})),['日期','店號','餐廳','訂單編號','狀態','等餐原因','登記時間','回覆時間']);
@@ -243,7 +249,7 @@
     name.textContent=matches.length?'請選擇餐廳':'查無此店號';list.innerHTML=matches.map(s=>'<button type="button" data-store-code="'+s.store_code+'">'+s.store_code+'　'+escape(s.restaurant_name)+'</button>').join('');
     list.querySelectorAll('button').forEach(b=>b.onclick=async()=>{input.value=b.dataset.storeCode;await findRestaurant(inputId);if(inputId==='opsLineStore')await fillLineState(input.value);});return null;
   }
-  async function fillLineState(code,date=window.OpsDateControl?.date||opsToday()){
+  async function fillLineState(code,date=opsToday()){
     const r=await db.from('t998_line_signature_records').select('line_completed,signature_completed').eq('record_date',date).eq('store_code',code).maybeSingle();if(E('opsLineStore').value!==code)return;if(r.error){E('opsLineMessage').textContent=r.error.message;return;}opsSetToggle('opsLineMark',!!r.data?.line_completed);opsSetToggle('opsSignMark',!!r.data?.signature_completed);
   }
   window.opsFindRestaurant=findRestaurant;

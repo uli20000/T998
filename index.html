@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- T998 V8: multi-week opening + Taipei-week rollover refresh; confirmed UI unchanged. -->
 <html lang="zh-Hant">
-<head><script src="center-config.js"></script><script src="center-runtime.js"></script><link rel="stylesheet" href="shared-shell.css">
+<head><script src="center-config.js"></script><script src="center-runtime.js"></script><script src="display-mode.js?v=20261117-v3w"></script><link rel="stylesheet" href="shared-shell.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#f4f0e8">
@@ -926,7 +926,7 @@
  .shift-add-slot,.shift-slot-remove,.shift-unavailable{width:100%;min-width:0;height:40px;min-height:40px;padding:4px 5px;font-size:12px}
 }
 </style>
-<link rel="stylesheet" href="front-shell.css?v=20261111-c4">
+<link rel="stylesheet" href="front-shell.css?v=20261117-v3w">
 </head>
 
 <body>
@@ -942,6 +942,7 @@
     </div>
 
     <div id="todayDate" class="date"></div>
+    <button type="button" class="fv-mode-toggle" data-display-mode-toggle aria-pressed="false">☀️</button>
   </header>
 
   <section class="intro">
@@ -2843,11 +2844,11 @@ function getClaimPlate4() {
    READ CLAIM VEHICLE
    ===================================================== */
 
+// D02：「今天」一律用台灣時間（Asia/Taipei），不看裝置時區
 function isTodayLocal(value){
   if(!value) return false;
-  const d = new Date(value);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  const key = RiderRules.dayKey(value);
+  return !!key && key === RiderRules.dayKey(new Date());
 }
 
 async function loadClaimVehicle() {

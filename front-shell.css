@@ -114,3 +114,14 @@ body.front-v2 .success-data > div{font-size:17px}
 /* 手機整頁放大：頁面寬度跟著螢幕（device-width），內容等比放大，左右剛好切齊 */
 @media(max-width:600px){body.front-v2{zoom:1.2}}
 @media(max-width:374px){body.front-v2{zoom:1.1}}
+
+/* D01：夜間模式（共用 display-mode.js 設定 html[data-display-mode]；表頭右側切換） */
+body.front-v2 .fv-mode-toggle{flex:0 0 40px;width:40px;height:40px;min-height:40px;padding:0;border:1px solid var(--fv-line);border-radius:10px;background:var(--fv-card);font-size:18px;line-height:1;cursor:pointer}
+html[data-display-mode=dark] body.front-v2{background:var(--fv-bg);color:var(--fv-text)}
+html[data-display-mode=dark] body.front-v2 :is(.card,.mode-btn,.intro .back-home-btn,.fv-mode-toggle){background:var(--fv-card);color:var(--fv-text);border-color:var(--fv-line)}
+html[data-display-mode=dark] body.front-v2 :is(input,select,textarea){background:#14171B;color:var(--fv-text);border-color:var(--fv-line)}
+html[data-display-mode=dark] body.front-v2 :is(input,textarea)::placeholder{color:var(--fv-faint)}
+html[data-display-mode=dark] body.front-v2 :is(.label,.check-name,label,p,li,td,th,h2,h3){color:inherit}
+html[data-display-mode=dark] body.front-v2 :is(.read-btn,.claim-option label,.back-home-btn,.scale-option,.survey-radio-group label,.answer-option,.defensive-page .video-panel,.defensive-page .question-card,.training-step-chip,.training-card,.name-suggestions,.name-suggestion,.device-action-btn,.survey-card,.status-card,.result-card,.vehicle-card){background:var(--fv-card);color:var(--fv-text);border-color:var(--fv-line)}
+html[data-display-mode=dark] body.front-v2 :is(.answer-option.selected,.training-step-chip.active){background:var(--fv-red-soft);color:var(--fv-text)}
+html[data-display-mode=dark] body.front-v2 :is(.training-pdf-box.mandatory-pdf,.device-register-note){background:#3b3423;color:#edce80}

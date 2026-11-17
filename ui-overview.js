@@ -26,17 +26,22 @@
   ];
   const shift=(d,n)=>{const x=new Date(d+'T12:00:00Z');x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10);};
   const sharedDate={key:'t998-shared-date-v1',get(){try{const x=JSON.parse(localStorage.getItem(this.key)||'null');if(x&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&['day','week','month'].includes(x.period)&&Date.now()-x.at<43200000)return x;}catch(e){}return null;},set(date,period){try{localStorage.setItem(this.key,JSON.stringify({date,period,at:Date.now()}));}catch(e){}}};
-  let date=opsToday(),req=0;
+  let date=opsToday(),req=0,period=sharedDate.get()?.period||'day';
+  // A01：總覽跟營運、分析共用日／週／月與日期
+  const S=window.OpsSummary,PLABEL={day:'日',week:'週',month:'月'};
+  const step=(d,n)=>{if(period==='day')return shift(d,n);if(period==='week')return shift(d,7*n);const x=new Date(d.slice(0,7)+'-01T12:00:00Z');x.setUTCMonth(x.getUTCMonth()+n);const last=new Date(Date.UTC(x.getUTCFullYear(),x.getUTCMonth()+1,0,12)).getUTCDate();return x.toISOString().slice(0,8)+String(Math.min(+d.slice(8,10),last)).padStart(2,'0');};
+  const label=d=>{if(period==='day')return d.replace(/-/g,'/')+'（'+'日一二三四五六'[new Date(d+'T12:00:00Z').getUTCDay()]+'）';const r=S.range(d,period);return period==='week'?S.weekLabel(d)+'　'+r.start.slice(5).replace('-','/')+'–'+r.end.slice(5).replace('-','/'):r.start.slice(0,4)+' 年 '+(+r.start.slice(5,7))+' 月';};
+  const sync=()=>{sharedDate.set(date,period);if(window.OpsDateControl)window.OpsDateControl.set(date,period,false);};
 
   const page=document.createElement('section');page.id='uiOverviewPage';page.className='ui-overview';
-  page.innerHTML='<div class="uo-head"><h1 id="uoTitle">營運成績</h1><div class="uo-date"><button type="button" data-d="-1" aria-label="前一天">‹</button><label class="date-display"><b id="uoDate"></b><input id="uoDatePick" type="date" aria-label="選擇日期"></label><button type="button" data-d="1" aria-label="後一天">›</button><button type="button" data-d="0">今日</button></div></div>'+
+  page.innerHTML='<div class="uo-head"><h1 id="uoTitle">營運成績</h1><div class="uo-date"><span class="uo-period" role="group" aria-label="期間">'+['day','week','month'].map(p=>'<button type="button" data-p="'+p+'">'+PLABEL[p]+'</button>').join('')+'</span><button type="button" data-d="-1" aria-label="上一期">‹</button><label class="date-display"><b id="uoDate"></b><input id="uoDatePick" type="date" aria-label="選擇日期"></label><button type="button" data-d="1" aria-label="下一期">›</button><button type="button" data-d="0">今日</button></div></div>'+
     '<div id="uoKpis" class="uo-kpis"></div>'+
     '<div class="uo-grid2"><article class="uo-card"><h2>等餐（依 AC）</h2><div id="uoWait"></div></article><article class="uo-card"><h2>劃線簽名（依 AC）</h2><div id="uoLine"></div></article></div>'+
     '<p id="uoFoot" class="uo-foot"></p><p id="uoStatus" class="uo-status" role="status"></p>';
   content.prepend(page);
-  page.querySelector('.uo-date').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;const d=+b.dataset.d;date=d===0?opsToday():shift(date,d);if(date>opsToday())date=opsToday();sharedDate.set(date,sharedDate.get()?.period||'day');if(window.OpsDateControl)window.OpsDateControl.set(date,window.OpsDateControl.period,false);load();});
+  page.querySelector('.uo-date').addEventListener('click',e=>{const pb=e.target.closest('[data-p]');if(pb){period=pb.dataset.p;sync();load();return;}const b=e.target.closest('[data-d]');if(!b)return;const d=+b.dataset.d;date=d===0?opsToday():step(date,d);if(date>opsToday())date=opsToday();sync();load();});
 
-  const pick=page.querySelector('#uoDatePick');pick.onclick=e=>{try{e.target.showPicker?.();}catch(_){}};pick.onchange=()=>{if(!pick.value)return;date=pick.value>opsToday()?opsToday():pick.value;sharedDate.set(date,sharedDate.get()?.period||'day');if(window.OpsDateControl)window.OpsDateControl.set(date,window.OpsDateControl.period,false);load();};
+  const pick=page.querySelector('#uoDatePick');pick.onclick=e=>{try{e.target.showPicker?.();}catch(_){}};pick.onchange=()=>{if(!pick.value)return;date=pick.value>opsToday()?opsToday():pick.value;sync();load();};
   const bar=(label,value,max,text,cls='')=>'<div class="uo-bar-row"><span>'+esc(label)+'</span><div class="uo-bar"><div class="'+cls+'" style="width:'+(max?Math.max(2,Math.round(value/max*100)):0)+'%"></div></div><b>'+esc(text)+'</b></div>';
   const empty=t=>'<p class="uo-empty">'+esc(t)+'</p>';
   const top3=(rows,metric,sub)=>rows.length?'<ol class="uo-top">'+rows.map(x=>'<li><b>'+esc(x.store_code+' '+(x.restaurant_name||''))+'</b><small>'+esc(sub(x))+'</small><em>'+esc(metric(x))+'</em></li>').join('')+'</ol>':'';
@@ -53,7 +58,7 @@
   function waitHtml(o){
     const max=Math.max(0,...o.acWait.map(x=>x.count));
     return (o.acWait.length?o.acWait.map(x=>bar(x.name,x.count,max,x.count+' 筆'+(x.pending?'（待回覆 '+x.pending+'）':''),'red')).join(''):empty('沒有 AC 設定'))+
-      '<h3>等餐最多的餐廳</h3>'+(top3(o.delayTop,x=>x.count+' 筆',x=>(x.ac?x.ac+'｜':'')+'待回覆 '+x.pending)||empty('這天沒有等餐紀錄'))+(o.delayTiedOthers?'<p class="uo-note">另有 '+o.delayTiedOthers+' 家同筆數並列</p>':'');
+      '<h3>等餐最多的餐廳</h3>'+(top3(o.delayTop,x=>x.count+' 筆',x=>(x.ac?x.ac+'｜':'')+'待回覆 '+x.pending)||empty(period==='day'?'這天沒有等餐紀錄':'這段期間沒有等餐紀錄'))+(o.delayTiedOthers?'<p class="uo-note">另有 '+o.delayTiedOthers+' 家同筆數並列</p>':'');
   }
   function renderWait(o){E('uoWait').innerHTML=waitHtml(o);}
   function lineHtml(o){
@@ -64,10 +69,10 @@
   function renderLine(o){E('uoLine').innerHTML=lineHtml(o);}
   window.UiOverview={waitHtml,lineHtml};
   async function load(){
-    const id=++req,wd='日一二三四五六'[new Date(date+'T12:00:00Z').getUTCDay()];E('uoDate').textContent=date.replace(/-/g,'/')+'（'+wd+'）';E('uoDatePick').value=date;E('uoDatePick').max=opsToday();E('uoTitle').textContent='T'+((window.CENTER_CONFIG&&window.CENTER_CONFIG.center)||(window.CenterBusinessConfig||{}).center||'')+' '+((window.CenterBusinessConfig||{}).centerName||'外送中心')+'｜營運成績';E('uoStatus').textContent='讀取中…';E('uoFoot').textContent='';
+    const id=++req;E('uoDate').textContent=label(date);page.querySelectorAll('[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===period));E('uoDatePick').value=date;E('uoDatePick').max=opsToday();E('uoTitle').textContent='T'+((window.CENTER_CONFIG&&window.CENTER_CONFIG.center)||(window.CenterBusinessConfig||{}).center||'')+' '+((window.CenterBusinessConfig||{}).centerName||'外送中心')+'｜營運成績';E('uoStatus').textContent='讀取中…';E('uoFoot').textContent='';
     try{
       if(window.KpiSettings&&typeof db!=='undefined'){try{await window.KpiSettings.load(db);}catch(e){}}
-      const o=await window.OpsReport.overview(date,'day');if(id!==req)return;
+      const o=await window.OpsReport.overview(date,period);if(id!==req)return;
       renderKpis(o);renderWait(o);renderLine(o);
       const now=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
       E('uoFoot').textContent='成績 BY ORDER '+(o.types.ByOrder?'已匯入':'未匯入')+'｜BY DATE '+(o.types.ByDate?'已匯入':'未匯入')+'｜劃線登記 '+o.lineRegistered+'／'+o.lineExpected+' 店｜產生時間 '+now;
@@ -80,7 +85,7 @@
   let loaded=false;
   const original=window.showAdminMode;
   window.showAdminMode=showAdminMode=function(mode){original(mode);page.style.display=mode==='home'?'block':'none';// 每次回到總覽都重讀，等餐、劃線在其他頁新增或修改後才會連動
-    if(mode==='home'&&E('adminApp').style.display==='block'){loaded=true;date=sharedDate.get()?.date||date;load();}};
+    if(mode==='home'&&E('adminApp').style.display==='block'){loaded=true;const sd=sharedDate.get();date=sd?.date||date;period=sd?.period||period;load();}};
   page.style.display='block';
   new MutationObserver(()=>{if(!loaded&&E('adminApp').style.display==='block'&&page.style.display!=='none'){loaded=true;load();}}).observe(E('adminApp'),{attributes:true,attributeFilter:['style']});
   if(E('adminApp').style.display==='block'){loaded=true;load();}

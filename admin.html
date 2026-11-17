@@ -1290,10 +1290,10 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 .ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
 @media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
 </style>
-<link rel="stylesheet" href="operations-report.css?v=20261117-v3a">
-<link rel="stylesheet" href="display-mode.css?v=20261117-v3a">
-<link rel="stylesheet" href="ui-shell.css?v=20261117-v3a">
-<link rel="stylesheet" href="upload-sidebar.css?v=20261117-v2z">
+<link rel="stylesheet" href="operations-report.css?v=20261117-v3s">
+<link rel="stylesheet" href="display-mode.css?v=20261117-v3w">
+<link rel="stylesheet" href="ui-shell.css?v=20261117-v3w">
+<link rel="stylesheet" href="upload-sidebar.css?v=20261117-v3w">
 </head>
 
 <body>
@@ -2022,30 +2022,22 @@ function fmt(v){
 
 }
 
+// D02：今天、近 5 天的日界一律用台灣時間（Asia/Taipei），不看裝置時區
+function taipeiDayKey(value = new Date()){
+  const d = new Date(value);
+  if(!Number.isFinite(d.getTime())) return null;
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
+function taipeiMidnight(offsetDays = 0){
+  return new Date(new Date(`${taipeiDayKey()}T00:00:00+08:00`).getTime() + offsetDays * 86400000);
+}
+
 function ranges(){
-
-  const n =
-    new Date();
-
-  const s =
-    new Date(
-      n.getFullYear(),
-      n.getMonth(),
-      n.getDate()
-    );
-
-  const e =
-    new Date(
-      n.getFullYear(),
-      n.getMonth(),
-      n.getDate()+1
-    );
-
   return {
-    s,
-    e
+    s: taipeiMidnight(0),
+    e: taipeiMidnight(1)
   };
-
 }
 
 /* =========================
@@ -2055,13 +2047,7 @@ function ranges(){
 
 function fiveDayCutoff(){
 
-  const n = new Date();
-
-  return new Date(
-    n.getFullYear(),
-    n.getMonth(),
-    n.getDate()-4
-  );
+  return taipeiMidnight(-4);
 
 }
 
@@ -2241,11 +2227,8 @@ function isClaimPending(v){
 
 function isToday(value){
   if(!value) return false;
-  const d = new Date(value);
-  const n = new Date();
-  return d.getFullYear() === n.getFullYear()
-    && d.getMonth() === n.getMonth()
-    && d.getDate() === n.getDate();
+  const key = taipeiDayKey(value);
+  return !!key && key === taipeiDayKey();
 }
 
 function isClaimedToday(v){
@@ -2437,8 +2420,10 @@ function updateSummary(){
 
   totalCount.textContent = vehicles.length;
   // 已領車只計算「今天已領、目前尚未還車」的車輛
-  claimedCount.textContent = vehicles.filter(isClaimPending).length;
-  returnedCount.textContent = vehicles.filter(isReturnedToday).length;
+  // 領車資料讀取失敗時不能當成 0（A06）
+  claimedCount.textContent = claimLoadError ? "—" : vehicles.filter(isClaimPending).length;
+  returnedCount.textContent = claimLoadError ? "—" : vehicles.filter(isReturnedToday).length;
+  claimedCount.title = returnedCount.title = claimLoadError ? "領車資料讀取失敗，無法統計" : "";
   unresolvedCount.textContent = unresolvedVehicleIds.size;
 }
 
@@ -3857,19 +3842,21 @@ function surveyResultClass(value){
 }
 
 function renderSurveyEmptySummary(message){
+  surveyExportBtn.disabled = true; // A05：讀取失敗不能匯出成「全部未完成」
   surveySummary.innerHTML = `
-    <button type="button" class="summary-card clickable" data-survey-status="required"><div class="summary-label">應完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card abnormal clickable" data-survey-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card done clickable" data-survey-status="completed"><div class="summary-label">已完成</div><div class="summary-number">0</div></button>
+    <div class="summary-card" title="讀取失敗，數字無法判讀"><div class="summary-label">應完成</div><div class="summary-number">—</div></div>
+    <div class="summary-card abnormal" title="讀取失敗，數字無法判讀"><div class="summary-label">未完成</div><div class="summary-number">—</div></div>
+    <div class="summary-card done" title="讀取失敗，數字無法判讀"><div class="summary-label">已完成</div><div class="summary-number">—</div></div>
   `;
   surveyStatusList.innerHTML = `<div class="empty" style="grid-column:1/-1;">${esc(message || "目前沒有資料")}</div>`;
 }
 
 function renderDefensiveEmptySummary(message){
+  defensiveExportBtn.disabled = true;
   defensiveSummary.innerHTML = `
-    <button type="button" class="summary-card clickable" data-defensive-status="required"><div class="summary-label">應完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card abnormal clickable" data-defensive-status="incomplete"><div class="summary-label">未完成</div><div class="summary-number">0</div></button>
-    <button type="button" class="summary-card done clickable" data-defensive-status="completed"><div class="summary-label">已完成</div><div class="summary-number">0</div></button>
+    <div class="summary-card" title="讀取失敗，數字無法判讀"><div class="summary-label">應完成</div><div class="summary-number">—</div></div>
+    <div class="summary-card abnormal" title="讀取失敗，數字無法判讀"><div class="summary-label">未完成</div><div class="summary-number">—</div></div>
+    <div class="summary-card done" title="讀取失敗，數字無法判讀"><div class="summary-label">已完成</div><div class="summary-number">—</div></div>
   `;
   defensiveAdminList.className = "survey-status-list";
   defensiveAdminList.innerHTML = `<div class="empty" style="grid-column:1/-1;">${esc(message || "目前沒有資料")}</div>`;
@@ -4251,6 +4238,7 @@ async function loadDefensiveAdminData(){
       .map(row => String(row.respondent_name || "").trim())
       .filter(name => name && activeNameSet.has(name)));
     const incomplete = uniqueNames.filter(name => !completed.has(name));
+    defensiveExportBtn.disabled = false;
     renderDefensiveSummary(uniqueNames, completed, incomplete);
   }catch(e){
     renderDefensiveEmptySummary(`防禦駕駛資料讀取失敗：${e.message || "請確認在職名單、資料表與權限"}`);
@@ -4317,6 +4305,7 @@ async function loadSurveyData(){
     });
     surveyTargets = [...targetMap.values()];
     surveyResponses = responseResult.data || [];
+    surveyExportBtn.disabled = false;
     renderSurveySummary();
     renderSurveyRoster();
     renderSurveyResponses();
@@ -4972,7 +4961,7 @@ todayDate.textContent =
 
 const now = new Date();
 exportMonth.value =
-  `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  taipeiDayKey(now).slice(0,7);
 
 /* =========================
    管理員登入
@@ -6349,14 +6338,14 @@ async function opsArchiveScoreSourceFiles(pair){
 <script src="config/998-business.js?v=20261114-v2w"></script>
 <script src="score-read-source.js"></script>
 <script src="operations-forecast.js?v=20261114-v2w"></script>
-<script src="operations-metrics.js?v=20261117-v3p"></script>
+<script src="operations-metrics.js?v=20261117-v3u"></script>
 <script src="operations-summary.js?v=20261113-v2q"></script>
-<script src="operations-report.js?v=20261117-v3p"></script>
-<script src="operations-entry.js?v=20261117-v3a"></script>
+<script src="operations-report.js?v=20261117-v3v"></script>
+<script src="operations-entry.js?v=20261117-v3u"></script>
 <script src="ui-shell.js?v=20261115-v2y"></script>
 <script src="kpi-settings.js?v=20261113-v2q"></script>
-<script src="ui-overview.js?v=20261117-v3p"></script>
-<script src="ui-ops.js?v=20261113-v2q"></script>
+<script src="ui-overview.js?v=20261117-v3w"></script>
+<script src="ui-ops.js?v=20261117-v3w"></script>
 <script src="upload-router.js?v=20261113-v2s"></script>
 <script src="upload-sidebar.js?v=20261117-v2z"></script>
 </body>

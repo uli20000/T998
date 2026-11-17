@@ -201,7 +201,7 @@
 .ops-filter-row label{display:grid;gap:7px;min-width:0;font-weight:700;font-size:14px}
 .ops-filter-row input,.ops-filter-row select{min-width:0;width:100%;min-height:44px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:7px;color:var(--black);font:inherit;text-align:center}
 .ops-delete-btn{background:#fff;color:#a71930;border:1px solid #dba6ad;border-radius:8px;min-height:36px;padding:6px 12px;font:inherit;white-space:nowrap;cursor:pointer}
-.ops-delete-btn:disabled{opacity:.5;cursor:wait}.ops-records-table{min-width:520px}.ops-records-table td{vertical-align:middle}
+.ops-delete-btn:disabled{opacity:.5;cursor:wait}.ops-row-actions{display:flex;gap:6px;justify-content:center;align-items:stretch}.ops-row-actions .ops-row-btn{flex:0 0 96px;min-width:0;min-height:36px;padding:6px 10px;border-radius:8px;font:inherit;font-weight:800;text-align:center;white-space:nowrap;cursor:pointer}.ops-row-actions .ops-return-btn{background:#fff;color:var(--black);border:1px solid var(--line)}.ops-row-actions .ops-return-btn:disabled{opacity:.5;cursor:not-allowed}.ops-records-table{min-width:520px}.ops-records-table td{vertical-align:middle}
 .ops-incomplete-fold{margin:20px 0;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.ops-incomplete-fold summary{cursor:pointer;text-align:center;font-weight:700;min-height:28px}
 #opsSummaryTitle{margin:22px 0 16px!important;font-size:19px}
 .ops-ranking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.ops-ranking-grid .ops-report-card{margin:0}
@@ -231,6 +231,8 @@
  .ops-records-table td::before{content:attr(data-label);margin-bottom:5px;color:var(--black);font-size:11px;font-weight:700}
  .ops-line-records tbody tr:first-child{border-color:#c77c87;background:#fff8f8}
  .ops-records-table .ops-delete-btn{align-self:center;min-width:54px}
+ .ops-records-table .ops-row-actions{width:100%}
+ .ops-records-table .ops-row-actions .ops-row-btn{flex:1 1 0;max-width:calc(50% - 3px);padding:6px 2px;font-size:14px}
 }
 
 /* Inspection summary, historical date view, and compact period navigation. */

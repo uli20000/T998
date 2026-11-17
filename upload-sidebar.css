@@ -69,3 +69,8 @@
   .us-types{gap:8px}.us-types li{padding:10px 6px}
   .us-slot table{min-width:600px;font-size:13px}.us-slot th,.us-slot td{padding:8px 6px}
 }
+
+/* A07：每日工時頁不再直接選檔，改用「前往檔案上傳」；上傳頁借用時才顯示選檔 */
+#opsScoresPanel .ops-upload-block :is(.ops-score-upload,.ui-drop-tip){display:none!important}
+.ops-upload-block .ops-go-upload{display:none}
+#opsScoresPanel .ops-upload-block .ops-go-upload{display:inline-flex;margin:4px 0 8px}

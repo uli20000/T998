@@ -57,10 +57,15 @@
     upload.classList.add('ui-dropzone');
     const tip=document.createElement('p');tip.className='ui-drop-tip';tip.textContent='也可以把 BY ORDER、BY DATE 兩個 Excel 一起拖到這裡';
     upload.querySelector('.ops-score-upload')?.after(tip);
-    ['dragenter','dragover'].forEach(t=>upload.addEventListener(t,e=>{e.preventDefault();if(!fileInput.disabled)upload.classList.add('ui-drag');}));
+    // A07：選檔只留「檔案上傳」一個入口；這裡（每日工時）改成前往按鈕，上傳頁借用此區塊時才顯示選檔
+    const go=document.createElement('button');go.type='button';go.className='action-btn ops-go-upload';go.textContent='前往檔案上傳';
+    go.onclick=()=>document.querySelector('.us-trigger')?.click();
+    upload.querySelector('.ops-score-upload')?.before(go);
+    const home=()=>!!upload.closest('#opsScoresPanel');
+    ['dragenter','dragover'].forEach(t=>upload.addEventListener(t,e=>{e.preventDefault();if(!fileInput.disabled&&!home())upload.classList.add('ui-drag');}));
     ['dragleave','drop'].forEach(t=>upload.addEventListener(t,e=>{e.preventDefault();upload.classList.remove('ui-drag');}));
     upload.addEventListener('drop',e=>{
-      if(fileInput.disabled||!e.dataTransfer?.files?.length)return;
+      if(fileInput.disabled||home()||!e.dataTransfer?.files?.length)return;
       fileInput.files=e.dataTransfer.files;fileInput.dispatchEvent(new Event('change',{bubbles:true}));
     });
     // 預設收起，標題列只顯示最新一筆；點開看最近 10 筆
