@@ -54,6 +54,15 @@
   function empty(){return {tc:0,fa:0,newTc:0,newFa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,qtSum:0,qtN:0,d7Seconds:0,d7TimeN:0,d25Seconds:0,d25TimeN:0,prior:0,priorN:0};}
   function add(target,source){for(const k of Object.keys(empty()))target[k]+=source[k]||0;return target;}
   function derived(x){const nonfa=x.tc-x.fa,forecast=null;return {...x,nonfa,forecast,forecastHours:forecast===null?null:forecast/FORECAST_TPLH,faShare:ratio(x.fa,x.tc),sstg:x.priorN&&x.prior>0?(x.tc-x.newTc)/x.prior-1:null,sstgExFA:x.priorN&&x.prior>0?(nonfa-(x.newTc-x.newFa))/x.prior-1:null,tcAchievement:ratio(x.tc,forecast),d7:ratio(x.d7Y,x.d7Y+x.d7N),d25:ratio(x.d25Y,x.d25Y+x.d25N),qt:ratio(x.qtSum,x.qtN),d7Avg:ratio(x.d7Seconds,x.d7TimeN),d25Avg:ratio(x.d25Seconds,x.d25TimeN)};}
+  // 該日 Power BI 單量：日期有任一在範圍內餐廳的 Power BI 列才採用；缺列的餐廳視為當日 0 單（停業）。
+  // 全店皆 0（可疑匯出）、同鍵衝突或缺自送數時不採用，退回 DMS。
+  function powerBiDay(source,date){
+    const eligible=source.eligible(date);if(!eligible.length||source.suspectDates.has(date))return null;
+    const keys=eligible.map(s=>date+'|'+s.name);if(!keys.some(k=>source.index.has(k)))return null;
+    if(keys.some(k=>source.conflicts.has(k)))return null;
+    const stores=[];for(const s of eligible){const v=source.index.has(date+'|'+s.name)?source.actual(s.name,date):{tc:0,self:0,fa:0};if(!v||v.fa===null)return null;stores.push({code:s.code,name:s.restaurant_name,area:s.area,tc:v.tc,fa:v.fa});}
+    return {stores};
+  }
   function buildOrders({rows,batches,history,mapping,catalog,reports,start,end,powerbiData}){
     rows=scopeData({rows,batches}).rows;
     const rangeAreas=areasForDate(start);
@@ -76,6 +85,15 @@
     }
     // Actual DMS orders stay unchanged; comparisons share the forecast's target-date cohort and prior-week source.
     const priorSource=F.prepare({history:powerbiData?.history||history,mapping,catalog,batches:powerbiData?.batches||batches,reports:powerbiData?.reports||reports,inScope:storeInScope});
+    // 單量（TC／FA）以 Power BI 為準；該日尚未上傳 Power BI 時先用 DMS ByOrder 暫估，上傳後自動改用 Power BI。D7／D25／QT 一律用 DMS。
+    for(const day of days.values()){
+      const pbi=powerBiDay(priorSource,day.date);day.dmsTc=null;
+      if(pbi){
+        let dmsTc=0;for(const a of day.areas.values()){dmsTc+=a.tc;a.tc=0;a.fa=0;a.newTc=0;a.newFa=0;}day.dmsTc=day.types.has('ByOrder')?dmsTc:null;
+        for(const x of pbi.stores){if(!day.areas.has(x.area))day.areas.set(x.area,empty());const a=day.areas.get(x.area);a.tc+=x.tc;a.fa+=x.fa;if(F.isNewStore(x.code,day.date,x.name)){a.newTc+=x.tc;a.newFa+=x.fa;}}
+        day.storeTc=pbi.stores;day.tcSource='powerbi';
+      }else day.tcSource=day.types.has('ByOrder')?'dms':null;
+    }
     for(const day of days.values()){
       const eligible=priorSource.eligible(day.date),covered=new Set();
       day.baselineDate=F.priorDate(day.date);day.baselineSubstitution=F.priorSubstitution(day.date);day.baselineMissingAreas=new Set();day.newStores=[];let expected=0;
@@ -94,7 +112,7 @@
     const total=empty(),hourTotals=new Map(rangeAreas.map(([a])=>[a,{hours:0,count:0}]));let totalHours=0,transferOut=0,transferIn=0,completeHours=true,hasHours=false;
     const missingPairs=[],missingHourDays=[],missingBaselineDays=[],hoursWithoutScores=[],invalidHourDays=[];
     for(const day of days.values()){
-      day.scoreExcluded=!!day.report?.score_excluded;const active=day.types.has('ByOrder')&&!day.scoreExcluded;if(day.types.size&&day.types.size<2&&!day.scoreExcluded)missingPairs.push(day.date);
+      day.scoreExcluded=!!day.report?.score_excluded;const active=!!day.tcSource&&!day.scoreExcluded;if(day.types.size&&day.types.size<2&&!day.scoreExcluded)missingPairs.push(day.date);
       day.metrics=empty();for(const [code,x] of day.areas){if(!day.scoreExcluded&&(active||start===end)){add(total,x);add(day.metrics,x);if(!areas.has(code))areas.set(code,empty());add(areas.get(code),x);}}
       day.metrics=derived(day.metrics);if(!day.baselineComplete){day.metrics.prior=null;day.metrics.sstg=null;day.metrics.sstgExFA=null;}day.hours=null;day.actualHours=null;
       const saved=day.report?.area_hours||{};let sum=0,entered=0,missing=0;
@@ -110,7 +128,7 @@
     }
     const summary=derived(total),actualHours=hasHours&&completeHours?totalHours-transferOut+transferIn:null;
     if(missingBaselineDays.length){summary.forecast=null;summary.forecastHours=null;summary.prior=null;summary.sstg=null;summary.sstgExFA=null;summary.tcAchievement=null;}
-    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.types.has('ByOrder')||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays,baselineSubstitutions:[...days.values()].filter(d=>!d.scoreExcluded&&d.types.has('ByOrder')).flatMap(d=>[d.baselineSubstitution,...(d.storeSubstitutions||[])]).filter(Boolean),newStores:[...new Set([...days.values()].flatMap(d=>d.newStores||[]))]};
+    return {priorSource,days,areas:new Map([...areas].map(([a,x])=>{const value=derived(x);if([...days.values()].some(d=>!d.scoreExcluded&&(d.tcSource||start===end)&&d.baselineMissingAreas.has(a))){value.prior=null;value.sstg=null;value.sstgExFA=null;}return [a,value];})),summary:{...summary,totalHours:hasHours?totalHours:null,transferOut,transferIn,actualHours,tplh:hoursWithoutScores.length?null:ratio(summary.nonfa,actualHours),hoursAchievement:hoursWithoutScores.length?null:ratio(actualHours,summary.forecastHours)},hourTotals,missingPairs,missingHourDays,missingBaselineDays,hoursWithoutScores,invalidHourDays,baselineSubstitutions:[...days.values()].filter(d=>!d.scoreExcluded&&d.tcSource).flatMap(d=>[d.baselineSubstitution,...(d.storeSubstitutions||[])]).filter(Boolean),newStores:[...new Set([...days.values()].flatMap(d=>d.newStores||[]))],provisionalDays:[...days.values()].filter(d=>d.tcSource==='dms'&&!d.scoreExcluded).map(d=>d.date),powerBiDays:[...days.values()].filter(d=>d.tcSource==='powerbi'&&!d.scoreExcluded).map(d=>d.date)};
   }
   function build(args){
     const v=buildOrders(args),{start,end,mapping,catalog}=args;
@@ -127,6 +145,7 @@
     function uncountedOrders(day,forecasts){
       const keys=new Set();for(const f of forecasts)if(f.totalTc!==null)for(const st of f.missingPriorStores||[])for(const k of storeKey(st.code,st.name))keys.add(k);
       const byArea=new Map();let total=0;if(!keys.size)return {total,byArea};
+      if(day.tcSource==='powerbi'){for(const x of day.storeTc||[])if(storeKey(x.code,x.name).some(k=>keys.has(k))){total+=x.tc;byArea.set(x.area,(byArea.get(x.area)||0)+x.tc);}return {total,byArea};}
       for(const o of day.orders){if(storeKey(o.store_code,o.restaurant_name).some(k=>keys.has(k))){total++;byArea.set(o.area_code,(byArea.get(o.area_code)||0)+1);}}
       return {total,byArea};
     }
@@ -134,7 +153,7 @@
       const f=prepared.forecast(day.date);
       if(day.scoreExcluded)for(const x of f)x.excluded=true;
       forecastDetails.push(...f);
-      day.tcComplete=day.types.has('ByOrder')&&!day.scoreExcluded;
+      day.tcComplete=!!day.tcSource&&!day.scoreExcluded;
       const unc=uncountedOrders(day,f);day.uncountedTc=unc.total;day.uncountedByArea=unc.byArea;
       day.metrics=decorate(day.metrics,f,unc.total);
       day.attainmentEligible=day.tcComplete&&day.date<=today;
@@ -158,10 +177,11 @@
       value.tcAchievement=ratio(value.attainmentActual,value.attainmentForecast);
     }
     v.forecastDetails=forecastDetails;
-    v.missingTcDays=[...v.days.values()].filter(day=>day.date<=today&&!day.scoreExcluded&&!day.types.has('ByOrder')).map(day=>day.date);
+    v.missingTcDays=[...v.days.values()].filter(day=>day.date<=today&&!day.scoreExcluded&&!day.tcSource).map(day=>day.date);
     v.powerbi=prepared;
     v.forecastWarnings=[];
-    if(v.missingTcDays.length)v.forecastWarnings.push('預估達成率已排除缺少 ByOrder 的日期（實際與預估同時排除）：'+v.missingTcDays.join('、'));
+    if(v.provisionalDays.length)v.forecastWarnings.push('尚未上傳 Power BI，單量先用 DMS 暫估：'+v.provisionalDays.join('、'));
+    if(v.missingTcDays.length)v.forecastWarnings.push('預估達成率已排除缺少單量（Power BI 與 ByOrder 皆無）的日期（實際與預估同時排除）：'+v.missingTcDays.join('、'));
     if([...v.days.values()].some(day=>day.date>today))v.forecastWarnings.push('預估達成率僅計算截至今日已匯入 ByOrder 的日期；今日採整日預估');
     const missing=includedForecasts.filter(x=>x.totalTc===null);
     if(missing.length)v.forecastWarnings.push('去年對應週TC缺漏：'+missing.length+'組區域／日期無法預估');
@@ -170,7 +190,7 @@
     if(prepared.conflicts.size)v.forecastWarnings.push('Power BI重複鍵內容衝突：'+prepared.conflicts.size+'筆，待核對');
     return v;
   }
-  const api={BUSINESS,AREAS,AC_ASSIGNMENTS,HISTORICAL_AC_ASSIGNMENTS,SCOPE_EFFECTIVE_DATE,REMOVED_STORES,storeInScope,areasForDate,acAssignmentsForDate,scopeData,NON_DELIVERY_STORES,GROWTH,FORECAST_TPLH,number,ratio,clean,duration,addDays,range,dates,weeks,latestBatches,areaFor,build};
+  const api={BUSINESS,AREAS,AC_ASSIGNMENTS,HISTORICAL_AC_ASSIGNMENTS,SCOPE_EFFECTIVE_DATE,REMOVED_STORES,storeInScope,areasForDate,acAssignmentsForDate,scopeData,NON_DELIVERY_STORES,GROWTH,FORECAST_TPLH,number,ratio,clean,duration,addDays,range,dates,weeks,latestBatches,areaFor,powerBiDay,build};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.OpsMetrics=api;
 })(typeof window!=='undefined'?window:globalThis);
 

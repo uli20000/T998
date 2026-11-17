@@ -41,11 +41,13 @@
   const empty=t=>'<p class="uo-empty">'+esc(t)+'</p>';
   const top3=(rows,metric,sub)=>rows.length?'<ol class="uo-top">'+rows.map(x=>'<li><b>'+esc(x.store_code+' '+(x.restaurant_name||''))+'</b><small>'+esc(sub(x))+'</small><em>'+esc(metric(x))+'</em></li>').join('')+'</ol>':'';
 
+  // 單量類指標：尚未上傳 Power BI 的日期用 DMS 暫估
+  const TC_KPIS=new Set(['tc','sstg','tplh','faShare'])
   function renderKpis(o){
     E('uoKpis').innerHTML=KPI.map(k=>{
       const v=o.hasScores||k.key==='tc'&&o.summary.tc?o.summary[k.key]:null,shown=v==null?null:k.fmt(v),ok=shown==null?null:k.ok(v,o.summary);
       const cls=shown==null?'na':ok===null?'':ok?'ok':'bad';
-      return '<button type="button" class="uo-kpi '+cls+'" data-go="analysis"><span>'+k.label+(k.scope?'<small class="scope-note">'+k.scope+'</small>':'')+'</span><b>'+(shown??'資料不足')+'</b><em>'+esc(k.targetText(o.summary))+'</em></button>';
+      return '<button type="button" class="uo-kpi '+cls+'" data-go="analysis"><span>'+k.label+(k.scope?'<small class="scope-note">'+k.scope+'</small>':'')+(shown!=null&&(o.provisionalDays||[]).length&&TC_KPIS.has(k.key)?'<small class="scope-note" title="尚未上傳 Power BI，先用 DMS 單量，上傳後自動更新">暫估</small>':'')+'</span><b>'+(shown??'資料不足')+'</b><em>'+esc(k.targetText(o.summary))+'</em></button>';
     }).join('');
   }
   function waitHtml(o){
