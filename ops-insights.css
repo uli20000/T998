@@ -151,3 +151,5 @@ html[data-display-mode=dark] .sf-tag.warn{background:transparent;color:#d29922}h
   .analysis-panel,#metricContent>*{min-width:0}
   .date-actions{flex-wrap:wrap}
 }
+/* 計算口徑等說明小字不顯示（使用者 2026-11-18：自己要的功能不用另外說明用途） */
+.ins-explain{display:none!important}

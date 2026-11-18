@@ -37,7 +37,7 @@
   const page=document.createElement('section');page.id='uiOverviewPage';page.className='ui-overview';
   page.innerHTML='<div class="uo-head"><h1 id="uoTitle">營運成績</h1><div class="uo-date"><span class="uo-period" role="group" aria-label="期間">'+['day','week','month'].map(p=>'<button type="button" data-p="'+p+'">'+PLABEL[p]+'</button>').join('')+'</span><button type="button" data-d="-1" aria-label="上一期">‹</button><label class="date-display"><b id="uoDate"></b><input id="uoDatePick" type="date" aria-label="選擇日期"></label><button type="button" data-d="1" aria-label="下一期">›</button><button type="button" data-d="0">今日</button></div></div>'+
     '<div id="uoKpis" class="uo-kpis"></div>'+
-    '<div class="uo-pend-head"><h2 id="uoDayHead">依選定日期</h2><small>車輛為目前狀態</small></div>'+
+    '<div class="uo-pend-head"><h2 id="uoDayHead">依選定日期</h2><small></small></div>'+
     '<div class="uo-grid3 uo-pend uo-day"><article class="uo-card"><h2>🛵 車輛待處理</h2><div id="uoPendVehicle"></div></article><article class="uo-card"><h2>⏱️ 等餐（依 AC）</h2><div id="uoWait"></div></article><article class="uo-card"><h2>✍️ 劃線簽名（依 AC）</h2><div id="uoLine"></div></article></div>'+
     '<div class="uo-pend-head"><h2 id="uoMonthHead">整月待回饋</h2><small id="uoPendNote"></small></div>'+
     '<div class="uo-grid2 uo-pend"><article class="uo-card"><h2>⏱️ 等餐待回饋</h2><div id="uoPendDelay"></div></article><article class="uo-card"><h2>📝 A 項待回饋</h2><div id="uoPendA"></div></article></div>'+
@@ -122,7 +122,7 @@
   let pendReq=0;
   async function loadPending(){
     const id=++pendReq,m=S.range(date,'month'),label=m.start.slice(0,4)+'年'+(+m.start.slice(5,7))+'月';
-    E('uoMonthHead').textContent=label+' 待回饋';E('uoPendNote').textContent='所選日期所在的整個月份';E('uoDayHead').textContent='依選定日期｜'+E('uoDate').textContent;
+    E('uoMonthHead').textContent=label+' 待回饋';E('uoDayHead').textContent='依選定日期｜'+E('uoDate').textContent;
     const set=(el,html)=>{if(id===pendReq)E(el).innerHTML=html;},fail=(el,e)=>set(el,'<p class="uo-empty">讀取失敗：'+esc(e.message||e)+'</p>');
     for(const el of ['uoPendVehicle','uoPendDelay','uoPendA'])E(el).innerHTML='<p class="uo-empty">讀取中…</p>';
     loadPendingVehicles().then(v=>set('uoPendVehicle',vehicleHtml(v)),e=>fail('uoPendVehicle',e));

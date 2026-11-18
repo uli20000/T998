@@ -57,7 +57,9 @@
   }
   function warnings(v,isDay,date){
     const list=xs=>xs.length>8?xs.slice(0,8).map(x=>x.slice(5)).join('、')+' 等 '+xs.length+' 天':xs.map(x=>x.slice(5)).join('、');
-    const messages=[...v.forecastWarnings];if(!isDay&&(v.missingTcDays||[]).length)messages.unshift('尚無單量的日期不計入數字：'+list(v.missingTcDays));if(v.missingPairs.length)messages.push('尚缺另一份成績檔：'+v.missingPairs.map(x=>x.slice(5)).join('、'));
+    // 畫面只留要人處理的缺漏／衝突；計算口徑說明（排除日期、暫估、截至今日、缺去年店）不顯示，Excel 匯出仍保留
+    const EXPLAIN=/^(預估達成率已排除|預估達成率僅計算|尚未上傳 Power BI|預估未計入缺去年TC)/;
+    const messages=v.forecastWarnings.filter(m=>!EXPLAIN.test(m));if(v.missingPairs.length)messages.push('尚缺另一份成績檔：'+v.missingPairs.map(x=>x.slice(5)).join('、'));
     if(v.missingHourDays.length)messages.push(isDay?'尚有 '+v.days.get(date).missingAreas+' 區未填工時':'尚有 '+v.missingHourDays.length+' 天工時未填完整');
     if(v.hoursWithoutScores.length)messages.push('有工時但尚無成績：'+v.hoursWithoutScores.map(x=>x.slice(5)).join('、'));
     if(v.invalidHourDays.length)messages.push('調出工時超過可用工時：'+v.invalidHourDays.map(x=>x.slice(5)).join('、'));
@@ -74,7 +76,7 @@
     const target=E('opsAnalysisSummary');if(!target)return;
     if(p!=='day'){target.innerHTML='<section class="ops-report-card"><h3>週期特殊事項</h3>'+list+'</section>';return;}
     const day=v.days.get(date),report=day?.report||{};
-    target.innerHTML='<section class="ops-report-card ops-daily-context"><h3>當日成績設定</h3><label class="ops-exclude-row"><input id="opsScoreExcluded" type="checkbox" '+(report.score_excluded?'checked':'')+'> 不計本日成績</label><label class="ops-note-field">當日特殊事項<textarea id="opsSpecialNotes" maxlength="2000" rows="3" placeholder="輸入當日特殊事項">'+escape(report.special_notes||'')+'</textarea></label><button id="opsSaveDailyContext" class="action-btn primary" type="button">儲存當日設定</button><div id="opsDailyContextStatus" class="ops-message" role="status"></div></section>';
+    target.innerHTML='<section class="ops-report-card ops-daily-context"><h3>當日成績設定</h3><label class="ops-exclude-switch"><input id="opsScoreExcluded" type="checkbox" role="switch" '+(report.score_excluded?'checked':'')+'><span class="ops-sw" aria-hidden="true"></span><span class="ops-sw-text"><b class="ops-sw-off">計入本日成績</b><b class="ops-sw-on">本日不計成績</b></span></label><label class="ops-note-field">當日特殊事項<textarea id="opsSpecialNotes" maxlength="2000" rows="3" placeholder="輸入當日特殊事項">'+escape(report.special_notes||'')+'</textarea></label><button id="opsSaveDailyContext" class="action-btn primary" type="button">儲存當日設定</button><div id="opsDailyContextStatus" class="ops-message" role="status"></div></section>';
     E('opsSaveDailyContext').onclick=async()=>{
       const excluded=E('opsScoreExcluded').checked,notes=E('opsSpecialNotes').value.trim(),status=E('opsDailyContextStatus');status.textContent='儲存中…';
       try{const exists=await db.from('t998_operations_daily_reports').select('record_date').eq('record_date',date).maybeSingle();if(exists.error)throw exists.error;const payload={score_excluded:excluded,special_notes:notes,updated_by:(await db.auth.getUser()).data.user?.id||null,updated_at:new Date().toISOString()};const saved=exists.data?await db.from('t998_operations_daily_reports').update(payload).eq('record_date',date):await db.from('t998_operations_daily_reports').insert({record_date:date,...payload});if(saved.error)throw saved.error;status.textContent='已儲存';await refresh(true);}catch(e){status.textContent='儲存失敗：'+e.message;}
@@ -84,7 +86,8 @@
   function renderScores(date,v){
     const p=period(),day=v.days.get(date),isDay=p==='day',s=v.summary;
     E('opsPeriodLabel').textContent='區域成績　'+periodTitle(date,p);
-    E('opsFileStatus').innerHTML=['ByDate','ByOrder'].map(type=>{const b=state.cache.batches.find(x=>x.report_date===date&&x.report_type===type);return '<div class="ops-file-card '+(b?'ready':'')+'"><b>'+type+'</b><span>'+date+'</span><strong>'+(b?'已匯入 '+fmt(b.row_count)+' 筆':'尚未匯入')+'</strong></div>';}).join('');
+    // 只顯示所選這天 ByDate／ByOrder 有沒有匯入（上傳統一在左下角「檔案上傳」）
+    E('opsFileStatus').innerHTML='<div class="ops-import-line"><b>'+date+' 匯入</b>'+['ByDate','ByOrder'].map(type=>{const b=state.cache.batches.some(x=>x.report_date===date&&x.report_type===type);return '<span class="ops-import-chip '+(b?'ok':'no')+'">'+type+' '+(b?'✓ 已匯入':'尚未匯入')+'</span>';}).join('')+'</div>';
     const areaRows=[...M.areasForDate(S.range(date,p).start),...(v.areas.has('?')?[['?','未分類']]:[])];
     const hasScores=[...v.days.values()].some(d=>d.tcSource);
     const cells=x=>'<td data-label="TC">'+(hasScores?fmt(x.tc):'—')+'</td><td data-label="FA">'+(hasScores?fmt(x.fa):'—')+'</td><td data-label="第三方佔比">'+pct(x.faShare)+'</td><td data-label="D7">'+pct(x.d7)+'</td><td data-label="D25">'+pct(x.d25)+'</td>';

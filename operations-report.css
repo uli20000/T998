@@ -456,3 +456,30 @@ html[data-display-mode="dark"] #opsAList .ops-a-table .a-full{color:#c9c4bc}
 #opsAList .ops-a-table .a-reply b{display:block;min-width:0;margin:0;text-align:left}
 #opsAList .ops-a-table .a-reply div{grid-template-columns:4.2em minmax(0,1fr);align-items:baseline}
 @media(min-width:601px){#opsAList .ops-a-table .a-complaint{min-width:11em}#opsAList .ops-a-table .a-reply{min-width:13em}}
+/* 每日工時：上傳區移到左下角「檔案上傳」，這頁只留當天匯入狀態一列 */
+#opsScoresPanel .ops-upload-block,#opsScoresPanel .ui-import-history{display:none!important}
+#opsScoresPanel .ops-file-status{display:block;margin:8px 0 14px}
+.ops-import-line{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.ops-import-line b{font-weight:800}
+.ops-import-chip{display:inline-flex;align-items:center;padding:3px 12px;border-radius:99px;border:1px solid var(--line);font-size:13px;font-weight:700;white-space:nowrap}
+.ops-import-chip.ok{border-color:#94b9a4;background:#f3faf5;color:#356b4b}
+.ops-import-chip.no{border-color:#f0c6c0;background:#fff4f2;color:#b42318}
+html[data-display-mode="dark"] .ops-import-chip.ok{background:#1f3327;color:#8dd6a8;border-color:#3d6b4f}
+html[data-display-mode="dark"] .ops-import-chip.no{background:#3a2023;color:#f0a0a8;border-color:#6b3a40}
+/* 當日成績設定：「不計本日成績」改成開關卡片 */
+.ops-exclude-switch{display:flex;align-items:center;gap:14px;max-width:680px;margin:12px auto;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.ops-exclude-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.ops-sw{flex:none;position:relative;width:48px;height:28px;border-radius:99px;background:#d9d4cb;transition:background .15s}
+.ops-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.ops-sw-text{display:grid;gap:2px}.ops-sw-text b{font-size:15px;font-weight:800}.ops-sw-text small{color:var(--gray);font-size:12px;line-height:1.5}
+.ops-sw-on{display:none}
+.ops-exclude-switch:has(input:checked){border-color:#e3a33a;background:#fff8ea}
+.ops-exclude-switch input:checked+.ops-sw{background:#d9822b}
+.ops-exclude-switch input:checked+.ops-sw::after{transform:translateX(20px)}
+.ops-exclude-switch input:checked~.ops-sw-text .ops-sw-on{display:block;color:#a85a12}
+.ops-exclude-switch input:checked~.ops-sw-text .ops-sw-off{display:none}
+.ops-exclude-switch input:focus-visible+.ops-sw{outline:2px solid #1683df;outline-offset:2px}
+html[data-display-mode="dark"] .ops-exclude-switch{background:#22262b;border-color:#4b5058}
+html[data-display-mode="dark"] .ops-exclude-switch:has(input:checked){background:#3a2e1a;border-color:#8a6420}
+html[data-display-mode="dark"] .ops-exclude-switch input:checked~.ops-sw-text .ops-sw-on{color:#f0b866}
+.ops-exclude-switch .ops-sw-text{text-align:left}
