@@ -26,6 +26,8 @@ const token=new URLSearchParams(location.search).get("token")||"";
 const monthLink=new URLSearchParams(location.search).get("kind")==="month";
 // 新版月回覆未啟用的中心（996／998）沿用舊制回覆函式，舊連結照常可用
 const gatewayReady=window.CENTER_CONFIG.features?.monthReplyGatewayReady===true;
+// A 項回饋只在新版月回覆啟用的中心；其他中心標題只寫等餐
+if(!gatewayReady){document.title="KFC｜等餐原因回覆";const h=document.querySelector("h1");if(h)h.textContent="等餐原因回覆";}
 const gateway=gatewayReady?ReplyGateway.create(db,{enabled:monthLink,boundSchema:window.CENTER_CONFIG.schema,production:window.CENTER_CONFIG.environment==='production',token}):ReplyLegacy.create(db,{monthLink,token});
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
