@@ -182,7 +182,7 @@
  .ops-month-fold,.ops-history-fold{padding:12px 8px}
 }
 /* Four operational tabs and single-row daily entry. */
-#opsModePage .ops-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#opsModePage .ops-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
 #opsModePage .ops-entry-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start;width:100%;max-width:none;margin:16px auto}
 #opsModePage .ops-entry-row>label,.ops-line-control{display:grid;gap:7px;min-width:0;position:relative;font-size:14px;font-weight:700}
 #opsModePage .ops-entry-row input{width:100%;min-width:0;min-height:46px;font-size:16px}
@@ -211,7 +211,7 @@
 #opsSummaryPanel .ops-export-bottom{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}#opsSummaryPanel .ops-export-bottom button:first-child{grid-column:auto}
 #opsSummaryPanel .ops-export-bottom .action-btn{width:100%;min-width:0;min-height:46px;padding:8px 6px;white-space:nowrap}
 @media(max-width:760px){
- #opsModePage .ops-tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}#opsModePage .ops-tab{font-size:13px;padding:8px 2px;white-space:nowrap}
+ #opsModePage .ops-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}#opsModePage .ops-tab{font-size:13px;padding:8px 2px;white-space:nowrap}
  #opsModePage .ops-entry-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
  #opsModePage .ops-delay-entry-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  #opsModePage #opsLinePanel .ops-entry-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
@@ -430,3 +430,29 @@ body:has(#opsModePage[style*="block"] #opsSummaryPanel:not([hidden])) .header .t
 }
 #opsSummaryPanel #opsDelayRank,#opsSummaryPanel #opsLineRank{margin-top:0;min-height:112px}
 
+
+/* A 項回饋表：電腦版短欄不換行、文字欄靠左；手機卡片的文字欄占整列並靠左 */
+@media(min-width:601px){
+ #opsAList .ops-a-table .a-nw{white-space:nowrap}
+ #opsAList .ops-a-table .a-txt{text-align:left;min-width:6em;line-height:1.5}
+ #opsAList .ops-a-table th,#opsAList .ops-a-table td{padding-left:6px;padding-right:6px}
+}
+@media(max-width:600px){
+ #opsAList .ops-a-table td.a-txt{grid-column:1/-1;align-items:flex-start;text-align:left}
+}
+#opsAList .ops-a-table .ops-row-btn{white-space:nowrap}
+@media(min-width:601px){#opsAList .ops-a-table .ops-row-btn{padding:6px 8px;min-width:0;width:auto;font-size:14px!important}}
+#opsAPanel .ops-help{text-align:center}
+#opsAList .ops-a-table .a-full{margin-top:4px;color:#49443e;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+@media(min-width:601px){#opsAList .ops-a-table .a-complaint{min-width:14em}}
+@media(max-width:600px){#opsAList .ops-a-table td.a-complaint{grid-column:1/-1}}
+html[data-display-mode="dark"] #opsAList .ops-a-table .a-full{color:#c9c4bc}
+#opsAList .ops-a-table .a-full{text-align:left}
+#opsAList .ops-a-table .a-reply div{text-align:left;line-height:1.55;margin:2px 0}
+#opsAList .ops-a-table .a-reply b{display:inline-block;min-width:4.5em;margin-right:6px;color:#77736d;font-size:13px;font-weight:700}
+@media(min-width:601px){#opsAList .ops-a-table .a-complaint{min-width:12em}#opsAList .ops-a-table .a-reply{min-width:11em}}
+@media(max-width:600px){#opsAList .ops-a-table td.a-reply{grid-column:1/-1;align-items:stretch}}
+#opsAList .ops-a-table .a-reply div{display:grid;grid-template-columns:4.8em minmax(0,1fr);gap:6px;align-items:start}
+#opsAList .ops-a-table .a-reply b{display:block;min-width:0;margin:0;text-align:left}
+#opsAList .ops-a-table .a-reply div{grid-template-columns:4.2em minmax(0,1fr);align-items:baseline}
+@media(min-width:601px){#opsAList .ops-a-table .a-complaint{min-width:11em}#opsAList .ops-a-table .a-reply{min-width:13em}}

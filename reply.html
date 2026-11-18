@@ -1,21 +1,24 @@
 <!doctype html>
-<html lang="zh-Hant"><head><script src="center-config.js"></script><script src="center-runtime.js"></script><script src="display-mode.js?v=20261117-v3w"></script><link rel="stylesheet" href="shared-shell.css"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f0e8"><meta name="referrer" content="no-referrer"><title>KFC｜等餐原因回覆</title>
+<html lang="zh-Hant"><head><script src="center-config.js"></script><script src="center-runtime.js"></script><script src="display-mode.js?v=20261117-v3w"></script><link rel="stylesheet" href="shared-shell.css"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f0e8"><meta name="referrer" content="no-referrer"><title>KFC｜等餐原因／A 項回饋</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--red:#c8102e;--ink:#242424;--muted:#77736d;--paper:#fff;--bg:#f4f0e8;--line:#ddd8ce;--green:#356b4b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC",Arial,sans-serif}.page{max-width:760px;margin:auto;padding:20px 14px 50px}.header,.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:14px}.brand{font-size:12px;letter-spacing:3px;color:var(--muted)}h1{font-size:25px;margin:8px 0}.sub{color:var(--muted);line-height:1.6}.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}.toolbar label{font-weight:700;white-space:nowrap}.toolbar select{flex:1;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}.order{padding:16px 0;border-bottom:1px solid var(--line)}.order:last-child{border:0}.order-head{display:flex;gap:10px;justify-content:space-between;font-weight:800}.order-date{color:var(--muted);font-size:14px}.order-no{font-size:17px}.order label{display:block;margin-top:10px;font-weight:700}.order textarea{width:100%;min-height:84px;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}.order-submit{width:100%;min-height:46px;margin-top:10px;border:0;border-radius:10px;background:var(--red);color:#fff;font:inherit;font-weight:800;cursor:pointer}.order-submit:disabled{opacity:.55}.msg{padding:14px;text-align:center;color:var(--muted);line-height:1.6}.success{color:var(--green);font-weight:800}.mode-toggle{float:right;width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:20px;line-height:1;cursor:pointer}
+:root{--red:#c8102e;--ink:#242424;--muted:#77736d;--paper:#fff;--bg:#f4f0e8;--line:#ddd8ce;--green:#356b4b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC",Arial,sans-serif}.page{max-width:760px;margin:auto;padding:20px 14px 50px}.header,.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:14px}.brand{font-size:12px;letter-spacing:3px;color:var(--muted)}h1{font-size:25px;margin:8px 0}.sub{color:var(--muted);line-height:1.6}.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}.toolbar label{font-weight:700;white-space:nowrap}.toolbar select{flex:1;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}.order{padding:16px 0;border-bottom:1px solid var(--line)}.order:last-child{border:0}.order-head{display:flex;gap:10px;justify-content:space-between;font-weight:800}.order-date{color:var(--muted);font-size:14px}.order-no{font-size:17px}.order label{display:block;margin-top:10px;font-weight:700}.order textarea{width:100%;min-height:84px;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}.order-submit{width:100%;min-height:46px;margin-top:10px;border:0;border-radius:10px;background:var(--red);color:#fff;font:inherit;font-weight:800;cursor:pointer}.order-submit:disabled{opacity:.55}.msg{padding:14px;text-align:center;color:var(--muted);line-height:1.6}.success{color:var(--green);font-weight:800}.a-meta{color:var(--muted);font-size:14px;margin-top:6px;line-height:1.6}.a-label{margin-top:10px;font-weight:700;font-size:14px}.a-content{margin-top:4px;padding:10px 12px;border-radius:10px;background:var(--bg);line-height:1.6;white-space:pre-wrap;word-break:break-word}.order input.packer{width:100%;min-height:44px;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:inherit}.order textarea.short{min-height:64px}h2{font-size:20px;margin:0 0 6px}.filter-card{position:sticky;top:8px;z-index:5;padding:14px 18px}.filter-card .toolbar{margin:0}.filter-card .sub{font-size:14px;margin-top:6px}.mode-toggle{float:right;width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:20px;line-height:1;cursor:pointer}
 /* E03：夜間模式（共用 display-mode.js） */
 html[data-display-mode="dark"]{--red:#f06079;--ink:#f1f1f1;--muted:#b8b4ad;--paper:#22262b;--bg:#17191d;--line:#4b5058;--green:#8dd6a8}
-html[data-display-mode="dark"] :is(.toolbar select,.order textarea){background:#17191d;color:#f1f1f1;border-color:#4b5058}
+html[data-display-mode="dark"] :is(.toolbar select,.order textarea,.order input.packer){background:#17191d;color:#f1f1f1;border-color:#4b5058}
 html[data-display-mode="dark"] .order textarea::placeholder{color:#b8b4ad}
 html[data-display-mode="dark"] .order-submit{background:#b51b35}
 @media(max-width:520px){.header,.card{padding:17px}.order-head{align-items:flex-start}.order-no{font-size:15px;text-align:right}}
 </style></head><body><main class="page">
-<header class="header"><button type="button" class="mode-toggle" data-display-mode-toggle aria-pressed="false">☀️</button><div class="brand">KFC DELIVERY CENTER</div><h1>等餐原因回覆</h1><div id="restaurant" class="sub">載入餐廳資料中…</div></header>
-<section class="card"><div id="message" class="msg">載入待回覆訂單中…</div><div id="replyForm" hidden>
-<div class="toolbar"><label for="restaurantFilter">篩選餐廳</label><select id="restaurantFilter"><option value="">全部餐廳</option></select></div>
+<header class="header"><button type="button" class="mode-toggle" data-display-mode-toggle aria-pressed="false">☀️</button><div class="brand">KFC DELIVERY CENTER</div><h1>等餐原因／A 項回饋</h1><div id="restaurant" class="sub">載入餐廳資料中…</div></header>
+<section class="card filter-card" id="filterCard" hidden><div class="toolbar"><label for="sharedFilter">選擇餐廳</label><select id="sharedFilter"><option value="">全部餐廳</option></select></div><div id="filterSummary" class="sub"></div></section>
+<section class="card"><h2>等餐原因</h2><div id="message" class="msg">載入待回覆訂單中…</div><div id="replyForm" hidden>
 <div id="orders"></div>
 </div></section>
-</main><script src="reply-drafts.js"></script><script src="reply-gateway.js"></script><script src="reply-legacy.js?v=20261117-v3w"></script><script>
+<section class="card" id="aCard" hidden><h2>A 項回饋</h2><div class="sub">0800 客訴「A 產品正確」的案件。每筆請填配餐人員、根源和行動，再按該筆的送出按鈕。</div><div id="aMessage" class="msg">載入 A 項客訴中…</div><div id="aForm" hidden>
+<div id="aItems"></div>
+</div></section>
+</main><script src="reply-drafts.js"></script><script src="feedback-a-reply.js?v=20261117-a1"></script><script src="reply-gateway.js"></script><script src="reply-legacy.js?v=20261117-v3w"></script><script>
 const SUPABASE_URL=window.CENTER_CONFIG.supabaseUrl;
 const SUPABASE_KEY=window.CENTER_CONFIG.publishableKey;
 const db=window.CenterRuntime.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -30,17 +33,28 @@ const ZH_ERRORS={"Invalid or expired month link":"連結已失效或已重新產
 const zh=e=>ZH_ERRORS[e?.message]||e?.message||"";
 const drafts=ReplyDrafts.createDrafts();
 window.addEventListener("beforeunload", event=>{if(drafts.dirty){event.preventDefault();event.returnValue="";}});
-let current=[];
+let current=[];let aItems=[];
 const submitting=new Set();
 let currentMonth="";
 // E02：只讓最後一次載入更新畫面；本頁已確認送出的訂單不再放回清單
 let loadSeq=0;const confirmed=new Set();
+const nameOf=x=>String(x.restaurant_name||"未命名餐廳");
+function renderFilter(){
+ const sel=$("sharedFilter").value,counts=new Map();
+ for(const o of current){const k=nameOf(o);const c=counts.get(k)||{d:0,a:0};c.d++;counts.set(k,c);}
+ for(const x of aItems){const k=nameOf(x);const c=counts.get(k)||{d:0,a:0};c.a++;counts.set(k,c);}
+ const label=c=>[c.d?'等餐 '+c.d:'',c.a?'A項 '+c.a:''].filter(Boolean).join('、');
+ const names=[...counts.keys()].sort((a,b)=>a.localeCompare(b,"zh-Hant"));
+ const total={d:current.length,a:aItems.length};
+ $("sharedFilter").innerHTML='<option value="">全部餐廳（'+esc(label(total)||'沒有待回覆')+'）</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'（'+esc(label(counts.get(n)))+'）</option>').join("");
+ if(names.includes(sel))$("sharedFilter").value=sel;
+ const v=$("sharedFilter").value,c=v?counts.get(v):total;
+ $("filterSummary").textContent=(v?v+'：':'全部餐廳：')+'等餐待回覆 '+(c?.d||0)+' 筆、A 項待回饋 '+(c?.a||0)+' 筆';
+ $("filterCard").hidden=!names.length&&!v;
+}
 function renderOrders(){
- const selected=$("restaurantFilter").value;
- const restaurants=[...new Set(current.map(o=>String(o.restaurant_name||"未命名餐廳")))].sort((a,b)=>a.localeCompare(b,"zh-Hant"));
- $("restaurantFilter").innerHTML='<option value="">全部餐廳</option>'+restaurants.map(name=>'<option value="'+esc(name)+'">'+esc(name)+'</option>').join("");
- if(restaurants.includes(selected))$("restaurantFilter").value=selected;
- const filtered=current.filter(o=>!$("restaurantFilter").value||String(o.restaurant_name||"未命名餐廳")===$("restaurantFilter").value);
+ renderFilter();
+ const filtered=current.filter(o=>!$("sharedFilter").value||nameOf(o)===$("sharedFilter").value);
  $("orders").innerHTML=filtered.map(o=>'<article class="order" data-id="'+esc(o.id)+'"><div class="order-head"><span class="order-date">'+esc(o.record_date)+'</span><span class="order-no">'+esc(o.restaurant_name)+'｜訂單 '+esc(o.order_number)+'</span></div>'+(o.return_reason?'<p>退回原因：'+esc(o.return_reason)+'</p><p>前次回覆：'+esc(o.prior_reason)+'</p>':'')+'<label>等餐原因<textarea class="reason" '+(submitting.has(String(o.id))?'disabled':'')+' maxlength="500" placeholder="請說明這筆訂單等餐原因">'+esc(drafts.get(o.id))+'</textarea></label><button class="order-submit" '+(submitting.has(String(o.id))?'disabled':'')+' type="button">送出這筆原因</button></article>').join("");
  if(!filtered.length)$("orders").innerHTML='<div class="msg">此餐廳目前沒有待回覆訂單。</div>';
 }
@@ -49,12 +63,12 @@ async function load(){
  if(!submitting.size){$("replyForm").hidden=true;$("orders").replaceChildren();}
  if(!token){$("message").textContent="連結缺少識別碼，請向值班人員索取共用回覆連結。";return;}
  try{const d=await gateway.list();if(seq!==loadSeq)return false;current=(d.orders||[]).filter(o=>!confirmed.has(String(o.id)));currentMonth=d.month||"";$("restaurant").textContent=(monthLink?"固定回覆月份：":"待回覆月份：")+(currentMonth||"—")+"｜共 "+current.length+" 筆訂單";
- if(!current.length){$("message").innerHTML='<span class="success">目前沒有待回覆訂單。</span>';return;}
+ if(!current.length){renderFilter();$("message").innerHTML='<span class="success">目前沒有待回覆訂單。</span>';return;}
  $("message").textContent="請逐筆填寫原因，並按該筆訂單下方的送出按鈕；完成的訂單會從清單移除。";
  renderOrders();$("replyForm").hidden=false;return true;
  }catch(e){if(seq!==loadSeq)return false;$("message").textContent="無法載入回覆資料："+(zh(e)||"連結可能已失效，請聯絡值班人員");}
 }
-$("restaurantFilter").onchange=renderOrders;
+$("sharedFilter").onchange=()=>{renderOrders();if(typeof renderA==="function"&&aItems.length)renderA();};
 $("orders").addEventListener("input", event=>{const row=event.target.closest(".order");if(row&&event.target.matches(".reason"))drafts.set(row.dataset.id,event.target.value);});
 $("orders").onclick=async event=>{
  const button=event.target.closest(".order-submit");if(!button)return;
@@ -66,5 +80,39 @@ $("orders").onclick=async event=>{
  finally{submitting.delete(id);renderOrders();}
 };
 load();
+// 0800 A 項：同一個月份連結（只有新版月回覆啟用的中心才有）
+const aGateway=gatewayReady&&monthLink&&window.FeedbackAReply?FeedbackAReply.create(db,{enabled:true,boundSchema:window.CENTER_CONFIG.schema,production:window.CENTER_CONFIG.environment==='production',token}):null;
+const A_ERRORS={"Order not available for this month link":"這筆客訴不屬於此月份連結。","Reply changed; reload before submitting":"這筆已被回覆或退回修改，請重新整理頁面後再填。","Invalid reply fields":"配餐人員（50 字內）、根源、行動（各 500 字內）都要填。"};
+const aZh=e=>A_ERRORS[e?.message]||zh(e);
+const aDrafts=new Map();const aSubmitting=new Set(),aDone=new Set();let aSeq=0;
+const aKey=(id,f)=>id+'|'+f;
+function renderA(){
+ renderFilter();
+ const list=aItems.filter(x=>!$("sharedFilter").value||nameOf(x)===$("sharedFilter").value);
+ const field=(x,f,label,ph,tag)=>{const dis=aSubmitting.has(String(x.id))?' disabled':'',v=esc(aDrafts.get(aKey(x.id,f))??'');return '<label>'+label+(tag==='input'?'<input class="packer" data-f="'+f+'" maxlength="50" placeholder="'+ph+'" value="'+v+'"'+dis+'>':'<textarea class="short" data-f="'+f+'" maxlength="500" placeholder="'+ph+'"'+dis+'>'+v+'</textarea>')+'</label>';};
+ $("aItems").innerHTML=list.length?list.map(x=>'<article class="order" data-a="'+esc(x.id)+'"><div class="order-head"><span class="order-date">'+esc(x.record_date)+'</span><span class="order-no">'+esc((x.store_code?x.store_code+' ':'')+x.restaurant_name)+'</span></div><div class="a-meta">'+esc([x.item_1,x.item_2].filter(Boolean).join('｜')||x.main_topic)+(x.work_order?'｜工作單 '+esc(x.work_order):'')+(x.invoice_number?'｜發票 '+esc(x.invoice_number):'')+'</div>'+(x.content?'<div class="a-label">顧客抱怨內容</div><div class="a-content">'+esc(x.content)+'</div>':'<div class="a-meta">（0800 檔沒有附顧客原話）</div>')+(x.return_reason?'<p>退回原因：'+esc(x.return_reason)+'</p><p class="a-meta">前次回覆：配餐 '+esc(x.prior_packer)+'；根源 '+esc(x.prior_root_cause)+'；行動 '+esc(x.prior_action_plan)+'</p>':'')+field(x,'packer','配餐人員','填配這筆餐的人','input')+field(x,'root_cause','根源','為什麼會少給／給錯')+field(x,'action_plan','行動','之後怎麼避免')+'<button class="order-submit" type="button"'+(aSubmitting.has(String(x.id))?' disabled':'')+'>送出這筆回饋</button></article>').join(""):'<div class="msg">此餐廳目前沒有待回覆的 A 項客訴。</div>';
+}
+async function loadA(){
+ if(!aGateway)return false;const seq=++aSeq;$("aCard").hidden=false;
+ try{const d=await aGateway.list();if(seq!==aSeq)return false;aItems=(d.items||[]).filter(x=>!aDone.has(String(x.id)));
+  if(!aItems.length){renderFilter();$("aForm").hidden=true;$("aMessage").innerHTML='<span class="success">目前沒有待回覆的 A 項客訴。</span>';return true;}
+  $("aMessage").textContent=(d.month||'')+' 共 '+aItems.length+' 筆待回覆；完成的會從清單移除。';renderA();$("aForm").hidden=false;return true;
+ }catch(e){if(seq===aSeq)$("aMessage").textContent="無法載入 A 項客訴："+(aZh(e)||"請聯絡值班人員");return false;}
+}
+if(aGateway){
+ $("aItems").addEventListener("input",e=>{const row=e.target.closest("[data-a]");if(row&&e.target.dataset.f){const k=aKey(row.dataset.a,e.target.dataset.f);if(e.target.value)aDrafts.set(k,e.target.value);else aDrafts.delete(k);}});
+ window.addEventListener("beforeunload",ev=>{if(aDrafts.size){ev.preventDefault();ev.returnValue="";}});
+ $("aItems").onclick=async e=>{
+  const b=e.target.closest(".order-submit");if(!b)return;const row=b.closest("[data-a]"),id=row.dataset.a,item=aItems.find(x=>String(x.id)===id);
+  const f={};for(const k of ['packer','root_cause','action_plan'])f[k]=row.querySelector('[data-f="'+k+'"]').value.trim();
+  const miss=[['packer','配餐人員'],['root_cause','根源'],['action_plan','行動']].filter(([k])=>!f[k]).map(([,n])=>n);
+  if(miss.length){$("aMessage").textContent='請先填：'+miss.join('、');row.querySelector('[data-f="'+(['packer','root_cause','action_plan'].find(k=>!f[k]))+'"]').focus();return;}
+  aSubmitting.add(id);renderA();
+  try{await aGateway.submit(item,f);aDone.add(id);for(const k of ['packer','root_cause','action_plan'])aDrafts.delete(aKey(id,k));await loadA();if(aItems.length)$("aMessage").innerHTML='<span class="success">'+esc(item.record_date+' '+item.restaurant_name)+' 已送出；其他待回覆仍保留。</span>';}
+  catch(err){$("aMessage").textContent="未確認送出成功："+(aZh(err)||"請重新整理後再試");}
+  finally{aSubmitting.delete(id);if(!aDone.has(id))renderA();}
+ };
+ loadA();
+}
 </script></body></html>
 

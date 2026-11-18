@@ -1290,9 +1290,9 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
 .ops-section{font-size:16px;line-height:1.65}.ops-section button,.ops-section input,.ops-section select,.ops-section textarea{font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC",sans-serif!important;font-size:16px!important}.ops-section button{font-weight:800!important}.ops-section .ops-table{font-size:15px}.ops-section .ops-message,.ops-section .ops-empty{color:#49443e;font-size:14px;font-weight:600}
 @media(max-width:600px){.ops-section .ops-table{font-size:14px}.ops-section .ops-table th,.ops-section .ops-table td{padding:9px 7px}}
 </style>
-<link rel="stylesheet" href="operations-report.css?v=20261117-v3s">
+<link rel="stylesheet" href="operations-report.css?v=20261117-a4">
 <link rel="stylesheet" href="display-mode.css?v=20261117-v3w">
-<link rel="stylesheet" href="ui-shell.css?v=20261117-v3w">
+<link rel="stylesheet" href="ui-shell.css?v=20261118-b5">
 <link rel="stylesheet" href="upload-sidebar.css?v=20261117-v3w">
 </head>
 
@@ -1360,6 +1360,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
     <div class="ops-tabs">
       <button type="button" class="ops-tab active" data-ops-tab="delay">等餐紀錄</button>
       <button type="button" class="ops-tab" data-ops-tab="line">劃線／簽名</button>
+      <button type="button" class="ops-tab" data-ops-tab="a0800">A 項回饋</button>
       <button type="button" class="ops-tab" data-ops-tab="scores">每日工時</button>
       <button type="button" class="ops-tab" data-ops-tab="summary">匯總資料</button>
     </div>
@@ -1374,6 +1375,13 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
       <div id="opsDelayMessage" class="ops-message" role="status"></div>
       <h3 id="opsDelayListTitle">當日紀錄</h3>
       <div id="opsDelayList" class="ops-table-wrap"></div>
+    </div>
+    <div id="opsAPanel" class="ops-panel" hidden>
+      <p class="ops-help">0800 客訴中「A 產品正確」的案件。餐廳用「匯總資料」產生的同一個月份回覆連結填配餐人員、根源、行動；這裡看回覆狀況，必要時退回重填。</p>
+      <div class="ops-form-grid"><label>餐廳查詢<input id="opsASearch" type="search" placeholder="輸入店號或餐廳名稱"></label><label>狀態<select id="opsAStatus"><option value="">全部</option><option value="pending">待回覆</option><option value="completed">已回覆</option></select></label></div>
+      <div id="opsAMessage" class="ops-message" role="status"></div>
+      <h3 id="opsAListTitle">A 項回饋</h3>
+      <div id="opsAList" class="ops-table-wrap"></div>
     </div>
     <div id="opsLinePanel" class="ops-panel" hidden>
       <div class="ops-line-toolbar-row">
@@ -1412,7 +1420,7 @@ button,[role="button"],input[type="button"],input[type="submit"],input[type="res
       <div id="opsLinksPanel" class="ops-shared-link ops-compact-actions">
         <div class="ops-export-link-row">
           <div class="ops-export-bottom"><h3>報表匯出</h3><button id="opsExportSelected" type="button" class="action-btn primary" title="匯出上方日期控制所選期間">匯出報表</button></div>
-          <div class="ops-month-link-controls"><h3>等餐回覆連結</h3><input id="opsLinkMonth" type="month" aria-label="等餐回覆連結月份" aria-describedby="opsLinkMonthPreview" title="等餐回覆連結月份">
+          <div class="ops-month-link-controls"><h3>等餐／A 項回饋連結</h3><input id="opsLinkMonth" type="month" aria-label="等餐回覆連結月份" aria-describedby="opsLinkMonthPreview" title="等餐回覆連結月份">
           <button id="opsLinkCreate" type="button" class="action-btn" title="產生所選月份的等餐回覆連結">產生月份連結</button></div>
         </div>
         <span id="opsLinkMonthPreview" class="ops-sr-only" aria-live="polite"></span>
@@ -6340,11 +6348,11 @@ async function opsArchiveScoreSourceFiles(pair){
 <script src="operations-forecast.js?v=20261114-v2w"></script>
 <script src="operations-metrics.js?v=20261117-v3u"></script>
 <script src="operations-summary.js?v=20261113-v2q"></script>
-<script src="operations-report.js?v=20261117-v3x"></script>
-<script src="operations-entry.js?v=20261117-v3u"></script>
-<script src="ui-shell.js?v=20261115-v2y"></script>
+<script src="operations-report.js?v=20261118-b6"></script>
+<script src="ops-a-reply.js?v=20261118-b6"></script><script src="operations-entry.js?v=20261117-a1"></script>
+<script src="ui-shell.js?v=20261118-b6"></script>
 <script src="kpi-settings.js?v=20261113-v2q"></script>
-<script src="ui-overview.js?v=20261117-v3x"></script>
+<script src="ui-overview.js?v=20261118-b6"></script>
 <script src="ui-ops.js?v=20261117-v3w"></script>
 <script src="upload-router.js?v=20261113-v2s"></script>
 <script src="upload-sidebar.js?v=20261117-v2z"></script>

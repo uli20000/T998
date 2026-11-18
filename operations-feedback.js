@@ -24,7 +24,7 @@
   function restaurantDirectoryMap(rows){return {byName:new Map(rows.map(x=>[clean(x.restaurant_name),x])),byCode:new Map(rows.map(x=>[String(x.store_code),x]))};}
   async function restaurantDirectory(){if(cachedStores)return cachedStores;const {data,error}=await db.from('t998_restaurants').select('store_code,restaurant_name').eq('enabled',true);if(error)throw error;cachedStores=restaurantDirectoryMap(data||[]);return cachedStores;}
   function rowRecord(type,sourceKey,file,fields){return {source_type:type,source_key:String(sourceKey),source_file:file.name.slice(0,255),...fields,raw_fields:fields.raw_fields||{},imported_at:new Date().toISOString()};}
-  async function parse0800(matrix,file){
+  async function parse0800(matrix,file,stores){
     const headerRow=matrix.findIndex(row=>row.some(x=>clean(x)==='日期')&&row.some(x=>clean(x)==='建議種類')&&row.some(x=>clean(x)==='被抱怨型態'));
     if(headerRow<0)throw new Error('找不到 0800 欄位列（日期／建議種類／被抱怨型態）。');
     const headers=matrix[headerRow].map(clean),ix={date:indexOf(headers,'日期'),channel:indexOf(headers,'來源'),kind:indexOf(headers,'建議種類'),type:indexOf(headers,'被抱怨型態'),topic:indexOf(headers,'重點'),item1:indexOf(headers,'項目1'),item2:indexOf(headers,'項目2'),area:indexOf(headers,'區域'),manager:indexOf(headers,'區經理'),invoice:indexOf(headers,'發票號碼'),restaurant:indexOf(headers,'餐廳'),content:indexOf(headers,'顧客回饋內容'),follow:indexOf(headers,'是否- 完成跟進報告','是否-\n完成跟進報告','是否-完成跟進報告'),work:indexOf(headers,'工作單號')};
@@ -35,7 +35,9 @@
       const kind=clean(get('kind')),complaintType=clean(get('type')),area=clean(get('area')),restaurant=clean(get('restaurant'));
       if(kind!=='抱怨'||!['網路外送','外送'].includes(complaintType)||!(AREA_NAMES.has(area)||isCenterRow(restaurant)||OWN_RESTAURANTS.has(restaurant)))continue;
       const recordDate=opsIsoDate(get('date'));if(!recordDate)continue;
-      const row={record_date:recordDate,area_name:area,restaurant_name:restaurant,source_channel:clean(get('channel')),feedback_kind:kind,complaint_type:complaintType,main_topic:clean(get('topic')),item_1:clean(get('item1')),item_2:clean(get('item2')),content:String(get('content')??'').trim(),invoice_number:clean(get('invoice')),work_order:clean(get('work')),followup_status:clean(get('follow')),raw_fields:Object.fromEntries(headers.map((h,i)=>[h||`欄位${i+1}`,cells[i] instanceof Date?opsIsoDate(cells[i]):cells[i]??'']))};
+      const mapped=window.FeedbackAReply?window.FeedbackAReply.storeFor0800(restaurant,get('invoice'),stores,isCenterRow(restaurant)):{store_code:'',restaurant_name:restaurant};
+      // 餐廳欄只寫「XX外送中心」：發票號碼前三碼就是店號，改記到該店
+      const row={record_date:recordDate,area_name:area,store_code:mapped.store_code,restaurant_name:mapped.restaurant_name,source_channel:clean(get('channel')),feedback_kind:kind,complaint_type:complaintType,main_topic:clean(get('topic')),item_1:clean(get('item1')),item_2:clean(get('item2')),content:String(get('content')??'').trim(),invoice_number:clean(get('invoice')),work_order:clean(get('work')),followup_status:clean(get('follow')),raw_fields:Object.fromEntries(headers.map((h,i)=>[h||`欄位${i+1}`,cells[i] instanceof Date?opsIsoDate(cells[i]):cells[i]??'']))};
       const caseKey=row.work_order?`work:${row.work_order}:${row.main_topic}:${row.item_1}:${row.item_2}`:`hash:${await stableHash([recordDate,row.invoice_number,restaurant,row.main_topic,row.item_1,row.item_2,row.content])}`;
       out.push(rowRecord('0800',caseKey,file,row));
     }
@@ -94,12 +96,12 @@
     const flat=all.flatMap(x=>x.matrix);let rows,type,manualRange=false;
     const stores=await restaurantDirectory();
     if(flat.some(r=>r.some(x=>clean(x)==='訂單編號')&&r.some(x=>clean(x)==='工作單號'))){type='4128';rows=await parse4128(flat,file,stores);}
-    else if(flat.some(r=>r.some(x=>clean(x)==='建議種類')&&r.some(x=>clean(x)==='被抱怨型態')&&r.some(x=>clean(x)==='重點')&&r.some(x=>clean(x)==='項目1'))){type='0800';rows=await parse0800(flat,file);}
+    else if(flat.some(r=>r.some(x=>clean(x)==='建議種類')&&r.some(x=>clean(x)==='被抱怨型態')&&r.some(x=>clean(x)==='重點')&&r.some(x=>clean(x)==='項目1'))){type='0800';rows=await parse0800(flat,file,stores);}
     else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';rows=parseGes(flat,file,stores);manualRange=!!rows.manualRange;}
     else throw new Error('無法辨識檔案類型；請選 0800、4128 或 GES 格式。');
     const uniq=new Map(rows.map(r=>[r.source_type+'|'+r.source_key,r]));rows=[...uniq.values()];
     const start=rows.map(r=>r.record_date||r.period_start).filter(Boolean).sort()[0],end=rows.map(r=>r.record_date||r.period_end).filter(Boolean).sort().at(-1);
-    return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>r.source_type==='4128'&&r.restaurant_name.startsWith('未配對店號')).length};
+    return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>['4128','0800'].includes(r.source_type)&&String(r.restaurant_name).startsWith('未配對店號')).length};
   }
   function render(errors=[]){
     const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:(x.start===x.end?x.start:`${x.start}～${x.end}`)+(x.manualRange?'（手動選週）':''),count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];

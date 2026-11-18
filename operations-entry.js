@@ -23,6 +23,7 @@
   function refreshActive(force=false){
     if(state.active==='delay')return loadDelay();
     if(state.active==='line')return loadLine();
+    if(state.active==='a0800')return window.OpsAReplyAdmin?.load(periodRange(),periodLabel());
     return R.open(state.active,force).catch(()=>{});
   }
   async function loadDelay(){
@@ -145,8 +146,8 @@
   E('opsLinkCopy').onclick=async()=>{if(!E('opsLinkUrl').value||E('opsLinkResult').hidden)return;try{await navigator.clipboard.writeText(E('opsLinkUrl').value);E('opsLinkMessage').textContent='已複製'+E('opsLinkMonthLabel').textContent+'的連結';}catch{E('opsLinkUrl').select();document.execCommand('copy');E('opsLinkMessage').textContent='已複製'+E('opsLinkMonthLabel').textContent+'的連結';}};
   function openTab(name){
     state.active=name;document.querySelectorAll('.ops-tab').forEach(b=>b.classList.toggle('active',b.dataset.opsTab===name));
-    for(const [tab,id] of Object.entries({delay:'opsDelayPanel',line:'opsLinePanel',scores:'opsScoresPanel',summary:'opsSummaryPanel'}))E(id).hidden=tab!==name;
-    if(name==='delay')loadDelay();else if(name==='line')loadLine();else R.open(name).catch(()=>{});
+    for(const [tab,id] of Object.entries({delay:'opsDelayPanel',line:'opsLinePanel',a0800:'opsAPanel',scores:'opsScoresPanel',summary:'opsSummaryPanel'}))E(id).hidden=tab!==name;
+    if(name==='delay')loadDelay();else if(name==='line')loadLine();else if(name==='a0800')window.OpsAReplyAdmin?.load(periodRange(),periodLabel());else R.open(name).catch(()=>{});
   }
   document.querySelectorAll('.ops-tab').forEach(b=>b.onclick=()=>openTab(b.dataset.opsTab));
   const original=showAdminMode;showAdminMode=function(mode){original(mode);E('opsModePage').style.display=mode==='ops'?'block':'none';if(mode==='ops')openTab(state.active);};

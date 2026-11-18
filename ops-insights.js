@@ -168,7 +168,7 @@
    *  clusters：[{name,n}] 本週 D7 未達成的集中單（同店 30 分鐘 6 張以上）依店
    *  daily：[{date,sstg}] 每日 TC 對去年同期
    *  bigOrders：{min,now:{n,amount},prev:{n,amount},stores:[{name,now,prev}]} 大單（餐點金額門檻以上）本週對上週
-   *  feedback：{now:{c0800:{[topic]:n},c4128:{[type]:n},ges:{food,speed,accuracy,delivery,responses}|null,stores:[{name,n}]},prev:{同上}} */
+   *  feedback：{now:{c0800:{[topic]:n},c4128:{[type]:n},ges:{food,speed,accuracy,delivery,responses}|null,aItems:[{name,item,reply:{packer,root_cause,action_plan}|null}],stores:[{name,n}]},prev:{同上}} */
   const CN=['一','二','三','四','五','六','七','八'];
   const ROOT_CANDIDATES={
     d7:['尖峰人力不足','餐點準備慢（等餐）','集中單，第三方難媒合','距離遠／外送範圍過大','天候影響','單一店拖累'],
@@ -320,6 +320,9 @@
         const s=[item('好吃度','food'),item('服務速度','speed'),item('正確度','accuracy'),item('外送 OSAT','delivery')].filter(Boolean);if(s.length)evidence.push({text:'GES：'+s.join('、')+(g.responses?`；回覆 ${int(g.responses)} 份`:''),src:'GES'});}
       const sCount=Object.entries(now.c0800||{}).filter(([k])=>/^S\b|^S /.test(k)).reduce((n,[,v])=>n+v,0);
       if(sCount)evidence.push({text:`S 項抱怨 ${sCount} 通`,src:'080'});
+      const aItems=now.aItems||[];
+      if(aItems.length){const done=aItems.filter(x=>x.reply);evidence.push({text:`A 項（產品正確）${aItems.length} 筆，餐廳已回覆 ${done.length} 筆`+(done.length<aItems.length?`；待回覆：${[...new Set(aItems.filter(x=>!x.reply).map(x=>x.name))].join('、')}`:''),src:'080 A 項回覆'});
+        for(const x of done.slice(0,5))evidence.push({text:`${x.name}${x.item?'（'+x.item+'）':''}：配餐 ${x.reply.packer}；根源 ${x.reply.root_cause}；行動 ${x.reply.action_plan}`,src:'080 A 項回覆'});}
       if((now.stores||[]).length)evidence.push({text:'客訴最多：'+now.stores.slice(0,3).map(s=>`${s.name} ${s.n} 通`).join('、'),src:'080／4128'});
       if(!g)diff.push('GES 本週未匯入');
       fb={key:'feedback',label:'080／GES／4128',met:true,judged:false,info:true,diff:diff.join('\n'),issue:lines.length?lines.join('\n'):g?'本週沒有 080／4128 客訴紀錄':'本週未匯入 080／GES／4128',evidence,candidates:ROOT_CANDIDATES.feedback,followup:followup('feedback',[])};
