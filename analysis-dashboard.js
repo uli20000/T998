@@ -144,7 +144,10 @@
   }
   function feedbackSidebarRows(data){const first=(source)=>feedbackGroups(data,source)[0];const a=first('0800'),b=first('4128'),ges=gesForRange(data.feedback,range()).filter(x=>x.osat_survey!==null&&x.osat_survey!==undefined).sort((x,y)=>Number(x.osat_survey)-Number(y.osat_survey));return [{label:'0800',name:a?.name||'尚無資料',value:a?fmt(a.count)+' 筆':'—'},{label:'4128',name:b?.name||'尚無資料',value:b?fmt(b.count)+' 筆':'—'},{label:'GES OSAT最低',name:ges[0]?.restaurant_name||'尚無資料',value:ges[0]?pct(ges[0].osat_survey):'—'}];}
   function renderMetricTabs(){
-    const labels=[['sstg','SG／TG'],['d7','D7／D25'],['fa','TPLH／FA'],['waiting','等餐'],['feedback','GES／080'],['alerts','🔔 預警'],['impact','🎯 影響度'],['weekly','📝 週報草稿'],['store','🏪 餐廳頁'],['actions','✅ 行動追蹤'],['drill','🔍 明細熱圖'],['staff','👷 排班派單']];
+    const labels=[
+      ['sstg','SG／TG'],['d7','D7／D25'],['fa','TPLH／FA'],['waiting','等餐'],['feedback','GES／080'],
+      ['weekly','📝 週報草稿'],['store','🏪 餐廳頁'],['actions','✅ 行動追蹤'],['drill','🔍 明細熱圖'],['staff','👷 排班派單']
+    ];
     const nav=$('metricTabs');
     if(!nav.dataset.bound){nav.addEventListener('click',event=>{const button=event.target.closest('[data-metric]');if(!button)return;state.metric=button.dataset.metric;syncMetricTab();try{renderMetric(state.data,state.previous,range());}catch(error){status('此成績頁載入失敗：'+(error.message||error),true);}});nav.dataset.bound='true';}
     nav.innerHTML=labels.map(([key,label])=>'<button type="button" class="'+(state.metric===key?'active':'')+'" data-metric="'+key+'" aria-pressed="'+(state.metric===key)+'">'+label+'</button>').join('');nav.classList.remove('hidden');
@@ -210,7 +213,48 @@
   function compareValue(a,b,type){if(type==='rate')return pct(a);if(type==='decimal')return fmt(a,2);return fmt(a);}
   function compareDelta(a,b,type){if(a===null||a===undefined||b===null||b===undefined||!Number.isFinite(Number(a))||!Number.isFinite(Number(b)))return '—';const d=Number(a)-Number(b);return type==='rate'?(d>0?'+':'')+fmt(d*100,1)+'%':(d>0?'+':'')+fmt(d,type==='decimal'?2:0);}
   function dailyComparisonPanel(data,previous,r,priorRange,metric){if(state.period!=='day')return '';const current=comparisonValues(data,r,metric),prior=previous?comparisonValues(previous,priorRange,metric):[],priorMap=new Map(prior.map(x=>[x[0],x])),label=priorRange?.special?'特殊日對當週六':'上週同日',rows=current.map(([name,value,type])=>{const old=priorMap.get(name);return [name,compareValue(value,old?.[1],type),compareValue(old?.[1],old?.[1],type),compareDelta(value,old?.[1],type)];});return '<section class="analysis-panel daily-comparison"><h3>日檢視差異對比｜'+label+'（'+(priorRange?.start||'—')+'）</h3>'+table(['指標','本日','比較日','差異'],rows)+'</section>';}
-  function renderMetric(data,previous,r){if(INSIGHT_TABS.has(state.metric)){renderInsight(r);return;}window.UiShell?.mark?.('analysis');$('metricContent').onclick=null;const rows=storeAnalytics(data,r),titles={sstg:'SSSG／SSTG 成績與原因分析',d7:'D7／D25 分析',d25:'D7／D25 分析',fa:'FA／TPLH 分析',waiting:'等餐細項分析',feedback:'GES／080 分析'};$('metricTitle').textContent=titles[state.metric];$('metricSubtitle').textContent=periodLabel(r);let content='';if(state.metric==='sstg')content=sstgPage(data,rows,r);else if(state.metric==='d7'||state.metric==='d25')content=d7d25Page(data,rows,r);else if(state.metric==='fa')content=faPage(data,previous,rows,r);else if(state.metric==='waiting')content=waitingPage(rows,data,r);else content=feedbackPage(data,previous,r);const evidence=trackingEvidence(data,r),cut=evidence.indexOf('<details class="analysis-panel">'),mainEvidence=cut<0?evidence:evidence.slice(0,cut),coverage=cut<0?'':evidence.slice(cut);$('metricContent').innerHTML=trackingOverview(data,r)+periodNotes(data,r)+trackingComparison()+mainEvidence+content+(state.metric==='feedback'?feedbackVolume(data):'')+coverage;$('biUploadFooter').classList.toggle('hidden',state.metric!=='sstg');$('feedbackUploadFooter').classList.toggle('hidden',state.metric!=='feedback');renderMetricTabs();syncMetricTab();}
+  let metricRender=0;
+  function renderMetric(data,previous,r){
+    state.metric=resolveMetric(state.metric)||'sstg';
+    const render=++metricRender;
+    if(INSIGHT_TABS.has(state.metric)){renderInsight(r);return;}
+    window.UiShell?.mark?.('analysis');
+    const metric=state.metric==='d25'?'d7':state.metric,box=$('metricContent'),rows=storeAnalytics(data,r);
+    const titles={sstg:'SSSG／SSTG 成績與原因分析',d7:'D7／D25 分析',fa:'FA／TPLH 分析',waiting:'等餐細項分析',feedback:'GES／080 分析'};
+    $('metricTitle').textContent=titles[metric];
+    $('metricSubtitle').textContent=periodLabel(r);
+    let content;
+    if(metric==='sstg')content=sstgPage(data,rows,r);
+    else if(metric==='d7')content=d7d25Page(data,rows,r);
+    else if(metric==='fa')content=faPage(data,previous,rows,r);
+    else if(metric==='waiting')content=waitingPage(rows,data,r);
+    else content=feedbackPage(data,previous,r);
+    const evidence=trackingEvidence(data,r),cut=evidence.indexOf('<details class="analysis-panel">');
+    const mainEvidence=cut<0?evidence:evidence.slice(0,cut),coverage=cut<0?'':evidence.slice(cut);
+    box.onclick=null;
+    box.innerHTML=trackingOverview(data,r)+periodNotes(data,r)+trackingComparison()+mainEvidence+content+
+      (metric==='feedback'?feedbackVolume(data):'')+coverage;
+    $('biUploadFooter').classList.toggle('hidden',metric!=='sstg');
+    $('feedbackUploadFooter').classList.toggle('hidden',metric!=='feedback');
+    renderMetricTabs();
+    syncMetricTab();
+    if(!ALERT_METRICS[metric])return;
+
+    let impactStores;
+    if(IMPACT_TABS[metric]){
+      const excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date));
+      impactStores=I.byStore(insightCells(data,r),r.start,r.end,excluded);
+      const impactMetric=metric==='d7'?state.impactMetric:metric;
+      box.insertAdjacentHTML('beforeend','<section class="ins-impact" id="metricImpact">'+impactPage(impactStores,r,impactMetric)+'</section>');
+    }
+    bindInsights(null,r,impactStores);
+    const request=state.request;
+    return insightContext(r).then(ctx=>{
+      if(render!==metricRender||request!==state.request)return;
+      const html=alertsSection(ctx,r,metric)+(metric==='sstg'?anomaliesSection(ctx,r):'');
+      if(html)box.insertAdjacentHTML('afterbegin',html);
+    }).catch(error=>console.warn('預警資料讀取失敗',error));
+  }
   function renderChoices(){
     $('periodDate').value=state.date;
     $('periodDateText').textContent=state.period==='week'?S.weekLabel(fullWeek(state.date).start):state.period==='month'?state.date.slice(0,4)+'年'+(+state.date.slice(5,7))+'月':state.date.replace(/-/g,'/')+'（'+['日','一','二','三','四','五','六'][new Date(state.date+'T12:00:00Z').getUTCDay()]+'）';
@@ -218,8 +262,14 @@
   }
   function changePeriod(direction){const d=new Date(state.date+'T12:00:00Z');if(state.period==='month'){d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+direction);}else d.setUTCDate(d.getUTCDate()+direction*(state.period==='week'?7:1));state.date=d.toISOString().slice(0,10);state.month=state.date.slice(0,7);renderChoices();loadReport();}
   // 完整成績 Excel 的明細分頁（營運摘要、預估、特殊事項、週行動追蹤、優惠券、餐廳、等餐、回饋），由 renderTrackingExport 一起寫出
-  const WEEKLY_KEY_LABEL={d7:'D7／D25',sstg:'SSSG／SSTG',fa:'TPLH／FA',tplh:'TPLH（舊格式）',feedback:'080／GES／4128',findings:'當週發現與行動',d25:'D25（舊格式）',waiting:'等餐（舊格式）'};
-  function appendDetailSheets(wb,data,rows,r){const result=model(data,r),summary=result.summary;XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{週期:state.period,期間:periodLabel(r),TC來源:result.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+result.provisionalDays.join('、'):'Power BI',D7D25來源:'DMS（ByOrder）',預估公式:window.OpsForecast.FORMULA,預估TC:summary.forecast,預估工時:summary.forecastHours,TC預估達成率:summary.tcAchievement,達成率採計實際TC:summary.attainmentActual,達成率採計預估TC:summary.attainmentForecast,資料提示:model(data,r).forecastWarnings.join('；'),TC:summary.tc,去年同期TC:summary.prior,去年比較口徑:'前52週同星期，依當期餐廳範圍',FA:summary.fa,FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,等餐筆數:data.delays.length,不計成績日期:data.reports.filter(x=>x.score_excluded).map(x=>x.record_date).join('、')}]),'營運摘要');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(result.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,需求工時:x.excluded?null:x.recommended,預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join('、'),去年對應日期:x.baselineDate,成長倍率:1+window.OpsForecast.SETTINGS.growth,前8週平均:x.averageTc,前8週成長率:x.recentGrowth,切換門檻:x.switchThreshold,有效週數:x.historyWeeks,目標週數:x.targetWeeks,不計成績:x.excluded?'是':'否',採用日期:x.baselineDate,排除日期:x.excludedSamples.map(s=>s.date+' '+s.reason).join('、')}))),'預估樣本');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.reports.filter(x=>x.score_excluded||String(x.special_notes||'').trim()).map(x=>({日期:x.record_date,不計成績:x.score_excluded?'是':'否',特殊事項:x.special_notes||''}))), '特殊事項');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.weeklyNotes||[]).filter(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end&&[x.issue,x.evidence,x.root_cause,x.action_plan].some(v=>String(v||'').trim())).map(x=>({週次:S.weekLabel(x.week_start),週一:x.week_start,項目:WEEKLY_KEY_LABEL[x.metric_key]||x.metric_key,發現問題:x.issue||'',提出證據:x.evidence||'',根源:x.root_cause||'',制定行動:x.action_plan||'',追上週:x.last_week_followup||'',最後儲存:x.updated_at?new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(x.updated_at)):''})).concat((data.weeklyNotes||[]).some(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end)?[]:[{週次:'這段期間沒有儲存過週報'}])), '週行動追蹤');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.campaigns||[]).filter(x=>x.active_from<=r.end&&x.active_to>=r.start).map(x=>({活動名稱:x.campaign_name,活動內容:x.details,開始日期:x.active_from,結束日期:x.active_to,來源網址:x.source_url,記錄時間:x.researched_at}))), '優惠券活動');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map(x=>({店號:x.code,餐廳:x.name,區域:regionName(x.area),TC:x.tc,去年同期TC:x.prior, SSTG:x.sstg,D7:x.d7,D25:x.d25,FA:x.fa,FA佔比:x.faShare,晚派單比例:x.lateShare,等餐筆數:x.wait,等餐比例:x.waitRatio,QT平均:x.qt}))), '餐廳指標');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.delays.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單:x.order_number,狀態:x.status,原因:x.reason||''}))), '等餐明細');const feedbackRows=data.feedback||[];const exportFeedback=(x)=>({來源:x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??''});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
+  const WEEKLY_KEY_LABEL={conclusion:'結論',sstg:'一、SSSG／SSTG',d7:'二、D7／D25',fa:'三、TPLH／FA',waiting:'四、等餐',findings:'五、其他發現',
+    feedback:'六、080／GES／4128',tplh:'TPLH（舊格式）',d25:'D25（舊格式）'};
+  const WEEKLY_KEY_ORDER=Object.keys(WEEKLY_KEY_LABEL);
+  // 新版把原因、上週行動等存成 JSON（last_week_followup）；匯出時拆成可讀欄位，舊格式維持原文字
+  function weeklyExportRow(x){const meta=I?.weeklyMeta?I.weeklyMeta(x):null,f=meta?.followup;
+    const follow=meta?(f?.text?f.text+(f.compare?.length?'｜本週：'+f.compare.join('；'):''):meta.legacy||''):x.last_week_followup||'';
+    return {原因:meta?.reason||'',追上週:x.metric_key==='conclusion'?(meta?.commitments?.text||''):follow};}
+  function appendDetailSheets(wb,data,rows,r){const result=model(data,r),summary=result.summary;XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{週期:state.period,期間:periodLabel(r),TC來源:result.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+result.provisionalDays.join('、'):'Power BI',D7D25來源:'DMS（ByOrder）',預估公式:window.OpsForecast.FORMULA,預估TC:summary.forecast,預估工時:summary.forecastHours,TC預估達成率:summary.tcAchievement,達成率採計實際TC:summary.attainmentActual,達成率採計預估TC:summary.attainmentForecast,資料提示:model(data,r).forecastWarnings.join('；'),TC:summary.tc,去年同期TC:summary.prior,去年比較口徑:'前52週同星期，依當期餐廳範圍',FA:summary.fa,FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,等餐筆數:data.delays.length,不計成績日期:data.reports.filter(x=>x.score_excluded).map(x=>x.record_date).join('、')}]),'營運摘要');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(result.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,需求工時:x.excluded?null:x.recommended,預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join('、'),去年對應日期:x.baselineDate,成長倍率:1+window.OpsForecast.SETTINGS.growth,前8週平均:x.averageTc,前8週成長率:x.recentGrowth,切換門檻:x.switchThreshold,有效週數:x.historyWeeks,目標週數:x.targetWeeks,不計成績:x.excluded?'是':'否',採用日期:x.baselineDate,排除日期:x.excludedSamples.map(s=>s.date+' '+s.reason).join('、')}))),'預估樣本');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.reports.filter(x=>x.score_excluded||String(x.special_notes||'').trim()).map(x=>({日期:x.record_date,不計成績:x.score_excluded?'是':'否',特殊事項:x.special_notes||''}))), '特殊事項');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.weeklyNotes||[]).filter(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end&&[x.issue,x.evidence,x.root_cause,x.action_plan].some(v=>String(v||'').trim())).slice().sort((a,b)=>a.week_start.localeCompare(b.week_start)||WEEKLY_KEY_ORDER.indexOf(a.metric_key)-WEEKLY_KEY_ORDER.indexOf(b.metric_key)).map(x=>({週次:S.weekLabel(x.week_start),週一:x.week_start,項目:WEEKLY_KEY_LABEL[x.metric_key]||x.metric_key,發現問題:x.issue||'',原因:weeklyExportRow(x).原因,提出證據:x.evidence||'',根源:x.root_cause||'',制定行動:x.action_plan||'',追上週:weeklyExportRow(x).追上週,最後儲存:x.updated_at?new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(x.updated_at)):''})).concat((data.weeklyNotes||[]).some(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end)?[]:[{週次:'這段期間沒有儲存過週報'}])), '週行動追蹤');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.campaigns||[]).filter(x=>x.active_from<=r.end&&x.active_to>=r.start).map(x=>({活動名稱:x.campaign_name,活動內容:x.details,開始日期:x.active_from,結束日期:x.active_to,來源網址:x.source_url,記錄時間:x.researched_at}))), '優惠券活動');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map(x=>({店號:x.code,餐廳:x.name,區域:regionName(x.area),TC:x.tc,去年同期TC:x.prior, SSTG:x.sstg,D7:x.d7,D25:x.d25,FA:x.fa,FA佔比:x.faShare,晚派單比例:x.lateShare,等餐筆數:x.wait,等餐比例:x.waitRatio,QT平均:x.qt}))), '餐廳指標');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.delays.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單:x.order_number,狀態:x.status,原因:x.reason||''}))), '等餐明細');const feedbackRows=data.feedback||[];const exportFeedback=(x)=>({來源:x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??''});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
   let weeklySales=[];
   function salesWeek(r){return state.period==='week'?weeklySales.find(x=>x.start===r.start&&x.end===r.end):null;}
   function sssgRanking(data,r){const sales=salesWeek(r);if(!sales)return '<section class="analysis-panel"><h3>本期餐廳 SSSG 排名</h3><p>'+'本期無可用的完整週營業額資料；日／月不拆分週數字。'+'</p></section>';const dir=new Map([...state.catalog.values()].map(x=>[M.clean(x.restaurant_name),x])),areas=new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),list=sales.stores.filter(x=>x.value!==null&&Number.isFinite(x.value)).map(x=>({...x,store:dir.get(M.clean(x.name)),area:areas.get(M.clean(x.name))})).sort((a,b)=>b.value-a.value||a.name.localeCompare(b.name,'zh-Hant')),topCut=list[Math.min(2,list.length-1)]?.value,bottomCut=list[Math.max(0,list.length-5)]?.value,top=list.filter(x=>x.value>=topCut),bottom=list.filter(x=>x.value<=bottomCut&&!top.includes(x));return '<section class="analysis-panel"><h3>本期餐廳 SSSG 排名｜前三名與後五名</h3>'+table(['區段','店號','餐廳','商圈','SSSG'],[...top.map(x=>['前三',x.store?.store_code||'—',x.name,regionName(x.area),pct(x.value)]),...bottom.map(x=>['後五',x.store?.store_code||'—',x.name,regionName(x.area),pct(x.value)])])+'<p>來源：'+escape(sales.file)+' 的 SSSG%_wk；有效 '+list.length+' 間，缺值 '+(sales.stores.length-list.length)+' 間；同分保留。'+escape(weeklySalesNote(sales.start))+'</p></section>';}
@@ -426,7 +476,15 @@
   window.t998RefreshFeedback = () => { state.cache.clear(); loadReport(true); };
 
   // ===== 儀表板 v2｜B 組：預警與異常日（B3、B4）、影響度排名（B1）、週報草稿（B2）。計算在 ops-insights.js =====
-  const I=window.OpsInsights,INSIGHT_TABS=new Set(['alerts','impact','weekly','store','actions','targets','drill','staff']);
+  const I=window.OpsInsights,INSIGHT_TABS=new Set(['weekly','store','actions','targets','drill','staff']);
+  const ALERT_METRICS={sstg:['sstg'],d7:['d7','d25'],fa:['fa','tplh'],waiting:['waiting']};
+  const IMPACT_TABS={d7:'d7',d25:'d7',fa:'fa',waiting:'waiting'};
+  function resolveMetric(metric){
+    if(metric==='alerts')return 'sstg';
+    if(metric==='impact')return 'd7';
+    return INSIGHT_TABS.has(metric)||Object.hasOwn(labels,metric)?metric:null;
+  }
+  const hashMetric=()=>resolveMetric((location.hash.match(/^#tab=(\w+)$/)||[])[1]);
   state.impactMetric='d7';
   function acOfFor(date){const list=M.acAssignmentsForDate(date);return code=>list.find(a=>a.stores.includes(String(code)))?.name||null;}
   // 每日 × 餐廳格子：訂單來自成績 ByOrder（與 D7 頁同一套判讀），等餐筆數用等餐登記
@@ -454,23 +512,49 @@
     return {data,span,cells,excluded,weeks,weekSummary,context,acOf:acOfFor(r.end),independent:independentStoreCodes};
   }
   const levelDot={red:'🔴',orange:'🟠',yellow:'🟡'};
-  function insightLink(link,text){return link?'<button type="button" class="ins-link" data-ins-tab="'+escape(link.tab)+'" data-ins-metric="'+escape(link.metric||'')+'">'+escape(text)+'</button>':'';}
-  function alertsPage(ctx,r){
-    const days=state.period==='day'?S.dates(M.addDays(r.end,-6),r.end):S.dates(r.start,r.end);
-    const alerts=I.alerts({cells:ctx.cells,weeks:ctx.weeks,days:S.dates(M.addDays(r.end,-13),r.end),targets,independent:ctx.independent,excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,weekRule:rules().alertWeeks,dayRule:rules().alertDays});
-    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,inScope:M.storeInScope});
-    const lastWeek=ctx.weeks.at(-1);
-    const alertItem=a=>'<li class="ins-item ins-'+a.level+'"><span class="ins-dot" aria-hidden="true">'+levelDot[a.level]+'</span><div><b>'+escape(a.title)+'</b><p>'+escape(a.detail)+'</p>'+'<div class="ins-actions">'+(a.link?insightLink(a.link,'看影響度排名'):'')+(['d7','d25','fa','tplh','sstg','waiting'].includes(a.metric)?'<button type="button" class="ins-link" data-add-action="'+escape(a.metric)+'" data-store="'+escape(a.scope==='store'?a.code||'':'')+'">＋新增行動</button>':'')+'</div>'+'</div></li>',SHOW=8,alertHtml=alerts.length?'<ul class="ins-list">'+alerts.slice(0,SHOW).map(alertItem).join('')+'</ul>'+(alerts.length>SHOW?'<details class="ins-more"><summary>其他 '+(alerts.length-SHOW)+' 項</summary><ul class="ins-list">'+alerts.slice(SHOW).map(alertItem).join('')+'</ul></details>':''):'<div class="empty">沒有連續未達標的項目</div>';
-    const anomalyHtml=anomalies.length?'<ul class="ins-list">'+anomalies.map(a=>'<li class="ins-item '+(a.bad?'ins-orange':'ins-blue')+'"><span class="ins-dot" aria-hidden="true">'+a.icon+'</span><div><b>'+escape(a.title)+'</b><p>'+escape([...a.others.map(f=>f.text),...a.reasons].join('；'))+'。</p><div class="ins-actions"><button type="button" class="ins-link" data-ins-day="'+a.date+'">看當天</button></div></div></li>').join('')+'</ul>':'<div class="empty">'+(days.length>1?'這段期間':'這天')+'沒有偏離平常的日子</div>';
-    return '<p class="ins-lead">連續未達標以 '+escape(lastWeek.label)+'（'+lastWeek.start.slice(5).replace('-','/')+'–'+lastWeek.end.slice(5).replace('-','/')+'）為最新一週往回看；異常日看 '+escape(days[0].slice(5).replace('-','/')+(days.length>1?'–'+days.at(-1).slice(5).replace('-','/'):''))+'。</p>'+
-      '<section class="analysis-panel ins-panel"><h3>🔔 連續未達標預警 <span class="ins-count">'+alerts.length+'</span></h3>'+alertHtml+'<p class="ins-foot ins-explain">規則：週指標連續 '+rules().alertWeeks+' 週、日指標連續 '+rules().alertDays+' 天未達標就列入（可在「目標值」頁調整）；餐廳每週至少 20 單才判斷，避免小店一兩單就上榜。D7／D25 只算非獨立店。</p></section>'+
-      '<section class="analysis-panel ins-panel"><h3>📉 異常日 <span class="ins-count">'+anomalies.length+'</span></h3>'+anomalyHtml+'<p class="ins-foot ins-explain">比較基準：前 4 個同一星期幾（至少 2 個有成績）的平均；單量差 '+pct(rules().anomalyTc)+' 以上、D7／D25／FA 佔比差 '+fmt(rules().anomalyRate*100,1)+' 個百分點以上，或平常每天 10 單以上的餐廳當天 0 單，就列入。不計成績的日子不比較。</p></section>';
+  function insightLink(link,text){
+    if(!link)return '';
+    const tab=link.tab==='impact'?IMPACT_TABS[link.metric]:resolveMetric(link.tab);
+    if(!tab)return '';
+    return '<button type="button" class="ins-link" data-ins-tab="'+escape(tab)+'" data-ins-metric="'+escape(link.metric||'')+'">'+escape(text)+'</button>';
   }
-  function impactPage(stores,r){
-    const metric=state.impactMetric,imp=I.impact(stores,metric,{targets,independent:independentStoreCodes,acOf:acOfFor(r.end)}),isRate=imp.kind==='rate',isCount=imp.kind==='count';
-    const tabs='<div class="ins-mtabs" role="group" aria-label="影響度指標">'+[['d7','D7'],['d25','D25'],['fa','FA 佔比'],['waiting','等餐']].map(([k,l])=>'<button type="button" data-impact-metric="'+k+'" class="'+(k===metric?'active':'')+'" aria-pressed="'+(k===metric)+'">'+l+'</button>').join('')+'</div>';
+  function alertsSection(ctx,r,metric){
+    const options=rules();
+    const alerts=I.alerts({cells:ctx.cells,weeks:ctx.weeks,days:S.dates(M.addDays(r.end,-13),r.end),targets,independent:ctx.independent,
+      excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,weekRule:options.alertWeeks,dayRule:options.alertDays})
+      .filter(a=>ALERT_METRICS[metric].includes(a.metric));
+    if(!alerts.length)return '';
+    const alertItem=a=>'<li class="ins-item ins-'+a.level+'"><span class="ins-dot" aria-hidden="true">'+levelDot[a.level]+'</span>'+
+      '<div><b>'+escape(a.title)+'</b><p>'+escape(a.detail)+'</p><div class="ins-actions">'+insightLink(a.link,'看影響度排名')+
+      '<button type="button" class="ins-link" data-add-action="'+escape(a.metric)+'" data-store="'+escape(a.scope==='store'?a.code||'':'')+
+      '">＋新增行動</button></div></div></li>';
+    const show=3,list=items=>'<ul class="ins-list">'+items.map(alertItem).join('')+'</ul>';
+    const more=alerts.length>show?'<details class="ins-more"><summary>其他 '+(alerts.length-show)+' 項</summary>'+list(alerts.slice(show))+'</details>':'';
+    return '<section class="analysis-panel ins-panel"><h3>🔔 連續未達標預警 <span class="ins-count">'+alerts.length+'</span></h3>'+
+      list(alerts.slice(0,show))+more+'</section>';
+  }
+  function anomaliesSection(ctx,r){
+    const days=state.period==='day'?S.dates(M.addDays(r.end,-6),r.end):S.dates(r.start,r.end);
+    const options=rules();
+    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,
+      tcThreshold:options.anomalyTc,rateThreshold:options.anomalyRate,inScope:M.storeInScope});
+    if(!anomalies.length)return '';
+    const items=anomalies.map(a=>'<li class="ins-item '+(a.bad?'ins-orange':'ins-blue')+'"><span class="ins-dot" aria-hidden="true">'+
+      a.icon+'</span><div><b>'+escape(a.title)+'</b><p>'+escape([...a.others.map(f=>f.text),...a.reasons].join('；'))+'。</p>'+
+      '<div class="ins-actions"><button type="button" class="ins-link" data-ins-day="'+a.date+'">看當天</button></div></div></li>').join('');
+    return '<section class="analysis-panel ins-panel"><h3>📉 異常日 <span class="ins-count">'+anomalies.length+'</span></h3>'+
+      '<ul class="ins-list">'+items+'</ul></section>';
+  }
+  function impactPage(stores,r,metric){
+    const imp=I.impact(stores,metric,{targets,independent:independentStoreCodes,acOf:acOfFor(r.end)}),isRate=imp.kind==='rate',isCount=imp.kind==='count';
+    const heading='<h3>'+escape(isRate?'D7／D25':imp.label)+'影響度排名</h3>';
+    const tabs=isRate?'<div class="ins-mtabs" role="group" aria-label="影響度指標">'+[['d7','D7'],['d25','D25']].map(([k,l])=>
+      '<button type="button" data-impact-metric="'+k+'" class="'+(k===metric?'active':'')+'" aria-pressed="'+(k===metric)+'">'+l+'</button>'
+    ).join('')+'</div>':'';
     const unit=state.period==='day'?'這天':state.period==='week'?'這週':'這個月';
-    if(imp.center.value===null||(isCount&&!imp.sumNeed))return tabs+'<div class="empty">'+(isCount?'本期沒有等餐登記（不代表實際沒有等餐）':'本期沒有可判讀的訂單')+'</div>';
+    if(imp.center.value===null||(isCount&&!imp.sumNeed)){
+      return heading+tabs+'<div class="empty">'+(isCount?'本期沒有等餐登記（不代表實際沒有等餐）':'本期沒有可判讀的訂單')+'</div>';
+    }
     const head=isCount?[['等餐登記',fmt(imp.sumNeed)+' 筆',fmt(imp.stores.length)+' 家有登記'],['最多的一家',imp.stores[0].name,fmt(imp.stores[0].need)+' 筆'],['前三家占',pct(imp.stores.slice(0,3).reduce((n,s)=>n+s.need,0)/imp.sumNeed),'依筆數，不依比例']]
       :[[imp.label+' '+unit+(isRate?'（非獨立店）':''),pct(imp.center.value),isRate?fmt(imp.center[metric+'Y'])+'／'+fmt(imp.center.orders)+' 單':fmt(imp.center.fa)+'／'+fmt(imp.center.tc)+' 單'],[isRate?'目標':'上限',pct(imp.target),isRate?'需 '+fmt(Math.ceil(imp.target*imp.center.orders-1e-9))+' 單':'最多 '+fmt(Math.floor(imp.target*imp.center.tc+1e-9))+' 張 FA 單'],['中心缺口',imp.gap?fmt(imp.gap)+' 單':'已達標',imp.gap&&imp.days>1?'每天約 '+fmt(imp.perDay,1)+' 單':''],['達標方案',imp.gap?(imp.cut>=0?'補齊前 '+(imp.cut+1)+' 家':'全部補齊仍不足'):'—',imp.gap?(imp.cut>=0?fmt(imp.stores[imp.cut].cum)+' ≥ '+fmt(imp.gap)+' 單':'各店缺口合計 '+fmt(imp.sumNeed)+' 單'):'']];
     const cards='<div class="ins-head">'+head.map(([a,b,c],i)=>'<div class="ins-m'+(!isCount&&i===2&&imp.gap?' bad':'')+'"><span>'+escape(a)+'</span><b>'+escape(b)+'</b><em>'+escape(c)+'</em></div>').join('')+'</div>';
@@ -483,35 +567,36 @@
     const note=worstPct&&imp.stores.indexOf(worstPct)>0?worstPct.name+'百分比最差，但'+(isRate?'有效單只有 '+fmt(worstPct.orders)+' 張':'訂單只有 '+fmt(worstPct.orders)+' 張')+'，補齊只多 '+fmt(worstPct.need)+' 單，排第 '+(imp.stores.indexOf(worstPct)+1)+'。':'';
     const acTable='<div class="scroll"><table class="table"><thead><tr><th>AC</th><th>'+(isCount?'有登記的店':'未達標店')+'</th><th>'+verb+'</th></tr></thead><tbody>'+imp.acs.map(a=>'<tr><td>'+escape(a.name)+'</td><td>'+fmt(a.stores)+'</td><td>'+fmt(a.need)+'</td></tr>').join('')+'</tbody></table></div>';
     const formula=isCount?'等餐筆數＝等餐登記筆數（含未配對到訂單的登記）。':isRate?'還要多幾單＝有效單 ×'+pct(imp.target,0)+' − 已達成單（無條件進位），只列未達標的店；有效單＝非獨立店、非第三方、D7／D25 為 Y 或 N 的單。':'要少幾張＝FA 單 − 訂單 × '+pct(imp.target,0)+'（無條件捨去），只列超過上限的店。';
-    return tabs+'<p class="ins-lead">依「補齊這家能幫中心補回幾單」排序，不是依百分比。小店百分比再低，單量少，影響也小。</p>'+cards+
+    return heading+tabs+'<p class="ins-lead">依「補齊這家能幫中心補回幾單」排序，不是依百分比。小店百分比再低，單量少，影響也小。</p>'+cards+
       '<div class="ins-how"><b>怎麼達標：</b>'+escape(how)+(note?' '+escape(note):'')+'</div>'+
       '<div class="ins-grid2"><section class="analysis-panel"><h3>餐廳｜依影響度</h3>'+table+'<p class="ins-foot ins-explain">'+escape(formula)+(imp.cut>=0?' 紅色虛線以上的店補齊，中心就達標。':'')+'</p></section>'+
       '<div class="ins-col"><section class="analysis-panel"><h3>AC｜負責的'+(isCount?'等餐':'缺口')+'</h3>'+acTable+(imp.gap&&imp.sumNeed>imp.gap?'<p class="ins-foot ins-explain">各店缺口加總 '+fmt(imp.sumNeed)+' 單，大於中心缺口 '+fmt(imp.gap)+' 單，因為有些店超過目標，抵掉了一部分。</p>':'')+'</section>'+
       '</div></div>';
   }
   // 週報草稿：照每週提交格式（KPI 四項＋當週發現與行動＋GES／080／4128）。
-  // 編輯模式：發現問題、證據自動；根源（附候選）、行動自己填；整份一次儲存。存過的週直接顯示檢視模式（只有「複製全部」「編輯」）。
+  // 系統產生結論和證據，使用者填根源與行動。存過的週顯示儲存快照。
   const BIG_ORDER_MIN=3000;
   function weeklyInputs(ctx,week){
     const prevStart=M.addDays(week.start,-7),prev={start:prevStart,end:M.addDays(prevStart,6)};
-    const inScope=o=>M.storeInScope(o.code,o.date,o.name);
-    let orders=[],prevOrders=[];try{orders=analysisOrders(ctx.data,week).filter(inScope);prevOrders=analysisOrders(ctx.data,prev).filter(inScope);}catch(e){}
-    // 熱圖最差時段（外送時段內）
-    const dh=M.BUSINESS.deliveryHours||{start:'10:30',end:'22:30'},toMin=t=>{const [a,b]=String(t).split(':').map(Number);return a*60+(b||0);},s0=toMin(dh.start),s1=toMin(dh.end);
-    const minuteOf=ms=>ms===null||ms===undefined||!Number.isFinite(ms)?null:Math.floor((ms+8*3600000)/60000)%1440;
-    const inHours=orders.filter(o=>{const m=minuteOf(o.moment);return m!==null&&m>=s0&&m<=s1;}).map(o=>({date:o.date,hour:hourOf(o.moment),code:o.code,fa:o.fa,d7:o.d7,d25:o.d25,wait:o.wait}));
-    const hourList=[];for(let h=Math.floor(s0/60);h<=Math.floor(s1/60);h++)hourList.push(h);
-    const slots={};for(const k of ['d7','d25','fa']){try{const hm=I.heatmap(inHours,k,{independent:ctx.independent,hourList}),w=hm.worst[0];if(w)slots[k]={weekday:w.weekday,hour:w.hour,value:w.value,overall:hm.overall};}catch(e){}}
-    // D7 未達成的集中單（同店 30 分鐘內 6 張以上）
-    const cl=new Map();for(const o of orders)if(o.cluster&&!o.fa&&o.d7==='N'&&!ctx.independent.has(o.code))cl.set(o.name,(cl.get(o.name)||0)+1);
-    const clusters=[...cl].map(([name,n])=>({name,n}));
+    const span=ctx.span||{start:prevStart,end:week.end};
+    const inScope=o=>M.storeInScope(o.code,o.date,o.name),forWeek=w=>o=>o.date>=w.start&&o.date<=w.end;
+    let allOrders=[];
+    try{allOrders=analysisOrders(ctx.data,span).filter(inScope).map(o=>({...o,hour:hourOf(o.moment)}));}catch(e){}
+    const orders=allOrders.filter(forWeek(week)),prevOrders=allOrders.filter(forWeek(prev));
     // 大單：餐點金額門檻以上，本週對上週
     const amt=o=>Number(String((o.raw||{})['餐點金額']??'').replace(/,/g,''));
     const big=list=>{const by=new Map();let n=0,amount=0;for(const o of list){const a=amt(o);if(!Number.isFinite(a)||a<BIG_ORDER_MIN)continue;n++;amount+=a;by.set(o.name,(by.get(o.name)||0)+1);}return {n,amount,by};};
     const bn=big(orders),bp=big(prevOrders),names=new Set([...bn.by.keys(),...bp.by.keys()]);
     const bigOrders=orders.length||prevOrders.length?{min:BIG_ORDER_MIN,now:{n:bn.n,amount:bn.amount},prev:{n:bp.n,amount:bp.amount},stores:[...names].map(name=>({name,now:bn.by.get(name)||0,prev:bp.by.get(name)||0}))}:null;
-    // 每日 TC 對去年同期
-    const daily=S.dates(week.start,week.end).map(d=>{try{return {date:d,sstg:model(ctx.data,{start:d,end:d}).summary.sstg??null};}catch(e){return {date:d,sstg:null};}});
+    // 附錄沿用成績共用口徑。
+    const daily=S.dates(week.start,week.end).map(date=>{
+      const missing={date,tc:null,d25:null,fa:null};
+      try{
+        const {summary,days}=model(ctx.data,{start:date,end:date}),day=days.get(date);
+        if(!day?.tcSource||day.scoreExcluded)return missing;
+        return {date,tc:summary.tc??null,d25:summary.d25??null,fa:summary.faShare??null};
+      }catch(e){return missing;}
+    });
     // GES／080／4128
     const fbAll=ctx.data.feedback||[];
     const fbOf=w=>{const daily=fbAll.filter(x=>x.record_date>=w.start&&x.record_date<=w.end&&x.feedback_kind!=='其他/建議');
@@ -523,99 +608,223 @@
       return {c0800,c4128,ges:g,aItems,stores:[...st].map(([name,n])=>({name,n})).sort((a,b)=>b.n-a.n)};};
     const fn=fbOf(week),fp=fbOf(prev),hasFb=x=>Object.keys(x.c0800).length||Object.keys(x.c4128).length||x.ges;
     const feedback=hasFb(fn)||hasFb(fp)?{now:fn,prev:hasFb(fp)?fp:{}}:null;
-    return {slots,clusters,bigOrders,daily,feedback};
+    const scoreDates=[...model(ctx.data,span).days.values()].filter(d=>d.tcSource&&!d.scoreExcluded).map(d=>d.date);
+    const weekStores=storeAnalytics(ctx.data,week),hasPrior=weekStores.some(s=>s.priorN>0);
+    const newStores=new Set(weekStores.filter(s=>s.tc>0&&(
+      window.OpsForecast.isNewStore(s.code,week.end,s.name)||(hasPrior&&s.activeDays>0&&s.priorN===0)
+    )).map(s=>s.code||s.name));
+    const sstgStores=w=>(w.start===week.start?weekStores:storeAnalytics(ctx.data,w)).map(s=>({code:s.code,name:s.name,value:s.sstg}));
+    const storeDays=new Map(dailyStoreAnalytics(ctx.data,week).map(s=>[s.key,s]));
+    const storeSstgDay=c=>{
+      const s=storeDays.get(c.date+'|'+(c.code||M.clean(c.name)));
+      return s?.prior>0&&!window.OpsForecast.isNewStore(c.code,c.date,c.name)?s.tc/s.prior-1:null;
+    };
+    const storeContext=c=>{
+      const weather=weatherRow(c.date,cityForStore(c.code,c.area));
+      return {rainMm:Number(weather?.precipitation),trace:weather?.trace,campaigns:ctx.context(c.date).campaigns};
+    };
+    const events=[];
+    for(const date of S.dates(week.start,week.end)){
+      const c=ctx.context(date);
+      for(const name of c.campaigns||[])events.push({date,name,kind:'優惠券'});
+      if(c.rainMm>0)events.push({date,name:'降雨',kind:'天氣'});
+      if(c.note)events.push({date,name:c.note,kind:/停班|颱風|天氣/.test(c.note)?'停班':'事項'});
+    }
+    return {bigOrders,daily,feedback,feedbackRows:fbAll,newStores,delays:ctx.data.delays,orders:allOrders,
+      scoreDates,events,sstgStores,storeSstgDay,storeContext};
   }
   function weeklyTitle(week){return M.BUSINESS.centerName?('T'+M.BUSINESS.center+' 營運週報｜'+week.label+'（'+week.start.slice(5).replace('-','/')+'–'+week.end.slice(5).replace('-','/')+'）'):'營運週報｜'+week.label;}
   // 存過的週：發現問題、證據用當時存下的文字，複製內容和儲存時一致
-  function weeklySaved(draft){return draft.sections.some(s=>s.note&&s.note.updated_at);}
-  function weeklyView(draft){return {...draft,sections:draft.sections.map(s=>{const n=s.note||{};return {...s,issue:n.issue||s.issue,evidence:n.evidence?String(n.evidence).split('\n').filter(Boolean).map(text=>({text,trend:!!s.evidence.find(e=>e.text===text)?.trend})):s.evidence};})};}
-  function weeklyFills(draft,box){const fills={};
-    if(box&&box.querySelector('#wkForm'))box.querySelectorAll('#wkForm textarea[data-key]').forEach(t=>{(fills[t.dataset.key]=fills[t.dataset.key]||{})[t.name]=t.value.trim();});
-    else for(const s of draft.sections){const n=s.note||{};fills[s.key]={root_cause:n.root_cause||'',action_plan:n.action_plan||''};}
-    return fills;}
-  function weeklyPage(ctx,r){
-    if(state.period!=='week')return '<div class="ins-switch"><p>週報草稿以「週」產生。</p><button type="button" class="ins-link primary" data-ins-period="week">切換到週</button></div>';
-    const week={start:r.start,end:r.end,label:S.weekLabel(r.start)},weeks=ctx.weeks.slice(-3);
-    const sssg=weeks.map(w=>{const x=weeklySales.find(y=>y.start===w.start);return x?{value:x.value,stores:x.stores||[]}:null;});
-    const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,inScope:M.storeInScope});
-    const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
-    const draft=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},inScope:M.storeInScope,sssg,...weeklyInputs(ctx,week)});
-    state.weeklyDraft=draft;
-    const title=weeklyTitle(week),editing=state.weeklyEdit===week.start||!weeklySaved(draft);
-    const missing=draft.missing.length?'<p class="wk-missing">資料不齊：'+escape(draft.missing.join('、'))+'。</p>':'';
-    if(!editing){
-      const view=weeklyView(draft),text=I.weeklyText(view,{title,fills:weeklyFills(view,null)});
-      const last=draft.sections.map(s=>s.note?.updated_at).filter(Boolean).sort().at(-1);
-      return '<div class="wk-tools"><button type="button" class="ins-link primary" data-wk="copy">複製全部</button><button type="button" class="ins-link" data-wk="edit">編輯</button><span class="wk-status" id="wkToolStatus" role="status">'+(last?'已儲存 '+escape(new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(last))):'')+'</span></div>'+
-        '<article class="wk-doc wk-viewdoc">'+missing+'<pre class="wk-view">'+escape(text)+'</pre></article>';
+  function weeklySaved(draft){
+    return !!draft.conclusion.note?.updated_at||draft.sections.some(s=>s.note?.updated_at);
+  }
+  function weeklyView(draft){return I.restoreWeekly(draft);}
+  function weeklyFills(draft,box){
+    const fills={};
+    if(box?.querySelector('#wkForm'))box.querySelectorAll('#wkForm [data-key][name]').forEach(t=>{
+      (fills[t.dataset.key]=fills[t.dataset.key]||{})[t.name]=t.value.trim();
+    });
+    else{
+      fills.conclusion={issue:draft.conclusion.text};
+      for(const s of draft.sections){const n=s.note||{};
+        fills[s.key]={root_cause:n.root_cause||'',action_plan:n.action_plan||''};
+      }
     }
-    const fmtFollow=fu=>fu?'<div class="wk-prev"><b>上週行動：</b>'+escape(fu.text)+(fu.compare.length?'<br><b>本週數字：</b>'+escape(fu.compare.join('；')):'')+'</div>':'';
-    const inSummary=new Set(draft.summary||[]);
-    const badgeOf=sec=>sec.info?'':sec.judged===false?' <span class="wk-na">無法判斷</span>':sec.met?' <span class="wk-ok">達標</span>':' <span class="wk-bad">未達標</span>';
-    const evidenceHtml=list=>list.length?'<div class="wk-blk"><b>＊提出證據</b><ul>'+list.map(e=>'<li>'+escape(e.text)+(e.link?' '+insightLink(e.link,'看排名'):'')+'</li>').join('')+'</ul></div>':'';
-    const headHtml=(sec,evidence)=>{const isFind=sec.key==='findings';
-      return (sec.diff?'<div class="wk-blk"><b>＊與上週差異</b><p class="wk-pre">'+escape(sec.diff)+'</p></div>':'')+
-        '<div class="wk-blk"><b>＊'+(isFind?'當週發現':'發現問題')+'</b><p class="wk-pre">'+escape(sec.issue)+'</p></div>'+evidenceHtml(evidence);};
-    // 根源／行動輸入框：在總結的項目只放在總結，下面段落顯示同一份文字
-    const fillHtml=sec=>{const n=sec.note||{},f=sec.fields||{},isFind=sec.key==='findings';
-      const cands=(sec.candidates||[]).map(c=>'<button type="button" class="wk-cand" data-wk-cand="'+escape(c)+'" data-key="'+sec.key+'">'+escape(c)+'</button>').join('');
-      return '<div class="wk-blk wk-fill"><b>＊'+escape(isFind?f.root_cause:'根源')+' <span class="wk-you">要你填</span></b>'+(cands?'<div class="wk-cands"><span>候選（點一下帶入）：</span>'+cands+'</div>':'')+'<textarea name="root_cause" data-key="'+sec.key+'" rows="3" placeholder="在這裡寫……">'+escape(n.root_cause||'')+'</textarea></div>'+
-        '<div class="wk-blk wk-fill"><b>＊'+escape(isFind?f.action_plan:'制定行動')+' <span class="wk-you">要你填</span></b>'+fmtFollow(sec.followup)+'<textarea name="action_plan" data-key="'+sec.key+'" rows="3" placeholder="在這裡寫……">'+escape(n.action_plan||'')+'</textarea></div>';};
-    const mirrorHtml=sec=>{const n=sec.note||{},p=v=>v?escape(v):'<span class="wk-mute">（在上方總結填寫）</span>';
-      return '<div class="wk-blk wk-mirror"><b>＊根源 <span class="wk-mute">同上方總結</span></b><p class="wk-pre" data-mirror="'+sec.key+'|root_cause">'+p(n.root_cause)+'</p></div>'+
-        '<div class="wk-blk wk-mirror"><b>＊制定行動 <span class="wk-mute">同上方總結</span></b><p class="wk-pre" data-mirror="'+sec.key+'|action_plan">'+p(n.action_plan)+'</p></div>';};
-    const summaryItems=(draft.summary||[]).map(k=>draft.sections.find(s=>s.key===k)).filter(Boolean).map((sec,i)=>
-      '<section class="wk-sum-item"><h4>'+(I.CIRCLE?.[i]||i+1)+' '+escape(sec.label)+badgeOf(sec)+'</h4>'+headHtml(sec,I.summaryEvidence(sec))+fillHtml(sec)+'</section>').join('');
-    const summary='<section class="wk-sum"><h3>本週問題與行動總結</h3><p class="wk-head">'+escape(draft.headline)+'</p>'+missing+summaryItems+'</section>';
-    const sections=draft.sections.map((sec,i)=>
-      '<section class="wk-sec'+(sec.met&&sec.judged!==false&&!sec.info?' wk-met':'')+'"><h3>'+(I.CN?.[i]||i+1)+'、'+escape(sec.label)+badgeOf(sec)+'</h3>'+
-        headHtml(sec,sec.evidence)+(inSummary.has(sec.key)?mirrorHtml(sec):fillHtml(sec))+'</section>').join('');
-    const tools='<div class="wk-tools"><button type="button" class="ins-link" data-wk="regen">重新產生</button>'+(weeklySaved(draft)?'<button type="button" class="ins-link" data-wk="cancel">取消編輯</button>':'')+'<button type="submit" form="wkForm" class="ins-link primary">儲存週報</button><span class="wk-status" id="wkToolStatus" role="status"></span></div>';
-    return tools+'<form id="wkForm"><article class="wk-doc"><h2>'+escape(title)+'</h2><div class="wk-meta"><span class="wk-you">要你填</span>＝根源與行動；存檔後變成可一鍵複製的週報</div>'+summary+sections+'</article></form>'+
-      '<div class="wk-tools wk-bottom"><button type="submit" form="wkForm" class="ins-link primary">儲存週報</button></div>'+
-      '<p class="ins-foot ins-explain">D7／D25 只算非獨立店；大單＝餐點金額 '+fmt(BIG_ORDER_MIN)+' 元以上。根源與行動存在「週行動追蹤」，完整成績 Excel 會一起匯出。</p>';
+    return fills;
+  }
+  function weeklyPage(ctx,r){
+    if(state.period!=='week')return '<div class="ins-switch"><button type="button" class="ins-link primary" '+
+      'data-ins-period="week">切換到週</button></div>';
+    const week={...S.range(r.start,'week'),label:S.weekLabel(r.start)},weeks=ctx.weeks;
+    const sssg=weeks.map(w=>{const x=weeklySales.find(y=>y.start===w.start);return x?{value:x.value,stores:x.stores||[]}:null;});
+    const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,
+      independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,
+      inScope:M.storeInScope,minOrders:I.WEEKLY_MIN_ORDERS});
+    const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
+    const raw=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,
+      weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},
+      inScope:M.storeInScope,sssg,actions:ctx.weeklyActions,...weeklyInputs(ctx,week)});
+    const draft=state.weeklyRegenerate===r.start?raw:weeklyView(raw);state.weeklyDraft=draft;
+    const title=weeklyTitle(week),editing=state.weeklyEdit===week.start||!weeklySaved(draft);
+    const missing=draft.missing.concat(ctx.weeklyActionsError?['上週行動（讀取失敗）']:[]);
+    const missingHtml=missing.length?'<p class="wk-missing">資料不齊：'+escape(missing.join('、'))+'</p>':'';
+    const last=[draft.conclusion.note?.updated_at,...draft.sections.map(s=>s.note?.updated_at)].filter(Boolean).sort().at(-1);
+    const lastText=last?'已儲存 '+new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',
+      hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(last)):'';
+    const button=(action,label,primary=false)=>'<button type="button" class="ins-link'+(primary?' primary':'')+
+      '" data-wk="'+action+'">'+label+'</button>';
+    const save='<button type="submit" form="wkForm" class="ins-link primary">儲存週報</button>';
+    const tools='<div class="wk-tools">'+(editing?button('regen','重新產生')+(weeklySaved(draft)?button('cancel','取消編輯'):'')+save:
+      button('copy','複製全部',true)+button('edit','編輯'))+'<span class="wk-status" id="wkToolStatus" role="status">'+escape(lastText)+'</span></div>';
+    const appendix='<details class="wk-appendix"><summary>附錄：每日明細</summary><pre class="wk-view">'+
+      escape(I.weeklyAppendix(draft).split('\n').slice(1).join('\n'))+'</pre></details>';
+    const field=(key,name,label,value,rows=3)=>'<label class="wk-blk wk-field"><b>'+label+'</b><textarea name="'+name+
+      '" data-key="'+key+'" rows="'+rows+'">'+escape(value||'')+'</textarea></label>';
+    const follow=sec=>sec.followup?'<div class="wk-prev"><b>上週行動：</b>'+escape(sec.followup.text)+
+      '<br><b>本週數字：</b>'+escape(sec.followup.compare.join('；'))+'</div>':'';
+    const sections=draft.sections.map((sec,i)=>{
+      const n=sec.note||{},heading=(I.CN[i]||i+1)+'、'+sec.label;
+      const savedField=(label,value)=>'<p class="wk-pre">'+label+'：'+escape(value||'（待填）')+'</p>';
+      const savedFields=showEmpty=>(showEmpty||n.root_cause?savedField('根源',n.root_cause):'')+
+        (showEmpty||n.action_plan?savedField('行動（負責人／完成日）',n.action_plan):'');
+      if(sec.compact)return '<section class="wk-sec wk-compact"><h3>'+escape(heading+'　'+sec.issue.replace(/\n/g,'｜'))+
+        '</h3>'+savedFields(false)+'</section>';
+      const header='<h3>'+escape(heading)+'</h3><p class="wk-pre wk-kpi">'+escape(sec.issue)+'</p>'+
+        (sec.key==='feedback'&&sec.diff?'<p class="wk-pre">'+escape(sec.diff)+'</p>':'');
+      const actionable=I.weeklyNeedsAction(sec);
+      const systemReason=text=>editing&&actionable?'<button type="button" class="wk-reason" data-wk-reason="'+escape(text)+
+        '" data-key="'+sec.key+'">'+escape(text)+'</button>':escape(text);
+      const evidenceItem=e=>{
+        const details=e.details?.length?'<ul aria-label="可能原因">'+
+          e.details.map(text=>'<li>'+systemReason(text)+'</li>').join('')+'</ul>':'';
+        return /^[①②③] /.test(e.text)||details?'<li class="wk-store"><b>'+escape(e.text)+'</b>'+details+'</li>':
+          '<li>'+escape(e.text)+'</li>';
+      };
+      const evidence=sec.evidence.length?'<ul class="wk-evidence">'+sec.evidence.map(evidenceItem).join('')+'</ul>':'';
+      const reason=sec.reason?'<p class="wk-pre">原因：'+
+        (sec.reason===I.WEEKLY_NO_REASON?escape(sec.reason):systemReason(sec.reason))+'</p>':'';
+      const suggestion=sec.suggestion?'<p>可能原因：'+systemReason(sec.suggestion)+'</p>':'';
+      const form=editing&&actionable?'<div class="wk-action-fields">'+follow(sec)+field(sec.key,'root_cause','根源',n.root_cause,2)+
+        field(sec.key,'action_plan','行動（負責人／完成日）',n.action_plan,2)+'</div>':
+        savedFields(actionable)+(actionable?follow(sec):'');
+      return '<section class="wk-sec">'+header+reason+suggestion+evidence+form+'</section>';
+    }).join('');
+    const conclusion=editing?field('conclusion','issue','【結論】',draft.conclusion.text,6):
+      '<h3>【結論】</h3><p class="wk-pre">'+escape(draft.conclusion.text)+'</p>';
+    const urgent=draft.urgent.length?'<section class="wk-urgent"><h3>⚠ 需立即處理</h3><ul>'+
+      draft.urgent.map(line=>'<li>'+escape(line)+'</li>').join('')+'</ul></section>':'';
+    const article='<article class="wk-doc"><h2>'+escape(title)+'</h2><section class="wk-conclusion">'+conclusion+urgent+
+      '<p class="wk-promises">'+escape(draft.commitments.text)+'</p></section>'+missingHtml+
+      '<div class="wk-sections">'+sections+'</div>'+appendix+'</article>';
+    return tools+(editing?'<form id="wkForm">'+article+'</form><div class="wk-tools wk-bottom">'+save+'</div>':article);
   }
   async function saveWeekly(box,r){
     const draft=state.weeklyDraft,fills=weeklyFills(draft,box),user=await db.auth.getUser(),now=new Date().toISOString();
-    const rows=draft.sections.map(s=>{const n=s.note||{},f=fills[s.key]||{};return {week_start:r.start,metric_key:s.key,issue:s.issue.slice(0,4000),evidence:s.evidence.map(e=>e.text).join('\n').slice(0,4000),root_cause:(f.root_cause||'').slice(0,4000),action_plan:(f.action_plan||'').slice(0,4000),last_week_followup:n.last_week_followup||'',updated_by:user.data.user?.id||null,updated_at:now};});
-    const result=await db.from('t998_weekly_metric_action_notes').upsert(rows,{onConflict:'week_start,metric_key'});if(result.error)throw result.error;
-    // KPI 段落的「制定行動」同步到行動追蹤（從下週一開始追蹤成效）；負責欄標「週報」，只更新這些自動建立的紀錄
-    // TPLH 已併入 TPLH／FA（fa）；這週舊的 tplh 紀錄內容已帶進 fa，存檔後清空（995／981 網站沒有刪除權限，用更新）避免重複
-    if(draft.sections.some(s=>s.key==='fa')&&(state.data?.weeklyNotes||[]).some(x=>x.week_start===r.start&&x.metric_key==='tplh')){const d=await db.from('t998_weekly_metric_action_notes').update({issue:'',evidence:'',root_cause:'',action_plan:'',last_week_followup:'',updated_by:user.data.user?.id||null,updated_at:now}).eq('week_start',r.start).eq('metric_key','tplh');if(d.error)throw d.error;}
-    const next=M.addDays(r.start,7),kpi=draft.sections.filter(s=>['d7','sstg','fa'].includes(s.key));
-    const ex=await db.from('t998_action_items').select('id,metric_key,action').eq('week_start',next).is('store_code',null).eq('owner','週報').eq('archived',false);if(ex.error)throw ex.error;
-    for(const old of (ex.data||[]).filter(x=>x.metric_key==='tplh')){const u=await db.from('t998_action_items').update({archived:true}).eq('id',old.id);if(u.error)throw u.error;}
-    for(const s of kpi){const action=((fills[s.key]||{}).action_plan||'').trim().slice(0,500),old=(ex.data||[]).find(x=>x.metric_key===s.key);
-      if(!action){if(old){const u=await db.from('t998_action_items').update({archived:true}).eq('id',old.id);if(u.error)throw u.error;}continue;}
-      if(old){if(old.action!==action){const u=await db.from('t998_action_items').update({action}).eq('id',old.id);if(u.error)throw u.error;}}
-      else{const ins=await db.from('t998_action_items').insert({week_start:next,store_code:null,target_label:'中心（週報 '+S.weekLabel(r.start)+'）',action,metric_key:s.key,owner:'週報'});if(ins.error)throw ins.error;}}
+    if(user.error)throw user.error;
+    const base={week_start:r.start,updated_by:user.data.user?.id||null,updated_at:now};
+    const rows=draft.sections.map(s=>{
+      const n=s.note||{},f=fills[s.key]||{},oldMeta=I.weeklyMeta(n),meta={v:3,reason:s.reason,control:s.control,
+        problem:s.problem,met:s.met,judged:s.judged,compact:s.compact,suggestion:s.suggestion,followup:s.followup,diff:s.diff,
+        legacy:oldMeta?oldMeta.legacy||'':n.last_week_followup||''};
+      return {...base,metric_key:s.key,issue:s.issue,evidence:I.weeklyEvidenceLines(s.evidence).join('\n'),
+        root_cause:f.root_cause??n.root_cause??'',action_plan:f.action_plan??n.action_plan??'',last_week_followup:JSON.stringify(meta)};
+    });
+    rows.push({...base,metric_key:'conclusion',issue:fills.conclusion?.issue??draft.conclusion.text,
+      evidence:draft.urgent.join('\n'),root_cause:'',action_plan:'',
+      last_week_followup:JSON.stringify({v:3,urgentSaved:true,appendix:draft.appendix,commitments:{text:draft.commitments.text}})});
+    for(const row of rows)for(const key of ['issue','evidence','root_cause','action_plan','last_week_followup']){
+      if(row[key].length>4000)throw new Error('週報內容超過儲存長度，請精簡後再儲存');
+    }
+    const result=await db.from('t998_weekly_metric_action_notes').upsert(rows,{onConflict:'week_start,metric_key'});
+    if(result.error)throw result.error;
+    for(const key of ['tplh','d25']){
+      if(!(state.data?.weeklyNotes||[]).some(x=>x.week_start===r.start&&x.metric_key===key))continue;
+      const d=await db.from('t998_weekly_metric_action_notes').update({issue:'',evidence:'',root_cause:'',action_plan:'',
+        last_week_followup:'',updated_by:base.updated_by,updated_at:now}).eq('week_start',r.start).eq('metric_key',key);
+      if(d.error)throw d.error;
+    }
+    const next=S.addDays(r.start,7),kpi=draft.sections.filter(s=>['d7','sstg','fa','waiting'].includes(s.key));
+    const ex=await db.from('t998_action_items').select('id,metric_key,action').eq('week_start',next)
+      .is('store_code',null).eq('owner','週報').eq('archived',false);
+    if(ex.error)throw ex.error;
+    let preserveLegacyTplh=false;
+    for(const s of kpi){
+      const f=fills[s.key]||{};
+      const actionable=I.weeklyNeedsAction(s);
+      if(!actionable&&s.note?.action_plan){
+        if(s.key==='fa')preserveLegacyTplh=true;
+        continue;
+      }
+      const action=actionable?String(f.action_plan??s.note?.action_plan??'').trim().slice(0,500):'';
+      const old=(ex.data||[]).find(x=>x.metric_key===s.key);
+      if(!action){
+        if(old){const u=await db.from('t998_action_items').update({archived:true}).eq('id',old.id);if(u.error)throw u.error;}
+        continue;
+      }
+      if(old){
+        if(old.action!==action){const u=await db.from('t998_action_items').update({action}).eq('id',old.id);if(u.error)throw u.error;}
+      }else{
+        const ins=await db.from('t998_action_items').insert({week_start:next,store_code:null,
+          target_label:'中心（週報 '+S.weekLabel(r.start)+'）',action,metric_key:s.key,owner:'週報'});
+        if(ins.error)throw ins.error;
+      }
+    }
+    if(!preserveLegacyTplh)for(const old of (ex.data||[]).filter(x=>x.metric_key==='tplh')){
+      const u=await db.from('t998_action_items').update({archived:true}).eq('id',old.id);if(u.error)throw u.error;
+    }
     state.actions=null;
   }
-  function bindInsights(ctx,r){
+  function bindInsights(ctx,r,impactStores){
     const box=$('metricContent');
     box.onclick=async event=>{
       const t=event.target.closest('button');if(!t)return;
       if(drillClick(t)){renderMetric(state.data,state.previous,range());if(state.metric==='drill'&&t.dataset.drillOpen!==undefined)window.scrollTo({top:0,behavior:'smooth'});return;}
-      if(t.dataset.impactMetric){state.impactMetric=t.dataset.impactMetric;renderMetric(state.data,state.previous,range());return;}
-      if(t.dataset.insTab){state.metric=t.dataset.insTab;if(t.dataset.insMetric&&['d7','d25','fa','waiting'].includes(t.dataset.insMetric))state.impactMetric=t.dataset.insMetric;syncMetricTab();renderMetric(state.data,state.previous,range());window.scrollTo({top:0,behavior:'smooth'});return;}
+      if(t.dataset.impactMetric||t.dataset.insTab){
+        const tab=t.dataset.insTab||state.metric,metric=t.dataset.impactMetric||t.dataset.insMetric;
+        const isD7=metric==='d7'||metric==='d25';
+        if(isD7)state.impactMetric=metric;
+        if(tab!==state.metric){
+          state.metric=tab;
+          renderMetric(state.data,state.previous,range());
+        }else if(isD7){
+          $('metricImpact').innerHTML=impactPage(impactStores,r,metric);
+        }
+        const section=$('metricImpact');
+        if(t.dataset.insTab)section?.scrollIntoView({behavior:'smooth',block:'start'});
+        else section?.querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
+        return;
+      }
       if(t.dataset.insDay){state.period='day';state.date=t.dataset.insDay;state.month=state.date.slice(0,7);state.metric='d7';loadReport();return;}
       if(t.dataset.insPeriod){state.period=t.dataset.insPeriod;state.month=state.date.slice(0,7);loadReport();return;}
       if(t.dataset.copy!==undefined){try{await navigator.clipboard.writeText(t.dataset.copy);t.textContent='已複製';}catch(e){t.textContent='無法複製，請手動選取';}return;}
-      if(t.dataset.wk==='regen'){loadReport(true);return;}
+      if(t.dataset.wk==='regen'){state.weeklyEdit=r.start;state.weeklyRegenerate=r.start;loadReport(true);return;}
       if(t.dataset.wk==='print'){window.print();return;}
       if(t.dataset.addAction){state.actionPrefill={metric:t.dataset.addAction,store:t.dataset.store||''};state.metric='actions';syncMetricTab();renderMetric(state.data,state.previous,range());window.scrollTo({top:0,behavior:'smooth'});return;}
-      if(t.dataset.wkCand!==undefined){const ta=box.querySelector('#wkForm textarea[name="root_cause"][data-key="'+t.dataset.key+'"]');if(ta){const v=t.dataset.wkCand;if(!ta.value.includes(v))ta.value=(ta.value.trim()?ta.value.replace(/\s+$/,'')+'\n':'')+v;ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();}return;}
+      if(t.dataset.wkReason!==undefined){
+        const ta=box.querySelector('#wkForm textarea[name="root_cause"][data-key="'+t.dataset.key+'"]');
+        if(ta){
+          const reason=t.dataset.wkReason,lines=ta.value.trimEnd().split('\n').filter(Boolean);
+          if(!lines.includes(reason)){
+            ta.value=[...lines,reason].join('\n');
+            ta.dispatchEvent(new Event('input',{bubbles:true}));
+          }
+          ta.focus();
+        }
+        return;
+      }
       if(t.dataset.wk==='edit'){state.weeklyEdit=r.start;renderMetric(state.data,state.previous,range());return;}
-      if(t.dataset.wk==='cancel'){state.weeklyEdit=null;renderMetric(state.data,state.previous,range());return;}
-      if(t.dataset.wk==='copy'){const view=weeklyView(state.weeklyDraft),text=I.weeklyText(view,{title:weeklyTitle({start:r.start,end:r.end,label:S.weekLabel(r.start)}),fills:weeklyFills(view,null)});try{await navigator.clipboard.writeText(text);$('wkToolStatus').textContent='已複製週報，可以直接貼上';}catch(e){$('wkToolStatus').textContent='無法自動複製，請手動選取下方文字';}return;}
+      if(t.dataset.wk==='cancel'){state.weeklyEdit=null;state.weeklyRegenerate=null;renderMetric(state.data,state.previous,range());return;}
+      if(t.dataset.wk==='copy'){
+        const draft=state.weeklyDraft,text=I.weeklyText(draft,{title:weeklyTitle(draft.week),fills:weeklyFills(draft,box)});
+        try{await navigator.clipboard.writeText(text);$('wkToolStatus').textContent='已複製週報，可以直接貼上';}
+        catch(e){$('wkToolStatus').textContent='無法自動複製，請手動選取下方文字';}return;
+      }
     };
     const wkForm=box.querySelector('#wkForm');
-    // 總結裡填的根源／行動，同步顯示在下面對應段落
-    if(wkForm)wkForm.oninput=event=>{const ta=event.target;if(!ta.matches('textarea[data-key]'))return;const m=box.querySelector('[data-mirror="'+ta.dataset.key+'|'+ta.name+'"]');if(m){const v=ta.value.trim();m.textContent=v||'（在上方總結填寫）';m.classList.toggle('wk-mute',!v);}};
     if(wkForm)wkForm.onsubmit=async event=>{
       event.preventDefault();const status=$('wkToolStatus'),buttons=[...box.querySelectorAll('button[form="wkForm"]')];
       buttons.forEach(b=>b.disabled=true);status.textContent='儲存中…';
-      try{await saveWeekly(box,r);state.weeklyEdit=null;state.cache.clear();await loadReport(true);}
+      try{await saveWeekly(box,r);state.weeklyEdit=null;state.weeklyRegenerate=null;state.cache.clear();await loadReport(true);}
       catch(error){status.textContent='儲存失敗：'+(error.message||error);buttons.forEach(b=>b.disabled=false);}
     };
   }
@@ -896,22 +1105,64 @@
   function closeExportMenu(){$('exportSheet')?.classList.add('hidden');$('export')?.focus();}
   async function renderInsight(r){
     window.UiShell?.mark?.(state.metric==='targets'?'analysis:targets':'analysis');
-    const titles={alerts:'預警與異常日',impact:'影響度排名：還差幾單才達標',weekly:'週報草稿',store:'餐廳頁：近 8 週所有指標',actions:'行動追蹤與自訂比較',targets:'目標值設定',drill:'明細與熱圖',staff:'排班與派單'};
+    const titles={weekly:'週報草稿',store:'餐廳頁：近 8 週所有指標',actions:'行動追蹤與自訂比較',
+      targets:'目標值設定',drill:'明細與熱圖',staff:'排班與派單'};
     $('metricTitle').textContent=titles[state.metric];$('metricSubtitle').textContent=periodLabel(r);
     $('biUploadFooter').classList.add('hidden');$('feedbackUploadFooter').classList.add('hidden');renderMetricTabs();syncMetricTab();
     const box=$('metricContent');
-    if(state.metric==='impact'){box.innerHTML=impactPage(I.byStore(insightCells(state.data,r),r.start,r.end,new Set(state.data.reports.filter(x=>x.score_excluded).map(x=>x.record_date))),r);bindInsights(null,r);return;}
     if(state.metric==='weekly'&&state.period!=='week'){box.innerHTML=weeklyPage(null,r);bindInsights(null,r);return;}
     if(state.metric==='drill'){const id0=state.request;box.innerHTML='<div class="empty">整理明細中…</div>';try{const html=await drillPage(r);if(id0!==state.request||state.metric!=='drill')return;box.innerHTML=html;bindInsights(null,r);}catch(error){box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}return;}
     if(state.metric==='staff'){const id0=state.request;box.innerHTML='<div class="empty">整理排班與派單中…</div>';try{const html=await staffPage(r);if(id0!==state.request||state.metric!=='staff')return;box.innerHTML=html;bindInsights(null,r);}catch(error){box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}return;}
     if(state.metric==='targets'){const id0=state.request;box.innerHTML='<div class="empty">讀取目標值中…</div>';const html=await targetsPage();if(id0!==state.request||state.metric!=='targets')return;box.innerHTML=html;bindInsights(null,r);bindV2(r);return;}
     const id=state.request,metric=state.metric;box.innerHTML='<div class="empty">讀取前幾週成績中…</div>';
-    try{const ctx=await insightContext(r);if(metric==='weekly'){try{await readWeeklySales(ctx.weeks.slice(-3).map(w=>({range:w})));}catch(e){}}if(id!==state.request||metric!==state.metric)return;const html=metric==='alerts'?alertsPage(ctx,r):metric==='weekly'?weeklyPage(ctx,r):metric==='store'?await storePage(ctx,r):await actionsPage(ctx,r);if(id!==state.request||metric!==state.metric)return;box.innerHTML=html;bindInsights(ctx,r);bindV2(r);}
-    catch(error){if(id===state.request)box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}
+    try{
+      const ctx=await insightContext(r);
+      if(metric==='weekly'){
+        try{await readWeeklySales(ctx.weeks.map(w=>({range:w})));}catch(e){}
+        try{ctx.weeklyActions=await paged('t998_action_items','*',q=>q.eq('week_start',r.start)
+          .eq('owner','週報').eq('archived',false),'id');}
+        catch(e){ctx.weeklyActions=null;ctx.weeklyActionsError=true;}
+      }
+      if(id!==state.request||metric!==state.metric)return;
+      const html=metric==='weekly'?weeklyPage(ctx,r):
+        metric==='store'?await storePage(ctx,r):await actionsPage(ctx,r);
+      if(id!==state.request||metric!==state.metric)return;
+      box.innerHTML=html;bindInsights(ctx,r);bindV2(r);
+    }
+    catch(error){if(id===state.request&&metric===state.metric)box.innerHTML='<div class="empty">讀取失敗：'+escape(error.message||error)+'</div>';}
   }
-  if(typeof window.addEventListener==='function')window.addEventListener('hashchange',()=>{const tab=(location.hash.match(/^#tab=(\w+)$/)||[])[1];if(!tab||!(INSIGHT_TABS.has(tab)||labels[tab])||!state.data)return;state.metric=tab;if(tab==='weekly'&&state.period!=='week'){state.period='week';loadReport();return;}syncMetricTab();renderMetric(state.data,state.previous,range());});
+  if(typeof window.addEventListener==='function')window.addEventListener('hashchange',()=>{
+    const tab=hashMetric();
+    if(!tab||!state.data)return;
+    state.metric=tab;
+    if(tab==='weekly'&&state.period!=='week'){state.period='week';loadReport();return;}
+    syncMetricTab();
+    renderMetric(state.data,state.previous,range());
+  });
   async function loadReport(force=false){sharedDate.set(state.date,state.period);const id=++state.request,r=range();renderChoices();$('report').classList.add('hidden');$('metricTabs').classList.add('hidden');$('refresh').disabled=true;status('讀取成績中…');try{const data=await loadRange(r,force);if(id!==state.request)return;const pr=previousRange(r,data);const timeline=state.period==='day'?[]:await Promise.all([-2,-1,0,1,2].map(async offset=>{const span=state.period==='week'?fullWeek(M.addDays(r.start,offset*7)):M.range(addMonths(r.start,offset),'month');if(span.start>today())return {range:span,offset,data:null};try{return {range:span,offset,data:offset===0?data:await loadRange(span,force)};}catch(error){return {range:span,offset,data:null,error:error.message};}}));if(id!==state.request)return;if(state.period==='week'){try{await readWeeklySales(timeline);}catch(e){$('biStatus').textContent='週 SSSG 讀取失敗：'+e.message;}if(id!==state.request)return;}state.data=data;state.timeline=timeline;state.comparisonRange=pr;state.previous=timeline.find(x=>x.offset===-1)?.data||null;try{await weatherForRange(r);}catch(e){}if(id!==state.request)return;status('');$('report').classList.remove('hidden');renderMetric(data,state.previous,r);state.fullExport=()=>renderTrackingExport(data,r);$('export').onclick=()=>openExportMenu();$('export').textContent='匯出 ▾';$('export').setAttribute('aria-haspopup','dialog');}catch(e){if(id===state.request)status('載入失敗：'+e.message,true);}finally{if(id===state.request)$('refresh').disabled=false;}}
   document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{state.period=b.dataset.period;state.month=state.date.slice(0,7);renderChoices();loadReport();});$('periodDate').onchange=()=>{state.date=$('periodDate').value||today();state.month=state.date.slice(0,7);renderChoices();loadReport();};$('periodDate').onclick=e=>{try{e.target.showPicker?.();}catch(_){}};$('periodPrev').onclick=()=>changePeriod(-1);$('periodNext').onclick=()=>changePeriod(1);$('periodToday').onclick=()=>{state.date=today();state.month=state.date.slice(0,7);renderChoices();loadReport();};$('refresh').onclick=()=>loadReport(true);
-  (async()=>{try{const {data,error}=await db.auth.getSession();if(error)throw error;if(!data.session){$('authMessage').classList.remove('hidden');$('authMessage').innerHTML='請先登入營運後台，再開啟分析儀表板。<br><a href="admin.html">前往登入</a>';return;}const shared=sharedDate.get();state.date=today();if(shared)state.period=shared.period;const wantTab=(location.hash.match(/^#tab=(\w+)$/)||[])[1];if(wantTab&&(INSIGHT_TABS.has(wantTab)||labels[wantTab])){state.metric=wantTab;if(wantTab==='weekly')state.period='week';}state.month=state.date.slice(0,7);$('dashboard').classList.remove('hidden');if(KS)await KS.load(db);await loadReport();}catch(e){$('authMessage').classList.remove('hidden');$('authMessage').textContent='登入狀態讀取失敗：'+e.message;}})();
+  (async()=>{
+    try{
+      const {data,error}=await db.auth.getSession();
+      if(error)throw error;
+      if(!data.session){
+        $('authMessage').classList.remove('hidden');
+        $('authMessage').innerHTML='請先登入營運後台，再開啟分析儀表板。<br><a href="admin.html">前往登入</a>';
+        return;
+      }
+      const shared=sharedDate.get();
+      state.date=today();
+      if(shared)state.period=shared.period;
+      state.metric=hashMetric()||resolveMetric(shared?.metric)||state.metric;
+      if(state.metric==='weekly')state.period='week';
+      state.month=state.date.slice(0,7);
+      $('dashboard').classList.remove('hidden');
+      if(KS)await KS.load(db);
+      await loadReport();
+    }catch(e){
+      $('authMessage').classList.remove('hidden');
+      $('authMessage').textContent='登入狀態讀取失敗：'+e.message;
+    }
+  })();
 })();
 
