@@ -1640,7 +1640,7 @@
 
 
 <script src="config/998-business.js?v=20261114-v2w"></script><script src="center-ui.js?v=20261111-c4"></script>
-<script src="rider-rules.js?v=20261119-dd20"></script>
+<script src="rider-rules.js?v=20261119-dd21"></script>
 <script src="rider-rpc-adapter.js"></script>
 <script>
 
@@ -4064,7 +4064,7 @@ async function loadDefensiveLesson(){
   const name = defensiveNameInput.value.trim();
   const monthNo = selectedTrainingMonth();
   const trainingYear = selectedTrainingYear();
-  if(!RiderRules.canTrain(trainingYear,monthNo)){alert("此月份課程尚未開放（每月課程於前一個月 20 號開放）。");return;}
+  if(!RiderRules.canTrain(trainingYear,monthNo)){alert("此月份課程目前未開放（每月課程於前一個月 20 號開放、次月 19 號截止）。");return;}
   if(!name){ alert("請輸入姓名。"); defensiveNameInput.focus(); return; }
   defensiveLoadBtn.disabled = true;
   defensiveLoadBtn.textContent = "載入中…";

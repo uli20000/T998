@@ -20,10 +20,11 @@
   }
   function hasReturn(claim,reports){return reports.some(r=>r.vehicle_id===claim.vehicle_id&&r.reporter_name===claim.claimant_name&&new Date(r.reported_at)>=new Date(claim.claimed_at));}
   function pendingClaimsToday(claims,reports,now=new Date()){return claims.filter(c=>dayKey(c.claimed_at)===dayKey(now)&&!hasReturn(c,reports));}
-  /* 防禦駕駛：每月課程於前一個月 20 號（台北時間）開放，例如 12 月課程 11/20 起開放、隔年 1 月課程 12/20 起開放。 */
+  /* 防禦駕駛：每月課程於前一個月 20 號（台北時間）開放、次月 19 號截止，例如 12 月課程 11/20 開放到隔年 1/19。 */
   const TRAINING_OPEN_DAY=20;
   function openTrainingPeriod(now=new Date()){const key=dayKey(now);let year=Number(key.slice(0,4)),month=Number(key.slice(5,7));if(Number(key.slice(8,10))>=TRAINING_OPEN_DAY){month+=1;if(month>12){month=1;year+=1;}}return {year,month};}
-  function trainingYearFor(month,now=new Date()){const open=openTrainingPeriod(now),calendarYear=Number(dayKey(now).slice(0,4));return Number(month)<=open.month?open.year:Math.min(open.year,calendarYear);}
-  function canTrain(year,month,now=new Date()){const m=Number(month);if(!Number.isInteger(m)||m<1||m>12)return false;const open=openTrainingPeriod(now);return Number(year)===trainingYearFor(m,now)&&Number(year)*12+m<=open.year*12+open.month;}
+  /* 每月課程開放到次月 19 號（台北時間）截止，所以任何時間只開放 2 個月：最新開放月與前一個月。 */
+  function trainingYearFor(month,now=new Date()){const open=openTrainingPeriod(now);return Number(month)<=open.month?open.year:open.year-1;}
+  function canTrain(year,month,now=new Date()){const m=Number(month);if(!Number.isInteger(m)||m<1||m>12)return false;const open=openTrainingPeriod(now),idx=open.year*12+open.month,target=Number(year)*12+m;return target===idx||target===idx-1;}
   return {dayKey,dayBounds,timeMinutes,formatMinutes,validateSlots,hasReturn,pendingClaimsToday,openTrainingPeriod,trainingYearFor,canTrain};
 });
