@@ -1640,7 +1640,7 @@
 
 
 <script src="config/998-business.js?v=20261114-v2w"></script><script src="center-ui.js?v=20261111-c4"></script>
-<script src="rider-rules.js"></script>
+<script src="rider-rules.js?v=20261119-dd20"></script>
 <script src="rider-rpc-adapter.js"></script>
 <script>
 
@@ -4006,12 +4006,16 @@ function closeAllNameSuggestions(){
 }
 
 
-function currentTrainingYear(){
-  return trainingTaipeiParts().year;
+function currentTrainingMonth(){
+  return RiderRules.openTrainingPeriod().month;
 }
 
-function currentTrainingMonth(){
-  return trainingTaipeiParts().month;
+function selectedTrainingYear(){
+  return RiderRules.trainingYearFor(selectedTrainingMonth());
+}
+
+function refreshDefensiveMonthOptions(){
+  Array.from(defensiveMonthSelect.options).forEach(option=>{const m=Number(option.value);option.disabled=!RiderRules.canTrain(RiderRules.trainingYearFor(m),m);});
 }
 
 function selectedTrainingMonth(){
@@ -4043,7 +4047,7 @@ function resetDefensiveForm(){
   defensiveNameSuggestions.classList.remove("show");
   defensiveNameSuggestions.innerHTML = "";
   defensiveMonthSelect.value = String(currentTrainingMonth());
-  Array.from(defensiveMonthSelect.options).forEach(option=>option.disabled=Number(option.value)>currentTrainingMonth());
+  refreshDefensiveMonthOptions();
   defensiveLessonPanel.style.display = "none";
   defensiveQuestions.style.display = "none";
   defensiveStatus.className = "training-message";
@@ -4059,7 +4063,8 @@ async function loadDefensiveLesson(){
   defensiveLesson = null;
   const name = defensiveNameInput.value.trim();
   const monthNo = selectedTrainingMonth();
-  if(!RiderRules.canTrain(currentTrainingYear(),monthNo)){alert("只能補做今年已到月份的課程，不可提前做。");return;}
+  const trainingYear = selectedTrainingYear();
+  if(!RiderRules.canTrain(trainingYear,monthNo)){alert("此月份課程尚未開放（每月課程於前一個月 20 號開放）。");return;}
   if(!name){ alert("請輸入姓名。"); defensiveNameInput.focus(); return; }
   defensiveLoadBtn.disabled = true;
   defensiveLoadBtn.textContent = "載入中…";
@@ -4081,11 +4086,11 @@ async function loadDefensiveLesson(){
       return;
     }
     defensiveLesson = lessonResult.data;
-    defensiveLoadedContext = {name, year:currentTrainingYear(), month:monthNo};
+    defensiveLoadedContext = {name, year:trainingYear, month:monthNo};
     const existing = await db.from("defensive_driving_responses")
       .select("*")
       .eq("respondent_name", name)
-      .eq("training_year", currentTrainingYear())
+      .eq("training_year", trainingYear)
       .eq("month_no", monthNo)
       .maybeSingle();
     if(existing.error) throw existing.error;
@@ -4159,8 +4164,8 @@ defensiveSubmitBtn.addEventListener("click", async () => {
     await requireActiveRider(name);
     const payload = {
       respondent_name: name,
-      training_year: currentTrainingYear(),
-      month_no: selectedTrainingMonth(),
+      training_year: defensiveLoadedContext.year,
+      month_no: defensiveLoadedContext.month,
       question_1_answer: a1,
       question_2_answer: a2,
       attempt_count: attempt,
@@ -4183,7 +4188,7 @@ defensiveSubmitBtn.addEventListener("click", async () => {
       defensiveVideoStatus.textContent = "答題未通過，請重新開啟影片後再作答。";
       return;
     }
-    defensiveSuccessData.textContent = `${currentTrainingYear()} 年 ${selectedTrainingMonth()} 月｜${name}｜兩題皆答對`;
+    defensiveSuccessData.textContent = `${defensiveLoadedContext.year} 年 ${defensiveLoadedContext.month} 月｜${name}｜兩題皆答對`;
     defensiveForm.style.display = "none";
     defensiveSuccess.classList.add("show");
   }catch(e){
@@ -4207,7 +4212,7 @@ defensiveLoadBtn.addEventListener("click", loadDefensiveLesson);
 document.getElementById("defensiveBackBtn").addEventListener("click", showHome);
 document.getElementById("defensiveSuccessHomeBtn").addEventListener("click", showHome);
 defensiveMonthSelect.value = String(currentTrainingMonth());
-  Array.from(defensiveMonthSelect.options).forEach(option=>option.disabled=Number(option.value)>currentTrainingMonth());
+refreshDefensiveMonthOptions();
 
 
 /* =====================================================

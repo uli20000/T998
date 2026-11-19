@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- T998 V8: multi-week opening + Taipei-week rollover refresh; confirmed UI unchanged. -->
 <html lang="zh-Hant">
-<head><script src="center-config.js"></script><script src="center-runtime.js"></script><script src="score-pair-adapter.js"></script><script src="source-archive-adapter.js"></script><script src="score-revision-upload.js"></script><link rel="stylesheet" href="shared-shell.css">
+<head><script src="center-config.js"></script><script src="center-runtime.js"></script><script src="score-pair-adapter.js"></script><script src="source-archive-adapter.js"></script><script src="score-revision-upload.js"></script><script src="rider-rules.js?v=20261119-dd20"></script><link rel="stylesheet" href="shared-shell.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="normal">
@@ -1937,7 +1937,7 @@ const defensiveExportBtn = $("defensiveExportBtn");
 const defensiveSearchInput = $("defensiveSearchInput");
 const defensiveSummary = $("defensiveSummary");
 const defensiveAdminList = $("defensiveAdminList");
-defensiveAdminMonth.value = String(trainingTaipeiParts().month);
+defensiveAdminMonth.value = String(RiderRules.openTrainingPeriod().month);
 const newVehicleFullPlate = $("newVehicleFullPlate");
 const newVehicleCenter = $("newVehicleCenter");
 const addVehicleBtn = $("addVehicleBtn");
@@ -4228,7 +4228,7 @@ async function deleteDefensiveResponse(name, monthNo, year){
 async function loadDefensiveAdminData(){
   defensiveAdminList.innerHTML = '<div class="loading">載入防禦駕駛資料中…</div>';
   const monthNo = Number(defensiveAdminMonth.value);
-  const year = trainingTaipeiParts().year;
+  const year = RiderRules.trainingYearFor(monthNo);
   try{
     const [employeeResult, responseResult] = await Promise.all([
       db.from("employee_directory").select("full_name,is_active").eq("is_active",true).order("full_name",{ascending:true}),
@@ -4253,8 +4253,8 @@ async function loadDefensiveAdminData(){
 }
 
 function exportDefensiveResponses(){
-  const year = trainingTaipeiParts().year;
   const monthNo = Number(defensiveAdminMonth.value);
+  const year = RiderRules.trainingYearFor(monthNo);
   const names = [...new Set((defensiveTargets || []).map(name => String(name || "").trim()).filter(Boolean))];
   if(!names.length){
     alert("目前沒有可匯出的防禦駕駛名單。");
