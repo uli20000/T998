@@ -91,17 +91,23 @@
   }
   async function parseFile(file){
     if(!window.XLSX)throw new Error('Excel 元件尚未載入，請重新整理後再試。');
-    const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});if(!workbook.SheetNames.length)throw new Error('活頁簿沒有工作表。');
-    const all=[];for(const sheetName of workbook.SheetNames){const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:'',raw:true});if(matrix.length)all.push({sheetName,matrix});}
+    const bytes=await file.arrayBuffer(),toMatrix=ws=>window.UploadRouter?.sheetMatrix?UploadRouter.sheetMatrix(XLSX,ws):XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    const workbook=XLSX.read(bytes,{type:'array',cellDates:true});if(!workbook.SheetNames.length)throw new Error('活頁簿沒有工作表。');
+    const all=[];for(const sheetName of workbook.SheetNames){const matrix=toMatrix(workbook.Sheets[sheetName]);if(matrix.length)all.push({sheetName,matrix});}
     const flat=all.flatMap(x=>x.matrix);let rows,type,manualRange=false;
     const stores=await restaurantDirectory();
     if(flat.some(r=>r.some(x=>clean(x)==='訂單編號')&&r.some(x=>clean(x)==='工作單號'))){type='4128';rows=await parse4128(flat,file,stores);}
     else if(flat.some(r=>r.some(x=>clean(x)==='建議種類')&&r.some(x=>clean(x)==='被抱怨型態')&&r.some(x=>clean(x)==='重點')&&r.some(x=>clean(x)==='項目1'))){type='0800';rows=await parse0800(flat,file,stores);}
     else if(flat.some(r=>r.some(x=>clean(x)==='問卷 OSAT')&&r.some(x=>clean(x)==='# 回應數'))){type='GES';rows=parseGes(flat,file,stores);manualRange=!!rows.manualRange;}
-    else throw new Error('無法辨識檔案類型；請選 0800、4128 或 GES 格式。');
+    else if(window.GesComments&&flat.some(GesComments.isCommentHeader)){
+      // GES 意見：時間欄要原始數值（不轉 Date），才不受瀏覽器時區影響；週別依每則日期判斷，不看檔名
+      const rawBook=XLSX.read(bytes,{type:'array'}),rawFlat=rawBook.SheetNames.flatMap(n=>toMatrix(rawBook.Sheets[n]));
+      type='GES 意見';rows=[];for(const row of GesComments.parse(rawFlat,stores))rows.push(rowRecord(GesComments.SOURCE_TYPE,'hash:'+await stableHash([row.raw_fields.時間,row.restaurant_name,row.content]),file,row));
+    }
+    else throw new Error('無法辨識檔案類型；請選 0800、4128、GES 或 GES 意見格式。');
     const uniq=new Map(rows.map(r=>[r.source_type+'|'+r.source_key,r]));rows=[...uniq.values()];
     const start=rows.map(r=>r.record_date||r.period_start).filter(Boolean).sort()[0],end=rows.map(r=>r.record_date||r.period_end).filter(Boolean).sort().at(-1);
-    return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>['4128','0800'].includes(r.source_type)&&String(r.restaurant_name).startsWith('未配對店號')).length};
+    return {file,type,rows,start,end,manualRange,unmapped:rows.filter(r=>(['4128','0800'].includes(r.source_type)&&String(r.restaurant_name).startsWith('未配對店號'))||(window.GesComments&&r.source_type===GesComments.SOURCE_TYPE&&!r.store_code)).length};
   }
   function render(errors=[]){
     const rows=[...prepared.map(x=>({file:x.file.name,type:x.type,period:(x.start===x.end?x.start:`${x.start}～${x.end}`)+(x.manualRange?'（手動選週）':''),count:x.rows.length,unmapped:x.unmapped,status:'待匯入'})),...errors.map(x=>({file:x.file,type:'—',period:'—',count:'—',unmapped:'—',status:x.error}))];
@@ -119,7 +125,7 @@
     for(const file of [...(root.files||[])])try{prepared.push(await parseFile(file));}catch(e){errors.push({file:file.name,error:e.message||'無法讀取'});}
     // 同一批裡兩個 GES 檔的日期範圍相同：同一週同一家店只有一筆，後面的會蓋掉前面的，所以擋下
     {const seen=new Set();for(let i=0;i<prepared.length;i++){const x=prepared[i];if(x.type!=='GES')continue;const k=x.start+'|'+x.end;if(seen.has(k)){errors.push({file:x.file.name,error:'和另一個 GES 檔的日期範圍相同（'+x.start+'～'+x.end+'），會互相覆蓋；請一次只選一週的 GES 檔，或改日期後再選。'});prepared.splice(i,1);i--;}else seen.add(k);}}
-    render(errors);$('opsFeedbackMessage').textContent=errors.length?`完成辨識；${errors.length} 個檔案未匯入。`:prepared.length?`已辨識 ${prepared.length} 個檔案，共 ${prepared.reduce((n,x)=>n+x.rows.length,0)} 筆符合條件資料。`:'請選取 0800、4128 或 GES Excel 檔案。';
+    render(errors);$('opsFeedbackMessage').textContent=errors.length?`完成辨識；${errors.length} 個檔案未匯入。`:prepared.length?`已辨識 ${prepared.length} 個檔案，共 ${prepared.reduce((n,x)=>n+x.rows.length,0)} 筆符合條件資料。`:'請選取 0800、4128、GES 或 GES 意見 Excel 檔案。';
   }
   document.addEventListener('change',prepareFeedbackSelection);
   window.UploadImportAdapters=Object.assign(window.UploadImportAdapters||{},{prepareFeedback:()=>prepareFeedbackSelection({target:$('opsFeedbackFiles')})});

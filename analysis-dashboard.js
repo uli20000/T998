@@ -57,7 +57,7 @@
       Promise.all(months.map(m=>db.rpc('t998_get_operations_reference',{p_month:m}))),
       paged('t998_delay_orders','record_date,store_code,restaurant_name,order_number,status,reason,responded_at,created_at',q=>q.gte('record_date',r.start).lte('record_date',r.end),'record_date'),
       db.from('t998_operations_coupon_campaigns').select('*').lte('active_from',r.end).gte('active_to',r.start).order('active_from'),
-      paged('t998_feedback_import_rows','*',q=>q.in('source_type',['0800','4128']).gte('record_date',r.start).lte('record_date',r.end),'record_date'),
+      paged('t998_feedback_import_rows','*',q=>q.in('source_type',['0800','4128','GES_COMMENT']).gte('record_date',r.start).lte('record_date',r.end),'record_date'),
       ['week','month'].includes(period)?paged('t998_feedback_import_rows','*',q=>q.eq('source_type','GES').lte('period_start',r.end).gte('period_end',r.start),'restaurant_name'):Promise.resolve([]),
       db.from('t998_weekly_metric_action_notes').select('*').gte('week_start',M.addDays(firstWeek,-7)).lte('week_start',lastWeek).order('week_start').order('metric_key'),
       window.OpsForecast.load(db,r.start,r.end,revisionSnapshot?{scoreBatches:revisionSnapshot.batches}:{})
@@ -279,6 +279,17 @@
   function complaintCode(row){const match=String(row?.main_topic||'').trim().match(/^([HASPCM])(?:\s|$)/i);return match?match[1].toUpperCase():'OTHER';}
   function complaintCodeCounts(rows){const counts=new Map();for(const row of rows){const code=complaintCode(row);counts.set(code,(counts.get(code)||0)+1);}const order=['H','A','S','P','C','M','OTHER'];return [...counts].map(([code,count])=>({name:code,count})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name)||b.count-a.count);}
   function restaurantComplaintCodes(rows){return complaintCodeCounts(rows).map(x=>x.name+'×'+fmt(x.count)).join('、')||'—';}
+  // GES 意見：關鍵字分類（一則可多類），分類數與明細兩張卡
+  function gesCommentPanels(all){
+    const G=window.GesComments,rows=all.filter(x=>x.source_type==='GES_COMMENT').sort((a,b)=>String(b.raw_fields?.時間||b.record_date).localeCompare(String(a.raw_fields?.時間||a.record_date)));
+    if(!G)return '';
+    const tags=x=>G.classify(x.content).join('、');
+    // 分類固定 11 類＋總數＝12 格，格子大小一致（桌面 6×2、平板 4×3、手機 2×6）；有意見時 0 則就是 0
+    const tile=(label,value)=>'<div class="kpi"><div class="kpi-label">'+escape(label)+'</div><div class="kpi-value">'+value+'</div></div>';
+    const countTiles=rows.length?'<div class="kpis ges-kpis">'+G.summarize(rows).map(x=>tile(x.label,fmt(x.count))).join('')+tile('意見總數',fmt(rows.length))+'</div>':'<div class="empty">此期間沒有 GES 意見</div>';
+    const detail=table(['日期','餐廳','評級','分類','意見'],rows.map(x=>[x.record_date.slice(5).replace('-','/'),x.restaurant_name||'—',x.feedback_kind||'—',tags(x),String(x.content||'').replace(/\s+/g,' ')]));
+    return '<div class="analysis-grid ges-comments"><section class="analysis-panel"><h3>GES 意見分類</h3>'+countTiles+'</section><section class="analysis-panel"><h3>GES 意見</h3>'+detail+'</section></div>';
+  }
   function feedbackPage(data,previous,r){
     const all=data.feedback||[],prior=previous?.feedback||[],c0800=all.filter(x=>x.source_type==='0800'),c4128=all.filter(x=>x.source_type==='4128'),ges=['week','month'].includes(state.period)?gesForRange(all,r):[],prev0800=prior.filter(x=>x.source_type==='0800');
     const topics=complaintCodeCounts(c0800),prevTopics=new Map(complaintCodeCounts(prev0800).map(x=>[x.name,x.count])),stores0800=feedbackGroups(data,'0800').filter(x=>!/外送中心/.test(x.name)&&!x.rows.some(row=>/外送中心/.test(String(row.area_name||'')))),stores4128=feedbackGroups(data,'4128'),rankGes=ges.filter(x=>x.osat_survey!==null&&x.osat_survey!==undefined).sort((a,b)=>Number(a.osat_survey)-Number(b.osat_survey)||Number(b.response_count||0)-Number(a.response_count||0));
@@ -289,7 +300,7 @@
     const compareRows=matchedGes.map(({ges:x,complaint},i)=>{return [i+1,x.store_code||complaint.code||'—',complaint.name,fmt(complaint.count),restaurantComplaintCodes(complaint.rows),fmt(x.response_count),pct(x.osat_survey),pct(x.score_accuracy),pct(x.score_service),pct(x.score_speed)];});
     const gesRanges=[...new Set(all.filter(x=>x.source_type==='GES').map(x=>x.period_start+'～'+x.period_end))],gesNote=ges.aggregatedWeeks?'<p class="ins-foot ins-explain">本月 GES 由 '+ges.aggregatedWeeks+' 週的週資料依回應數加權匯總（週四落在本月的週）。</p>':!ges.length&&gesRanges.length?'<p>現有 GES 期間 '+escape(gesRanges.join('、'))+'，與所選期間不一致，未直接比較。</p>':'';const gesPanel=state.period==='week'?'<section class="analysis-panel"><h3>週 GES 與 0800 餐廳對照</h3>'+table(['名次','店號','餐廳','0800 抱怨','抱怨代碼','GES 回應數','問卷 OSAT','餐點正確性','服務','服務速度'],compareRows)+gesNote+'</section>':state.period==='month'?'<section class="analysis-panel"><h3>GES 餐廳排行｜問卷 OSAT 低至高</h3>'+table(['名次','店號','餐廳','回應數','問卷 OSAT','1SAT','外送平台 OSAT','餐點正確性','服務','服務速度','餐點好吃度'],gesRows)+gesNote+'</section>':'';
     const volume='<section class="analysis-panel feedback-volume"><h3>本期資料量</h3>'+table(['來源','資料量'],[['0800 外送抱怨',fmt(c0800.length)],['4128 '+M.BUSINESS.centerName,fmt(c4128.length)],...(['week','month'].includes(state.period)?[['期間完全一致的 GES 餐廳彙總',fmt(ges.length)+' 間']]:[])])+'</section>';
-    return '<div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>0800 抱怨分類</h3>'+table(state.period==='day'?['代碼','當日']:['代碼','本期','前期','差異'],state.period==='day'?topicRows.map(row=>row.slice(0,2)):topicRows)+'</section><section class="analysis-panel"><h3>0800 餐廳排行（排除外送中心）</h3>'+table(['名次','餐廳','抱怨筆數','抱怨代碼'],topTies(stores0800,10).map((x,i)=>[stores0800.findIndex(y=>y.count===x.count)+1,x.name,fmt(x.count),restaurantComplaintCodes(x.rows)]))+'</section></div><div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>4128 '+escape(M.BUSINESS.centerName)+'</h3>'+table(['名次','店號','餐廳','紀錄筆數'],topTies(stores4128,10).map((x,i)=>[stores4128.findIndex(y=>y.count===x.count)+1,x.code||'—',x.name,fmt(x.count)]))+'</section>'+gesPanel+'</div>';
+    return '<div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>0800 抱怨分類</h3>'+table(state.period==='day'?['代碼','當日']:['代碼','本期','前期','差異'],state.period==='day'?topicRows.map(row=>row.slice(0,2)):topicRows)+'</section><section class="analysis-panel"><h3>0800 餐廳排行（排除外送中心）</h3>'+table(['名次','餐廳','抱怨筆數','抱怨代碼'],topTies(stores0800,10).map((x,i)=>[stores0800.findIndex(y=>y.count===x.count)+1,x.name,fmt(x.count),restaurantComplaintCodes(x.rows)]))+'</section></div><div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>4128 '+escape(M.BUSINESS.centerName)+'</h3>'+table(['名次','店號','餐廳','紀錄筆數'],topTies(stores4128,10).map((x,i)=>[stores4128.findIndex(y=>y.count===x.count)+1,x.code||'—',x.name,fmt(x.count)]))+'</section>'+gesPanel+'</div>'+gesCommentPanels(all);
   }
   function comparisonValues(data,r,metric){
     const {summary,days}=model(data,r),tc=summary.tc;
@@ -396,11 +407,11 @@
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.delays.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單:x.order_number,狀態:x.status,
       原因:x.reason||''}))), '等餐明細');
     const feedbackRows=data.feedback||[];
-    const exportFeedback=(x)=>({來源:x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',
+    const exportFeedback=(x)=>({來源:x.source_type==='GES_COMMENT'?'GES 意見':x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',
       餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',
       發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',
       A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',
-      餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??''});
+      餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??'',評級:x.source_type==='GES_COMMENT'?x.feedback_kind||'':'',意見分類:x.source_type==='GES_COMMENT'&&window.GesComments?GesComments.classify(x.content).join('、'):''});
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
   function appendRestaurantScores(wb,data,rows,r){
     const sales=storeSalesRows(data,r,salesFor(data,r));

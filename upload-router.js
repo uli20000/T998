@@ -14,6 +14,7 @@
         if(has('訂單編號','工作單號','餐廳'))hits.add('4128');
         if(has('建議種類','被抱怨型態','重點','項目1'))hits.add('0800');
         if(has('問卷 OSAT','# 回應數','餐廳'))hits.add('GES');
+        if(has('餐廳_名稱','OSAT整體滿意度評論'))hits.add('GES意見');
         const store=['STR_SN','餐廳','餐廳名稱','CenterName','中心名稱','中心'].some(x=>cells.includes(x));
         if(store&&['DATE','日期','Date'].some(x=>cells.includes(x))){
           if(['實際外送TC','今年TC','今年 TC','TC(System)','TC (System)','總TC','T_C','TC','去年單數','去年TC','去年 TC','扣除第三方TC','扣除第三方 TC','扣除第三方'].some(x=>cells.includes(x)))hits.add('TC');
@@ -59,6 +60,13 @@
     }
     return out;
   }
-  const api={classify,groups};root.UploadRouter=api;
+  // 有些匯出檔的 <dimension> 只寫 A1，SheetJS 會只讀第一格；依實際儲存格放大範圍（只放大不縮小）再轉列陣列
+  function sheetMatrix(X,ws){
+    if(!ws)return [];let box=ws['!ref']?X.utils.decode_range(ws['!ref']):null;
+    for(const key of Object.keys(ws)){if(key[0]==='!')continue;const c=X.utils.decode_cell(key);if(!box){box={s:{r:c.r,c:c.c},e:{r:c.r,c:c.c}};continue;}box.s.r=Math.min(box.s.r,c.r);box.s.c=Math.min(box.s.c,c.c);box.e.r=Math.max(box.e.r,c.r);box.e.c=Math.max(box.e.c,c.c);}
+    if(box)ws['!ref']=X.utils.encode_range(box);
+    return X.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+  }
+  const api={classify,groups,sheetMatrix};root.UploadRouter=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
 })(typeof window==='object'?window:globalThis);

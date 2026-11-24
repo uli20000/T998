@@ -10,12 +10,12 @@
   try{tab=sessionStorage.getItem('upload-tab');if(!tab){tab=crypto.randomUUID();sessionStorage.setItem('upload-tab',tab);}}
   catch(e){tab=crypto.randomUUID();}
   const key=scope+'|'+tab,activeKey='upload-active|'+scope;
-  const isAdmin=!!E('adminApp'),labels={scores:'每日成績',staffing:'TC／工時',bi:'BI 週 SSSG',feedback:'GES／0800／4128'};
+  const isAdmin=!!E('adminApp'),labels={scores:'每日成績',staffing:'TC／工時',bi:'BI 週 SSSG',feedback:'GES／GES 意見／0800／4128'};
   let queue=[],done=[],busy=false,storage;
   const doneKey='done|'+scope;
   // 獨立上傳頁：佔用主內容區（側欄、頂部列保留），不插進總覽或其他頁面。
   const frame=side.closest('.ui-frame'),main=frame.querySelector('.ui-main'),content=main.querySelector('.ui-content');
-  const TYPES=[['scores','每日成績','ByDate＋ByOrder 各一份，日期範圍相同'],['staffing','TC／工時','每日 TC、實際工時，可放同一個 Excel'],['bi','BI 週 SSSG','含 SSSG%_wk 的 Power BI 週檔，可用 CSV'],['feedback','GES／0800／4128','GES 問卷、0800 客訴、4128 工單']];
+  const TYPES=[['scores','每日成績','ByDate＋ByOrder 各一份，日期範圍相同'],['staffing','TC／工時','每日 TC、實際工時，可放同一個 Excel'],['bi','BI 週 SSSG','含 SSSG%_wk 的 Power BI 週檔，可用 CSV'],['feedback','GES／GES 意見／0800／4128','GES 問卷、GES 意見、0800 客訴、4128 工單']];
   const page=document.createElement('section');page.className='us-page';page.id='fileUploadPage';page.hidden=true;page.setAttribute('aria-labelledby','usPageTitle');
   page.innerHTML='<div class="us-page-head"><button type="button" class="us-back">‹ 返回</button><h1 id="usPageTitle" tabindex="-1">檔案上傳</h1><span class="us-center">T'+center+'</span></div>'+
     '<div class="us-grid">'+
@@ -135,7 +135,7 @@
           item.hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
           if(seen.has(item.hash))continue;seen.add(item.hash);
           const book=XLSX.read(bytes,{type:'array',cellDates:true});
-          const sheets=book.SheetNames.map(name=>({name,matrix:XLSX.utils.sheet_to_json(book.Sheets[name],{header:1,defval:'',raw:true})}));
+          const sheets=book.SheetNames.map(name=>({name,matrix:UploadRouter.sheetMatrix(XLSX,book.Sheets[name])}));
           Object.assign(item,UploadRouter.classify(sheets));
           if(item.centers.length&&item.centers.some(c=>c!==center))throw new Error('檔案標示中心 '+item.centers.join('／')+'，與目前 T'+center+' 不符');
           if(item.route!=='bi'&&/\.csv$/i.test(file.name))throw new Error('此匯入流程需要 Excel，請匯出為 .xlsx');
