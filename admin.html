@@ -5553,7 +5553,7 @@ async function t998ImportTcWorkbook(){
     batchId=await t998CreateImportBatch(file.name,rows,"TC Excel 上傳；整天與餐期分頁分開匯入；Total 彙總列略過");
     rows.forEach(r=>r.import_batch_id=batchId);
     await t998UpsertChunks("staffing_tc_history",rows,"restaurant_name,record_date,period_code",t998TcImportMessage);
-    t998TcImportMessage.textContent=`✅ 已匯入 ${rows.length} 列 TC 資料。空白／負數歸零 ${counter.count} 個欄位。`;
+    t998TcImportMessage.textContent=`✅ 已匯入 ${rows.length} 列 TC 資料。空白／負數歸零 ${counter.count} 個欄位。`;globalThis.OpsReport?.invalidate?.();
     await t998LoadShiftAdmin();
   }catch(e){t998TcImportMessage.textContent=`匯入失敗：${e.message||"請稍後重試"}${batchId?"；若部分批次已送出，請重新上傳同一完整檔案以覆寫補齊。":""}`;}
   finally{t998TcImportBtn.disabled=false;}
@@ -5868,7 +5868,7 @@ async function t998ImportCompleteWorkbookV4(){
     if(tcRows.length)await t998UpsertChunks("staffing_tc_history",tcRows,"restaurant_name,record_date,period_code",t998TcImportMessage);
     if(actualRows.length)await t998UpsertChunks("staffing_daily_actuals",actualRows,"restaurant_name,record_date",t998TcImportMessage);
     if(centerRows.length)await t998UpsertChunks("staffing_center_daily_actuals",centerRows,"center_name,record_date",t998TcImportMessage);
-    t998TcImportMessage.textContent=`已匯入｜${labels.join("｜")}｜${dates.start}–${dates.end}${audit}${missingText()}`;await t998LoadShiftAdmin();
+    t998TcImportMessage.textContent=`已匯入｜${labels.join("｜")}｜${dates.start}–${dates.end}${audit}${missingText()}`;globalThis.OpsReport?.invalidate?.();await t998LoadShiftAdmin();
   }catch(e){t998TcImportMessage.textContent=`匯入失敗：${e.message||"請檢查 Excel"}${batchId?"｜可重傳同檔補齊":""}${missingText()}`;}
   finally{t998TcImportBtn.disabled=false;}
 }
@@ -6388,7 +6388,7 @@ async function opsArchiveScoreSourceFiles(pair){
 <script src="operations-forecast.js?v=20261125-i1"></script>
 <script src="operations-metrics.js?v=20261125-i1"></script>
 <script src="operations-summary.js?v=20261113-v2q"></script>
-<script src="operations-report.js?v=20261125-i1"></script>
+<script src="operations-report.js?v=20261125-i6"></script>
 <script src="ops-a-reply.js?v=20261118-b6"></script><script src="operations-entry.js?v=20261117-a1"></script>
 <script src="ui-shell.js?v=20261118-b6"></script>
 <script src="kpi-settings.js?v=20261113-v2q"></script>

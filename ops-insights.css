@@ -46,7 +46,7 @@ tr.ins-cut td{border-bottom:2px dashed var(--red)}
 .wk-head{font-size:16px;font-weight:700;margin:0}
 .wk-sec{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .wk-sec h3{margin:0 0 4px;font-size:17px}
-.wk-compact h3{margin:0;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
+.wk-compact h3{margin:0;font-size:15px;line-height:1.5;overflow-wrap:break-word}
 .wk-met h3{color:var(--muted)}
 .wk-ok{display:inline-block;font-size:12.5px;padding:1px 9px;border-radius:999px;background:#dcf5e3;color:#1a7f37;vertical-align:2px}
 .wk-blk{margin:10px 0 0}.wk-blk>b{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:4px}
@@ -161,28 +161,23 @@ html[data-display-mode=dark] .sf-tag.warn{background:transparent;color:#d29922}h
 .wk-field textarea{display:block;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;
   padding:10px;font:inherit;line-height:1.7;resize:vertical;background:var(--paper);color:var(--ink)}
 .wk-kpi{font-weight:700;text-align:left}
-.wk-promises{margin:12px 0 0;line-height:1.7;overflow-wrap:anywhere}
+.wk-promises{margin:12px 0 0;line-height:1.7;overflow-wrap:break-word}
 .wk-urgent{margin-top:10px;padding:8px 12px;border:1px solid currentColor;border-radius:8px;color:#9c2520}
-.wk-urgent h3,.wk-urgent ul{margin:0}.wk-urgent li{overflow-wrap:anywhere}.wk-urgent ul{padding-left:20px}
-.wk-evidence{margin:5px 0;padding-left:20px;line-height:1.5;overflow-wrap:anywhere}
+.wk-urgent h3,.wk-urgent ul{margin:0}.wk-urgent li{overflow-wrap:break-word}.wk-urgent ul{padding-left:20px}
+.wk-evidence{margin:5px 0;padding-left:20px;line-height:1.5;overflow-wrap:break-word}
 .wk-store{list-style:none;margin:4px 0}
 .wk-store ul{padding-left:19px}
-@media(min-width:1000px){
-  .wk-evidence{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:22px}
-  .wk-evidence>li:not(.wk-store){grid-column:1/-1}
-}
-@media screen and (min-width:1320px){
-  .wk-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
-  .wk-sections .wk-evidence{column-gap:12px}
-}
-.wk-reason{border:0;padding:0;background:transparent;color:#0b57d0;font:inherit;text-align:left;cursor:pointer;
-  text-decoration:underline;text-underline-offset:3px;max-width:100%;overflow-wrap:anywhere}
+/* 週報一律單欄、每家店一行（2026-11-25：兩欄＋三小欄讓文字斷在奇怪位置） */
+.wk-doc{max-width:1100px;margin-left:auto;margin-right:auto}
+.wk-reason{min-height:0;border:0;padding:0;background:transparent;color:#0b57d0;font:inherit;line-height:1.5;text-align:left;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;max-width:100%;overflow-wrap:break-word}
+.wk-store li>.wk-reason{display:block;width:fit-content;max-width:100%}
 .wk-action-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .wk-action-fields .wk-prev{grid-column:1/-1}
 .wk-action-fields .wk-field{margin-top:5px}
 .wk-appendix{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 .wk-appendix summary{font-weight:700;cursor:pointer;text-align:left}
-.wk-doc p{margin:4px 0;line-height:1.5;overflow-wrap:anywhere}
+.wk-doc p{margin:4px 0;line-height:1.5;overflow-wrap:break-word}
 html[data-display-mode="dark"] .wk-conclusion{border-color:var(--line);background:var(--bg)}
 html[data-display-mode="dark"] .wk-urgent{color:#ffb4ab}
 html[data-display-mode="dark"] .wk-reason{color:#9cc2ff}
