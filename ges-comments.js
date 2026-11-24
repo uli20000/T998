@@ -64,7 +64,17 @@
   function counts(c,s,ironic){const re=new RegExp(c.re.source,'g');let m;while((m=re.exec(s))){const before=s.slice(Math.max(0,m.index-6),m.index).replace(/\s+/g,''),after=s.slice(m.index+m[0].length,m.index+m[0].length+10).replace(/\s+/g,'');
     if(!ironic&&NEG_BEFORE.test(before))continue;if(PRAISE_OK.has(c.key)&&PRAISE_AFTER.test(after))continue;return true;}return false;}
   function classify(text){const s=clean(text),ironic=/才怪/.test(s);const hits=CATEGORIES.filter(c=>counts(c,s,ironic)&&(!c.need||counts({key:'need',re:c.need},s,ironic))).map(c=>c.label);return hits.length?hits:[OTHER.label];}
-  // 依分類計數（一則多類時每類各算一次）；順序固定
-  function summarize(rows){const counts=new Map([...CATEGORIES,OTHER].map(c=>[c.label,0]));for(const r of rows)for(const tag of classify(r.content))counts.set(tag,counts.get(tag)+1);return [...counts].map(([label,count])=>({label,count}));}
-  return {SOURCE_TYPE,CATEGORIES:[...CATEGORIES,OTHER].map(c=>c.label),isCommentHeader,parse,classify,summarize,taipeiTime,weekOf,isoWeek,offsetHours};
+  // 畫面與匯出用五大項（美花 11/25 定）：H 服務態度、A 餐點不正確、P 餐點品質、S 提早到／遲到、Other。
+  // 細項仍分開判斷並附在明細（A 給錯／漏給、S 提早到／遲到分開看）；無法配送／送錯地點、APP／優惠／發票歸 Other。
+  const GROUPS=[{code:'H',label:'H 服務態度',keys:{attitude:'態度',contact:'未聯繫'}},{code:'A',label:'A 餐點不正確',keys:{wrong:'給錯',missing:'漏給'}},
+    {code:'P',label:'P 餐點品質',keys:{quality:'冷掉／口味',package:'打翻'}},{code:'S',label:'S 提早到／遲到',keys:{early:'提早到',late:'遲到'}}];
+  const OTHER_GROUP={code:'O',label:'Other'};
+  function fineKeys(text){const labels=classify(text);return CATEGORIES.filter(c=>labels.includes(c.label)).map(c=>c.key);}
+  // 回傳 [{code,label,subs:[...]}]，沒有落在 H／A／P／S 的就是 Other
+  function groups(text){const keys=fineKeys(text),out=GROUPS.map(g=>({code:g.code,label:g.label,subs:keys.filter(k=>g.keys[k]).map(k=>g.keys[k])})).filter(g=>g.subs.length);return out.length?out:[{...OTHER_GROUP,subs:[]}];}
+  // 明細顯示：例「A 給錯・漏給、S 遲到」
+  function tagText(text){return groups(text).map(g=>g.code==='O'?'Other':g.code+' '+g.subs.join('・')).join('、');}
+  // 依五大項計數（一則落在多項時每項各算一次）；順序固定 H、A、P、S、Other
+  function summarize(rows){const counts=new Map([...GROUPS,OTHER_GROUP].map(g=>[g.label,0]));for(const r of rows)for(const g of groups(r.content))counts.set(g.label,counts.get(g.label)+1);return [...counts].map(([label,count])=>({label,count}));}
+  return {SOURCE_TYPE,CATEGORIES:[...CATEGORIES,OTHER].map(c=>c.label),GROUPS:[...GROUPS,OTHER_GROUP].map(g=>g.label),isCommentHeader,parse,classify,groups,tagText,summarize,taipeiTime,weekOf,isoWeek,offsetHours};
 });

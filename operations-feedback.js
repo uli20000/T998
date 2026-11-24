@@ -125,6 +125,8 @@
     for(const file of [...(root.files||[])])try{prepared.push(await parseFile(file));}catch(e){errors.push({file:file.name,error:e.message||'無法讀取'});}
     // 同一批裡兩個 GES 檔的日期範圍相同：同一週同一家店只有一筆，後面的會蓋掉前面的，所以擋下
     {const seen=new Set();for(let i=0;i<prepared.length;i++){const x=prepared[i];if(x.type!=='GES')continue;const k=x.start+'|'+x.end;if(seen.has(k)){errors.push({file:x.file.name,error:'和另一個 GES 檔的日期範圍相同（'+x.start+'～'+x.end+'），會互相覆蓋；請一次只選一週的 GES 檔，或改日期後再選。'});prepared.splice(i,1);i--;}else seen.add(k);}}
+    // 「GES 是哪一週」平常藏起來；只有 GES 問卷檔讀不到日期（或正在用手動選的週）才顯示
+    {const box=document.querySelector('.ges-range');if(box)box.hidden=!(errors.some(x=>/沒有寫日期/.test(x.error))||prepared.some(x=>x.manualRange));}
     render(errors);$('opsFeedbackMessage').textContent=errors.length?`完成辨識；${errors.length} 個檔案未匯入。`:prepared.length?`已辨識 ${prepared.length} 個檔案，共 ${prepared.reduce((n,x)=>n+x.rows.length,0)} 筆符合條件資料。`:'請選取 0800、4128、GES 或 GES 意見 Excel 檔案。';
   }
   document.addEventListener('change',prepareFeedbackSelection);

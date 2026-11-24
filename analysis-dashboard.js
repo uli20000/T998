@@ -283,8 +283,8 @@
   function gesCommentPanels(all){
     const G=window.GesComments,rows=all.filter(x=>x.source_type==='GES_COMMENT').sort((a,b)=>String(b.raw_fields?.時間||b.record_date).localeCompare(String(a.raw_fields?.時間||a.record_date)));
     if(!G)return '';
-    const tags=x=>G.classify(x.content).join('、');
-    // 分類固定 11 類＋總數＝12 格，格子大小一致（桌面 6×2、平板 4×3、手機 2×6）；有意見時 0 則就是 0
+    const tags=x=>G.tagText(x.content);
+    // 五大項＋總數＝6 格，格子大小一致（桌面 6×1、平板 3×2、手機 2×3）；有意見時 0 則就是 0
     const tile=(label,value)=>'<div class="kpi"><div class="kpi-label">'+escape(label)+'</div><div class="kpi-value">'+value+'</div></div>';
     const countTiles=rows.length?'<div class="kpis ges-kpis">'+G.summarize(rows).map(x=>tile(x.label,fmt(x.count))).join('')+tile('意見總數',fmt(rows.length))+'</div>':'<div class="empty">此期間沒有 GES 意見</div>';
     const detail=table(['日期','餐廳','評級','分類','意見'],rows.map(x=>[x.record_date.slice(5).replace('-','/'),x.restaurant_name||'—',x.feedback_kind||'—',tags(x),String(x.content||'').replace(/\s+/g,' ')]));
@@ -411,7 +411,7 @@
       餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',
       發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',
       A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',
-      餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??'',評級:x.source_type==='GES_COMMENT'?x.feedback_kind||'':'',意見分類:x.source_type==='GES_COMMENT'&&window.GesComments?GesComments.classify(x.content).join('、'):''});
+      餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??'',評級:x.source_type==='GES_COMMENT'?x.feedback_kind||'':'',意見分類:x.source_type==='GES_COMMENT'&&window.GesComments?GesComments.tagText(x.content):''});
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
   function appendRestaurantScores(wb,data,rows,r){
     const sales=storeSalesRows(data,r,salesFor(data,r));
@@ -526,17 +526,27 @@
         escape(compareValue(item?.[1],null,item?.[2]))+'</strong></article>';
     }).join('')+'</div></section>';
   }
+  // GES 週／月彙總依回應數加權；該欄空白的餐廳不計入該指標
+  const GES_TREND=['GES OSAT','好吃度','服務速度'],GES_FIELD={'GES OSAT':'osat_survey','好吃度':'score_food','服務速度':'score_speed'};
+  function gesTrendStat(x,name){
+    if(!x.data)return null;
+    const field=GES_FIELD[name],rows=gesForRange(x.data.feedback,x.range).filter(row=>Number.isFinite(Number(row[field]))&&row[field]!==null&&row[field]!==''&&Number(row.response_count)>0);
+    const n=rows.reduce((sum,row)=>sum+Number(row.response_count),0);
+    return n?[name,rows.reduce((sum,row)=>sum+Number(row[field])*Number(row.response_count),0)/n,'rate']:null;
+  }
   function trackingCharts(computed){
     const spec={sstg:['SSSG','SSTG'],d7:['D7','D25'],fa:['TPLH','FA佔比'],waiting:['等餐登記','等餐／TC'],feedback:['0800','4128']}[state.metric];
-    const groups=['sstg','d7','feedback'].includes(state.metric)?[spec]:spec.map(x=>[x]);
+    // 0800 分頁多一張 GES 曲線（和 0800／4128 同尺寸、上下排列）
+    const groups=state.metric==='feedback'?[spec,GES_TREND]:['sstg','d7'].includes(state.metric)?[spec]:spec.map(x=>[x]);
     return groups.map(names=>{
-      const series=names.map(name=>({name,values:computed.map(x=>x.stats&&statMap(x.stats).get(name))}));
+      const series=names.map(name=>({name,values:computed.map(x=>GES_TREND.includes(name)?gesTrendStat(x,name):x.stats&&statMap(x.stats).get(name))}));
       const numbers=series.flatMap(x=>x.values.map(y=>y?.[1])).filter(Number.isFinite);
       if(!numbers.length){
         const status=names.includes('SSSG')?'—':'資料不足，暫無趨勢圖。';
         return '<p class="tracking-note">'+names.join('／')+'：'+status+'</p>';
       }
-      const lo=Math.min(0,...numbers),hi=Math.max(...numbers),span=hi-lo||1,y=v=>155-(v-lo)/span*110,colors=['#bd1622','#287bb9'];
+      // GES 都是 0～100% 的高分，Y 軸改依資料範圍（上下各留 5%），三條線才分得開
+      const gesChart=names===GES_TREND,lo=gesChart?Math.max(0,Math.floor((Math.min(...numbers)-0.05)*20)/20):Math.min(0,...numbers),hi=gesChart?Math.min(1,Math.ceil((Math.max(...numbers)+0.05)*20)/20):Math.max(...numbers),span=hi-lo||1,y=v=>155-(v-lo)/span*110,colors=['#bd1622','#287bb9','#d99a00'];
       const grid=[0,1,2,3,4].map(i=>{
         const at=45+i*27.5,value=compareValue(hi-i*span/4,null,series[0].values.find(Boolean)?.[2]);
         return '<line x1="75" y1="'+at+'" x2="875" y2="'+at+'" stroke="#dedede"/>'+
@@ -550,7 +560,7 @@
           const py=y(value);
           if(prev)parts+='<line x1="'+prev.x+'" y1="'+prev.y+'" x2="'+x+'" y2="'+py+'" stroke="'+colors[j]+'" stroke-width="2.5"/>';
           parts+='<circle cx="'+x+'" cy="'+py+'" r="4" fill="'+colors[j]+'"/>'+
-            '<text x="'+x+'" y="'+(py-9-j*13)+'" text-anchor="middle" fill="#555">'+escape(compareValue(value,null,item[2]))+'</text>';
+            '<text x="'+x+'" y="'+(gesChart?(j?py+17:py-9):py-9-j*13)+'" text-anchor="middle" fill="#555">'+escape(compareValue(value,null,item[2]))+'</text>';
           prev={x,y:py};
         }
         return parts;
