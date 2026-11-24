@@ -446,7 +446,7 @@
   function weeklyDraft({week,weeks=[],cells=[],targets={},independent=new Set(),excluded=new Set(),
     weekSummary=()=>null,anomalyList=[],notes=[],dataDays=null,inScope=()=>true,sssg=[],sstgStores=()=>[],storeSstgDay=()=>null,
     storeContext=()=>({}),rateThreshold=.05,daily=[],bigOrders=null,feedback=null,feedbackRows=[],newStores=new Set(),
-    delays=null,orders=[],scoreDates=null,events=[],actions=null,salesComparison=null}){
+    delays=null,orders=[],scoreDates=null,events=[],actions=null,salesComparison=null,storeClosures=[]}){
     const rawNote=(key,start)=>notes.find(x=>x.week_start===start&&x.metric_key===key)||null;
     const note=(key,start)=>{
       const a=rawNote(key,start),partner={fa:'tplh',d7:'d25'}[key];if(!partner)return a;
@@ -664,8 +664,13 @@
     const missingTc=known(wait.count)&&scoreDates?wait.count-wait.counted.length:0;
     if(missingTc>0)waiting.evidence.push({text:`${missingTc} 筆等餐缺對應成績日或不計成績`});
     waiting.wait=wait;
-    const closed=anoms.flatMap(a=>(a.closed||[]).map(s=>`${md(a.date)} ${s.name} 0 單／未見訂單，待確認`));
-    const findingsList=[...closed,...contradictoryFeedback(complaints,stores,independent)];
+    // 店休：Power BI 與 DMS 都沒有單的店日（系統判定），同店連續日期合併
+    const closedKey=new Set(storeClosures.map(x=>x.date+'|'+x.name));
+    const closed=anoms.flatMap(a=>(a.closed||[]).filter(s=>!closedKey.has(a.date+'|'+s.name)).map(s=>`${md(a.date)} ${s.name} 0 單／未見訂單，待確認`));
+    const shut=[];for(const x of storeClosures.filter(x=>x.date>=week.start&&x.date<=week.end).sort((a,b)=>a.name.localeCompare(b.name)||a.date.localeCompare(b.date))){
+      const last=shut.at(-1);if(last&&last.name===x.name&&addDays(last.end,1)===x.date)last.end=x.date;else shut.push({name:x.name,start:x.date,end:x.date});}
+    const shutText=shut.length?['店休：'+shut.map(x=>md(x.start)+(x.end!==x.start?'–'+md(x.end):'')+' '+x.name).join('、')]:[];
+    const findingsList=[...shutText,...closed,...contradictoryFeedback(complaints,stores,independent)];
     const findings={key:'findings',label:'其他發現',info:true,issue:findingsList.join('\n')||'無',evidence:[],
       followup:null,note:note('findings',week.start)};
     // 080／GES／4128（每週都列在總結）

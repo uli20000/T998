@@ -139,7 +139,10 @@
         const filled=pbi.missing.filter(x=>dmsStores.has(String(x.code))).map(x=>({...x,...dmsStores.get(String(x.code)),source:'dms'}));
         const all=[...pbi.stores,...filled];
         for(const x of all){if(!day.areas.has(x.area))day.areas.set(x.area,empty());const a=day.areas.get(x.area);a.tc+=x.tc;a.fa+=x.fa;if(F.isNewStore(x.code,day.date,x.name)){a.newTc+=x.tc;a.newFa+=x.fa;}}
-        day.storeTc=all;day.pbiMissingStores=pbi.missing.map(x=>x.code);day.tcSource=pbi.missing.length?'mixed':'powerbi';
+        // Power BI 與 DMS ByOrder 都沒有單的店視為當天無單（停業），不標暫估；當天沒有 ByOrder 無法確認時仍標暫估
+        const unknown=day.types.has('ByOrder')?filled:pbi.missing;
+        day.storeTc=all;day.pbiMissingStores=unknown.map(x=>x.code);day.tcSource=unknown.length?'mixed':'powerbi';
+        day.closedStores=day.types.has('ByOrder')?pbi.missing.filter(x=>!dmsStores.has(String(x.code))).map(x=>({code:x.code,name:x.name})):[];
       }else day.tcSource=day.types.has('ByOrder')?'dms':null;
     }
     for(const day of days.values()){

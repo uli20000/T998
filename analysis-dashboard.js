@@ -828,6 +828,10 @@
     }
     return fills;
   }
+  // 系統判定的店休（Power BI 與 DMS 都沒有單）
+  function weekClosures(ctx,week){
+    try{return [...model(ctx.data,week).days.values()].flatMap(d=>(d.closedStores||[]).map(x=>({date:d.date,name:x.name})));}catch(e){return [];}
+  }
   function weeklyPage(ctx,r){
     if(state.period!=='week')return '<div class="ins-switch"><button type="button" class="ins-link primary" '+
       'data-ins-period="week">切換到週</button></div>';
@@ -841,7 +845,7 @@
     const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
     const raw=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,
       weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},
-      inScope:M.storeInScope,sssg,salesComparison,actions:ctx.weeklyActions,...weeklyInputs(ctx,week)});
+      inScope:M.storeInScope,sssg,salesComparison,actions:ctx.weeklyActions,storeClosures:weekClosures(ctx,week),...weeklyInputs(ctx,week)});
     const draft=state.weeklyRegenerate===r.start?raw:weeklyView(raw);state.weeklyDraft=draft;
     const title=weeklyTitle(week),editing=state.weeklyEdit===week.start||!weeklySaved(draft);
     const missing=draft.missing.concat(ctx.weeklyActionsError?['上週行動（讀取失敗）']:[]);
