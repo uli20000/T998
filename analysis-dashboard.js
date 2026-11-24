@@ -269,17 +269,115 @@
   function weeklyExportRow(x){const meta=I?.weeklyMeta?I.weeklyMeta(x):null,f=meta?.followup;
     const follow=meta?(f?.text?f.text+(f.compare?.length?'｜本週：'+f.compare.join('；'):''):meta.legacy||''):x.last_week_followup||'';
     return {原因:meta?.reason||'',追上週:x.metric_key==='conclusion'?(meta?.commitments?.text||''):follow};}
-  function appendDetailSheets(wb,data,rows,r){const result=model(data,r),summary=result.summary;XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{週期:state.period,期間:periodLabel(r),TC來源:result.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+result.provisionalDays.join('、'):'Power BI',D7D25來源:'DMS（ByOrder）',預估公式:window.OpsForecast.FORMULA,預估TC:summary.forecast,預估工時:summary.forecastHours,TC預估達成率:summary.tcAchievement,達成率採計實際TC:summary.attainmentActual,達成率採計預估TC:summary.attainmentForecast,資料提示:model(data,r).forecastWarnings.join('；'),TC:summary.tc,去年同期TC:summary.prior,去年比較口徑:'前52週同星期，依當期餐廳範圍',FA:summary.fa,FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,等餐筆數:data.delays.length,不計成績日期:data.reports.filter(x=>x.score_excluded).map(x=>x.record_date).join('、')}]),'營運摘要');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(result.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,需求工時:x.excluded?null:x.recommended,預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join('、'),去年對應日期:x.baselineDate,成長倍率:1+window.OpsForecast.SETTINGS.growth,前8週平均:x.averageTc,前8週成長率:x.recentGrowth,切換門檻:x.switchThreshold,有效週數:x.historyWeeks,目標週數:x.targetWeeks,不計成績:x.excluded?'是':'否',採用日期:x.baselineDate,排除日期:x.excludedSamples.map(s=>s.date+' '+s.reason).join('、')}))),'預估樣本');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.reports.filter(x=>x.score_excluded||String(x.special_notes||'').trim()).map(x=>({日期:x.record_date,不計成績:x.score_excluded?'是':'否',特殊事項:x.special_notes||''}))), '特殊事項');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.weeklyNotes||[]).filter(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end&&[x.issue,x.evidence,x.root_cause,x.action_plan].some(v=>String(v||'').trim())).slice().sort((a,b)=>a.week_start.localeCompare(b.week_start)||WEEKLY_KEY_ORDER.indexOf(a.metric_key)-WEEKLY_KEY_ORDER.indexOf(b.metric_key)).map(x=>({週次:S.weekLabel(x.week_start),週一:x.week_start,項目:WEEKLY_KEY_LABEL[x.metric_key]||x.metric_key,發現問題:x.issue||'',原因:weeklyExportRow(x).原因,提出證據:x.evidence||'',根源:x.root_cause||'',制定行動:x.action_plan||'',追上週:weeklyExportRow(x).追上週,最後儲存:x.updated_at?new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(x.updated_at)):''})).concat((data.weeklyNotes||[]).some(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end)?[]:[{週次:'這段期間沒有儲存過週報'}])), '週行動追蹤');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.campaigns||[]).filter(x=>x.active_from<=r.end&&x.active_to>=r.start).map(x=>({活動名稱:x.campaign_name,活動內容:x.details,開始日期:x.active_from,結束日期:x.active_to,來源網址:x.source_url,記錄時間:x.researched_at}))), '優惠券活動');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map(x=>({店號:x.code,餐廳:x.name,區域:regionName(x.area),TC:x.tc,去年同期TC:x.prior, SSTG:x.sstg,D7:x.d7,D25:x.d25,FA:x.fa,FA佔比:x.faShare,晚派單比例:x.lateShare,等餐筆數:x.wait,等餐比例:x.waitRatio,QT平均:x.qt}))), '餐廳指標');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.delays.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單:x.order_number,狀態:x.status,原因:x.reason||''}))), '等餐明細');const feedbackRows=data.feedback||[];const exportFeedback=(x)=>({來源:x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??''});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
+  function appendDetailSheets(wb,data,rows,r){
+    const result=model(data,r),summary=result.summary;
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{週期:state.period,期間:periodLabel(r),
+      TC來源:result.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+result.provisionalDays.join('、'):'Power BI',D7D25來源:'DMS（ByOrder）',
+      預估公式:window.OpsForecast.FORMULA,預估TC:summary.forecast,預估工時:summary.forecastHours,TC預估達成率:summary.tcAchievement,達成率採計實際TC:summary.attainmentActual,
+      達成率採計預估TC:summary.attainmentForecast,資料提示:result.forecastWarnings.join('；'),TC:summary.tc,去年同期TC:summary.prior,去年比較口徑:'前52週同星期，依當期餐廳範圍',FA:summary.fa,
+      FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,等餐筆數:data.delays.length,
+      不計成績日期:data.reports.filter(x=>x.score_excluded).map(x=>x.record_date).join('、')}]),'營運摘要');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(result.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,
+      需求工時:x.excluded?null:x.recommended,預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join('、'),去年對應日期:x.baselineDate,
+      成長倍率:1+window.OpsForecast.SETTINGS.growth,前8週平均:x.averageTc,前8週成長率:x.recentGrowth,切換門檻:x.switchThreshold,有效週數:x.historyWeeks,目標週數:x.targetWeeks,不計成績:x.excluded?'是':'否',
+      採用日期:x.baselineDate,排除日期:x.excludedSamples.map(s=>s.date+' '+s.reason).join('、')}))),'預估樣本');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.reports.filter(x=>x.score_excluded||String(x.special_notes||'').trim()).map(x=>({日期:x.record_date,
+      不計成績:x.score_excluded?'是':'否',特殊事項:x.special_notes||''}))), '特殊事項');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.weeklyNotes||[]).filter(x=>x.week_start>=M.addDays(r.start,-6)&&x.week_start<=r.end&&[x.issue,x.evidence,
+      x.root_cause,x.action_plan].some(v=>String(v||'').trim())).slice().sort((a,
+      b)=>a.week_start.localeCompare(b.week_start)||WEEKLY_KEY_ORDER.indexOf(a.metric_key)-WEEKLY_KEY_ORDER.indexOf(b.metric_key)).map(x=>({週次:S.weekLabel(x.week_start),
+      週一:x.week_start,項目:WEEKLY_KEY_LABEL[x.metric_key]||x.metric_key,發現問題:x.issue||'',原因:weeklyExportRow(x).原因,提出證據:x.evidence||'',根源:x.root_cause||'',制定行動:x.action_plan||'',
+      追上週:weeklyExportRow(x).追上週,最後儲存:x.updated_at?new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',
+      minute:'2-digit',hour12:false}).format(new Date(x.updated_at)):''})).concat((data.weeklyNotes||[]).some(x=>x.week_start>=M.addDays(r.start,
+      -6)&&x.week_start<=r.end)?[]:[{週次:'這段期間沒有儲存過週報'}])), '週行動追蹤');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((data.campaigns||[]).filter(x=>x.active_from<=r.end&&x.active_to>=r.start).map(x=>({活動名稱:x.campaign_name,
+      活動內容:x.details,開始日期:x.active_from,結束日期:x.active_to,來源網址:x.source_url,記錄時間:x.researched_at}))), '優惠券活動');appendRestaurantScores(wb,data,rows,r);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.delays.map(x=>({日期:x.record_date,店號:x.store_code,餐廳:x.restaurant_name,訂單:x.order_number,狀態:x.status,
+      原因:x.reason||''}))), '等餐明細');
+    const feedbackRows=data.feedback||[];
+    const exportFeedback=(x)=>({來源:x.source_type,日期:x.record_date||'',資料期間:x.period_start&&x.period_end?`${x.period_start}～${x.period_end}`:'',店號:x.store_code||'',
+      餐廳:x.restaurant_name||'',區域:x.area_name||'',來源渠道:x.source_channel||'',抱怨型態:x.complaint_type||'',重點:x.main_topic||'',項目1:x.item_1||'',項目2:x.item_2||'',回饋內容:x.content||'',
+      發票:x.invoice_number||'',訂單:x.order_number||'',工作單:x.work_order||'',回覆狀態:x.followup_status||'',A項回覆:x.a_reply_status||'',配餐人員:x.a_reply?.packer||'',
+      A項根源:x.a_reply?.root_cause||'',A項行動:x.a_reply?.action_plan||'',回應數:x.response_count??'',問卷OSAT:x.osat_survey??'','1SAT':x.score_1sat??'',外送平台OSAT:x.osat_delivery??'',
+      餐點正確性:x.score_accuracy??'',服務:x.score_service??'',服務速度:x.score_speed??'',餐點好吃度:x.score_food??''});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(feedbackRows.map(exportFeedback)),'0800_4128_GES資料');}
+  function appendRestaurantScores(wb,data,rows,r){
+    const sales=storeSalesRows(data,r,salesFor(data,r));
+    const byName=new Map(sales.map(x=>[M.clean(x.name),x]));
+    const byCode=new Map(sales.filter(x=>x.code).map(x=>[x.code,x]));
+    const seen=new Set();
+    const result=rows.map(x=>{
+      const amounts=byCode.get(x.code)||byName.get(M.clean(x.name));
+      if(amounts)seen.add(amounts);
+      return {...x,amounts};
+    });
+    for(const x of sales)if(!seen.has(x))result.push({...x,amounts:x});
+    const exported=result.map(x=>({
+      店號:x.code,餐廳:x.name,區域:regionName(x.area),TC:x.tc??null,去年同期TC:x.prior??null,SSTG:x.sstg??null,
+      營業額:x.amounts?.sales??null,去年營業額:x.amounts?.priorYearSales??null,SSSG:x.amounts?.value??null,客單價:x.amounts?.averageTicket??null,
+      D7:x.d7??null,D25:x.d25??null,FA:x.fa??null,FA佔比:x.faShare??null,晚派單比例:x.lateShare??null,
+      等餐筆數:x.wait??null,等餐比例:x.waitRatio??null,QT平均:x.qt??null
+    }));
+    const headers=['店號','餐廳','區域','TC','去年同期TC','SSTG','營業額','去年營業額','SSSG','客單價',
+      'D7','D25','FA','FA佔比','晚派單比例','等餐筆數','等餐比例','QT平均'];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(exported,{header:headers}),'餐廳指標');
+  }
   let weeklySales=[];
-  function salesWeek(r){return state.period==='week'?weeklySales.find(x=>x.start===r.start&&x.end===r.end):null;}
-  function sssgRanking(data,r){const sales=salesWeek(r);if(!sales)return '<section class="analysis-panel"><h3>本期餐廳 SSSG 排名</h3><p>'+'本期無可用的完整週營業額資料；日／月不拆分週數字。'+'</p></section>';const dir=new Map([...state.catalog.values()].map(x=>[M.clean(x.restaurant_name),x])),areas=new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code])),list=sales.stores.filter(x=>x.value!==null&&Number.isFinite(x.value)).map(x=>({...x,store:dir.get(M.clean(x.name)),area:areas.get(M.clean(x.name))})).sort((a,b)=>b.value-a.value||a.name.localeCompare(b.name,'zh-Hant')),topCut=list[Math.min(2,list.length-1)]?.value,bottomCut=list[Math.max(0,list.length-5)]?.value,top=list.filter(x=>x.value>=topCut),bottom=list.filter(x=>x.value<=bottomCut&&!top.includes(x));return '<section class="analysis-panel"><h3>本期餐廳 SSSG 排名｜前三名與後五名</h3>'+table(['區段','店號','餐廳','商圈','SSSG'],[...top.map(x=>['前三',x.store?.store_code||'—',x.name,regionName(x.area),pct(x.value)]),...bottom.map(x=>['後五',x.store?.store_code||'—',x.name,regionName(x.area),pct(x.value)])])+'<p>來源：'+escape(sales.file)+' 的 SSSG%_wk；有效 '+list.length+' 間，缺值 '+(sales.stores.length-list.length)+' 間；同分保留。'+escape(weeklySalesNote(sales.start))+'</p></section>';}
+  const salesCache=new WeakMap();
+  function dailySalesFor(data,r){
+    if(!salesCache.has(data))salesCache.set(data,{source:baselineSource(data),ranges:new Map()});
+    const {source,ranges}=salesCache.get(data),key=r.start+'|'+r.end;
+    if(!ranges.has(key)){
+      const reports=new Map([...(data.powerbiData?.reports||[]),...(data.reports||[])].map(x=>[x.record_date,x]));
+      ranges.set(key,M.dailySales(source,r,[...reports.values()]));
+    }
+    return ranges.get(key);
+  }
+  function salesFor(data,r){
+    const daily=dailySalesFor(data,r);
+    const weekly=state.period==='week'&&!daily.hasDailySales?weeklySales.find(x=>x.start===r.start&&x.end===r.end):null;
+    return {...daily,...M.salesSssg(daily,weekly),weeklyStores:weekly?.stores||[]};
+  }
+  function storeSalesRows(data,r,sales){
+    if(sales.source==='daily')return [...sales.stores.values()].map(x=>({...x,value:x.sssg}));
+    const dir=new Map([...state.catalog.values()].map(x=>[M.clean(x.restaurant_name),x.store_code]));
+    const areas=new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code]));
+    return sales.weeklyStores.filter(x=>{
+      const name=M.clean(x.name),code=dir.get(name);
+      return M.storeInScope(code,r.start,x.name)&&!M.NON_DELIVERY_STORES.has(code);
+    }).map(x=>({...x,code:dir.get(M.clean(x.name)),area:areas.get(M.clean(x.name))}));
+  }
+  function sssgRanking(data,r){
+    const list=storeSalesRows(data,r,salesFor(data,r)).filter(x=>Number.isFinite(x.value))
+      .sort((a,b)=>b.value-a.value||a.name.localeCompare(b.name,'zh-Hant'));
+    const topCut=list[Math.min(2,list.length-1)]?.value,bottomCut=list[Math.max(0,list.length-5)]?.value;
+    const top=list.filter(x=>x.value>=topCut),bottom=list.filter(x=>x.value<=bottomCut&&!top.includes(x));
+    const row=(x,rank)=>[rank,x.code||'—',x.name,regionName(x.area),pct(x.value)];
+    const ranking=[...top.map(x=>row(x,'前三')),...bottom.map(x=>row(x,'後五'))];
+    return '<section class="analysis-panel"><h3>本期餐廳 SSSG 排名｜前三名與後五名</h3>'+
+      (ranking.length?table(['區段','店號','餐廳','商圈','SSSG'],ranking):'<p>—</p>')+'</section>';
+  }
   function feedbackVolume(data){const f=data.feedback||[];return '<section class="analysis-panel"><h3>本期資料量</h3>'+table(['來源','資料量'],[['0800 外送抱怨',fmt(f.filter(x=>x.source_type==='0800').length)],['4128 '+M.BUSINESS.centerName,fmt(f.filter(x=>x.source_type==='4128').length)],['GES 餐廳彙總',fmt(f.filter(x=>x.source_type==='GES').length)+' 間']])+'<p>2026 年 10 月以指定的兩份十月檔為準；查詢範圍超出十月時，其他日期來源完整度待確認。無匯入紀錄不表示零件。</p></section>';}
   function basicFactors(orders,kind){const groups=[['集中單',x=>x.moment!==null&&x.cluster],['非集中單',x=>x.moment!==null&&!x.cluster],['下單時間不足',x=>x.moment===null],['餐期',x=>x.moment!==null&&mealOrder(x)],['非餐期',x=>x.moment!==null&&!mealOrder(x)]];const total=orders.filter(x=>kind==='fa'?x.fa:x.wait).length;return '<section class="analysis-panel"><h3>'+(kind==='fa'?'FA':'等餐')+'｜因素與影響範圍</h3>'+table(['因素','有效訂單','FA單','FA佔比','占全部FA單','已配對等餐','等餐比例','占全部已配對等餐'],groups.map(([name,test])=>{const a=orders.filter(test),fa=a.filter(x=>x.fa).length,wait=a.filter(x=>x.wait).length,totalFA=orders.filter(x=>x.fa).length,totalWait=orders.filter(x=>x.wait).length;return [name,fmt(a.length),fmt(fa),pct(a.length?fa/a.length:null),pct(totalFA?fa/totalFA:null),fmt(wait),pct(a.length?wait/a.length:null),pct(totalWait?wait/totalWait:null)];}))+'<p>各因素分組分開計算；等餐只計可配對的登記，未配對另列。分時工時不足，無法計算分組 TPLH。</p></section>';}
   function trackingStats(data,r){
     const built=model(data,r),summary=built.summary,orders=analysisOrders(data,r),valid=key=>orders.filter(x=>!x.fa&&!independentStoreCodes.has(x.code)&&['Y','N'].includes(x[key])),rate=key=>{const list=valid(key);return list.length?list.filter(x=>x[key]==='Y').length/list.length:null;};
     const scoreDates=[...built.days.values()].filter(d=>d.tcSource&&!d.scoreExcluded&&d.date>=r.start&&d.date<=r.end).map(d=>d.date).sort(),provisionalDays=built.provisionalDays;
     const fb=data.feedback||[],count=source=>fb.filter(x=>x.source_type===source).length,tc=scoreDates.length?summary.tc:null;
-    return {summary,orders,scoreDates,provisionalDays,values:[['SSSG',salesWeek(r)?.value??null,'rate'],['SSTG',summary.sstg,'rate'],['TC',tc,'count'],['去年TC',summary.priorN?summary.prior:null,'count'],['D7',rate('d7'),'rate'],['D7達成單',tc===null?null:valid('d7').filter(x=>x.d7==='Y').length,'count'],['D7有效單',tc===null?null:valid('d7').length,'count'],['D25',rate('d25'),'rate'],['D25達成單',tc===null?null:valid('d25').filter(x=>x.d25==='Y').length,'count'],['D25有效單',tc===null?null:valid('d25').length,'count'],['TPLH',summary.tplh,'decimal'],['自送TC',tc===null?null:summary.nonfa,'count'],['FA佔比',tc?summary.faShare:null,'rate'],['FA單數',tc!==null?summary.fa:null,'count'],['實際工時',summary.actualHours,'decimal'],['等餐登記',tc===null?null:data.delays.length,'count'],['等餐／TC',tc?scoredDelays(data,scoreDates).length/tc:null,'rate'],['0800',tc===null?null:count('0800'),'count'],['0800／千單',tc&&r.start>='2026-10-01'&&r.end<='2026-10-31'&&!data.reports.some(d=>d.score_excluded&&fb.some(x=>x.source_type==='0800'&&x.record_date===d.record_date))?count('0800')/tc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']]};
+    const sales=salesFor(data,r),salesComparison=M.compareSales(sales,dailySalesFor(data,previousRange(r,data)));
+    const complaintsComplete=r.start>='2026-10-01'&&r.end<='2026-10-31'&&
+      !data.reports.some(d=>d.score_excluded&&fb.some(x=>x.source_type==='0800'&&x.record_date===d.record_date));
+    return {summary,orders,scoreDates,provisionalDays,sales,values:[
+      ['SSSG',sales.value,'rate'],['SSTG',summary.sstg,'rate'],['TC',tc,'count'],['去年TC',summary.priorN?summary.prior:null,'count'],
+      ['營業額',sales.sales,'decimal'],['去年營業額',sales.priorYearSales,'decimal'],['客單價',sales.averageTicket,'decimal'],
+      ['上期客單價',salesComparison.priorAverageTicket,'decimal'],['客單價變化',salesComparison.ticketChange,'rate'],
+      ['D7',rate('d7'),'rate'],['D7達成單',tc===null?null:valid('d7').filter(x=>x.d7==='Y').length,'count'],
+      ['D7有效單',tc===null?null:valid('d7').length,'count'],['D25',rate('d25'),'rate'],
+      ['D25達成單',tc===null?null:valid('d25').filter(x=>x.d25==='Y').length,'count'],['D25有效單',tc===null?null:valid('d25').length,'count'],
+      ['TPLH',summary.tplh,'decimal'],['自送TC',tc===null?null:summary.nonfa,'count'],['FA佔比',tc?summary.faShare:null,'rate'],
+      ['FA單數',tc!==null?summary.fa:null,'count'],['實際工時',summary.actualHours,'decimal'],['等餐登記',tc===null?null:data.delays.length,'count'],
+      ['等餐／TC',tc?scoredDelays(data,scoreDates).length/tc:null,'rate'],['0800',tc===null?null:count('0800'),'count'],
+      ['0800／千單',tc&&complaintsComplete?count('0800')/tc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']
+    ]};
   }
   function statMap(stats){return new Map(stats.values.map(x=>[x[0],x]));}
   function trackingOverview(data,r) {
@@ -292,7 +390,7 @@
     const responses=validGes.reduce((sum,row)=>sum+row.response_count,0);
     values.set('GES OSAT',['GES OSAT',responses?validGes.reduce((sum,row)=>sum+row.osat_survey*row.response_count,0)/responses:null,'rate']);
     const keys={
-      sstg:['SSSG','SSTG','TC','去年TC'],d7:['D7','D25'],
+      sstg:['SSSG','SSTG','TC','去年TC','客單價'],d7:['D7','D25'],
       fa:['TPLH','FA佔比','FA單數','實際工時'],
       waiting:['等餐登記','等餐／TC','已回覆','待回覆'],
       feedback:['0800','4128','0800／千單','GES OSAT']
@@ -300,42 +398,122 @@
     const inRange=stats.scoreDates.filter(d=>d>=r.start&&d<=r.end),lastScore=inRange.length?inRange[inRange.length-1]:'',cutoff=r.end<today()?r.end:today(),lastDay=lastScore>cutoff?lastScore:cutoff,elapsed=r.start>lastDay?0:Math.round((Date.parse(lastDay+'T00:00:00Z')-Date.parse(r.start+'T00:00:00Z'))/86400000)+1,scored=inRange.filter(d=>d<=lastDay).length;
     const coverage=elapsed>1&&scored<elapsed?'<small class="scope-note coverage-note" title="缺成績的日期不計入，數字只算有成績的天數">成績只有 '+scored+'／'+elapsed+' 天</small>':'';
     const prov=provisionalIn(stats,r),provNote=prov.length?'<small class="scope-note provisional-note" title="尚未上傳 Power BI 的日期用 DMS 暫估：'+escape(prov.join('、'))+'">單量含 '+prov.length+' 天 DMS 暫估</small>':'';
-    return '<section class="analysis-panel score-overview"><h3>本期成績'+coverage+provNote+'</h3><div class="score-tiles '+(keys.length===2?'two-tiles':'')+'">'+keys.map(key=>{
+    const tiles=({2:'two-tiles',5:'five-tiles'})[keys.length]||'';
+    return '<section class="analysis-panel score-overview"><h3>本期成績'+coverage+provNote+'</h3><div class="score-tiles '+tiles+'">'+keys.map(key=>{
       const item=values.get(key);
       return '<article class="score-tile"><h4>'+escape(key)+(key==='D7'||key==='D25'?'<small class="scope-note">非獨立店</small>':'')+(prov.length&&TC_DEPENDENT.has(key)?'<small class="scope-note">暫估</small>':'')+'</h4><strong>'+escape(compareValue(item?.[1],null,item?.[2]))+'</strong></article>';
     }).join('')+'</div></section>';
   }
-  function trackingCharts(computed){const spec={sstg:['SSSG','SSTG'],d7:['D7','D25'],fa:['TPLH','FA佔比'],waiting:['等餐登記','等餐／TC'],feedback:['0800','4128']}[state.metric],same=['sstg','d7','feedback'].includes(state.metric),groups=same?[spec]:spec.map(x=>[x]);return groups.map(names=>{const series=names.map(name=>({name,values:computed.map(x=>x.stats&&statMap(x.stats).get(name))})),numbers=series.flatMap(x=>x.values.map(y=>y?.[1])).filter(v=>typeof v==='number'&&Number.isFinite(v));if(!numbers.length)return '<p class="tracking-note">'+names.join('／')+'：資料不足，暫無趨勢圖。</p>';const lo=Math.min(0,...numbers),hi=Math.max(...numbers),span=hi-lo||1,y=v=>155-(v-lo)/span*110,colors=['#bd1622','#287bb9'];let grid=[0,1,2,3,4].map(i=>'<line x1="75" y1="'+(45+i*27.5)+'" x2="875" y2="'+(45+i*27.5)+'" stroke="#dedede"/><text x="65" y="'+(49+i*27.5)+'" text-anchor="end" fill="#666">'+escape(compareValue(hi-i*span/4,null,series[0].values.find(Boolean)?.[2]))+'</text>').join('');let lines=series.map((series,j)=>{let prev=null,parts='';for(let i=0;i<5;i++){let item=series.values[i],value=item?.[1],x=100+i*190;if(value===null||value===undefined||!Number.isFinite(value)){prev=null;continue;}let py=y(value);if(prev)parts+='<line x1="'+prev.x+'" y1="'+prev.y+'" x2="'+x+'" y2="'+py+'" stroke="'+colors[j]+'" stroke-width="2.5"/>';parts+='<circle cx="'+x+'" cy="'+py+'" r="4" fill="'+colors[j]+'"/><text x="'+x+'" y="'+(py-9-j*13)+'" text-anchor="middle" fill="#555">'+escape(compareValue(value,null,item[2]))+'</text>';prev={x,y:py};}return parts;}).join('');return '<div class="line-chart"><h4>'+names.join('／')+' 趨勢</h4><svg viewBox="0 0 950 215" role="img" aria-label="'+names.join('及')+'五期折線圖">'+grid+lines+computed.map((x,i)=>'<text x="'+(100+i*190)+'" y="180" text-anchor="middle" fill="#666">'+escape((state.period==='week'?S.weekLabel(x.range.start):x.range.start.slice(0,7))+(x.stats?.provisionalDays?.length?'（暫估）':''))+'</text>').join('')+'</svg><div class="line-legend">'+names.map((name,i)=>'<span><i style="background:'+colors[i]+'"></i>'+name+'</span>').join('')+'</div>'+(names.includes('SSSG')?sssgClosureNote(computed):'')+'</div>';}).join('');}
-  // SSSG 是 BI 週檔的整週數字，含停班日；SSTG 逐日計算、已排除停班日。有 SSSG 的期間若含不計成績日，圖下註明。
-  function sssgClosureNote(computed){
-    const hits=computed.filter(x=>x.data&&Number.isFinite(x.stats&&statMap(x.stats).get('SSSG')?.[1])).map(x=>({label:state.period==='week'?S.weekLabel(x.range.start):x.range.start.slice(0,7),
-      dates:(x.data.reports||[]).filter(d=>d.score_excluded&&d.record_date>=x.range.start&&d.record_date<=x.range.end).map(d=>d.record_date.slice(5).replace('-','/')).sort()})).filter(x=>x.dates.length);
-    if(!hits.length)return '';
-    return '<p class="tracking-note ins-explain">SSSG 為總部 BI 週檔整週數字，含停班日；SSTG 已排除停班日。含停班日的期間：'+escape(hits.map(x=>x.label+'（'+x.dates.join('、')+'）').join('、'))+'。</p>';
+  function trackingCharts(computed){
+    const spec={sstg:['SSSG','SSTG'],d7:['D7','D25'],fa:['TPLH','FA佔比'],waiting:['等餐登記','等餐／TC'],feedback:['0800','4128']}[state.metric];
+    const groups=['sstg','d7','feedback'].includes(state.metric)?[spec]:spec.map(x=>[x]);
+    return groups.map(names=>{
+      const series=names.map(name=>({name,values:computed.map(x=>x.stats&&statMap(x.stats).get(name))}));
+      const numbers=series.flatMap(x=>x.values.map(y=>y?.[1])).filter(Number.isFinite);
+      if(!numbers.length){
+        const status=names.includes('SSSG')?'—':'資料不足，暫無趨勢圖。';
+        return '<p class="tracking-note">'+names.join('／')+'：'+status+'</p>';
+      }
+      const lo=Math.min(0,...numbers),hi=Math.max(...numbers),span=hi-lo||1,y=v=>155-(v-lo)/span*110,colors=['#bd1622','#287bb9'];
+      const grid=[0,1,2,3,4].map(i=>{
+        const at=45+i*27.5,value=compareValue(hi-i*span/4,null,series[0].values.find(Boolean)?.[2]);
+        return '<line x1="75" y1="'+at+'" x2="875" y2="'+at+'" stroke="#dedede"/>'+
+          '<text x="65" y="'+(at+4)+'" text-anchor="end" fill="#666">'+escape(value)+'</text>';
+      }).join('');
+      const lines=series.map((items,j)=>{
+        let prev=null,parts='';
+        for(const [i,item] of items.values.entries()){
+          const value=item?.[1],x=100+i*190;
+          if(!Number.isFinite(value)){prev=null;continue;}
+          const py=y(value);
+          if(prev)parts+='<line x1="'+prev.x+'" y1="'+prev.y+'" x2="'+x+'" y2="'+py+'" stroke="'+colors[j]+'" stroke-width="2.5"/>';
+          parts+='<circle cx="'+x+'" cy="'+py+'" r="4" fill="'+colors[j]+'"/>'+
+            '<text x="'+x+'" y="'+(py-9-j*13)+'" text-anchor="middle" fill="#555">'+escape(compareValue(value,null,item[2]))+'</text>';
+          prev={x,y:py};
+        }
+        return parts;
+      }).join('');
+      const labels=computed.map((x,i)=>{
+        const label=state.period==='week'?S.weekLabel(x.range.start):x.range.start.slice(0,7);
+        return '<text x="'+(100+i*190)+'" y="180" text-anchor="middle" fill="#666">'+
+          escape(label+(x.stats?.provisionalDays?.length?'（暫估）':''))+'</text>';
+      }).join('');
+      const legend=names.map((name,i)=>'<span><i style="background:'+colors[i]+'"></i>'+name+'</span>').join('');
+      return '<div class="line-chart"><h4>'+names.join('／')+' 趨勢</h4>'+
+        '<svg viewBox="0 0 950 215" role="img" aria-label="'+names.join('及')+'五期折線圖">'+grid+lines+labels+
+        '</svg><div class="line-legend">'+legend+'</div></div>';
+    }).join('');
   }
-  function trackingKeys(metric){return {sstg:['SSSG','SSTG','TC','去年TC'],d7:['D7','D7達成單','D7有效單','D25','D25達成單','D25有效單'],fa:['TPLH','自送TC','實際工時','FA佔比','FA單數','TC'],waiting:['等餐登記','TC','等餐／TC'],feedback:['0800','TC','0800／千單','4128']}[metric]||[];}
+  function trackingKeys(metric){
+    return {sstg:['SSSG','SSTG','TC','去年TC','客單價'],d7:['D7','D7達成單','D7有效單','D25','D25達成單','D25有效單'],
+      fa:['TPLH','自送TC','實際工時','FA佔比','FA單數','TC'],waiting:['等餐登記','TC','等餐／TC'],feedback:['0800','TC','0800／千單','4128']}[metric]||[];
+  }
   function trackingComparison(){if(state.period==='day')return '';const timeline=state.timeline||[],computed=timeline.map(x=>({...x,stats:x.data?trackingStats(x.data,x.range):null})),names=trackingKeys(state.metric);
     const rows=names.map(name=>[name,...computed.map(x=>{const v=x.stats&&statMap(x.stats).get(name);return x.stats?compareValue(v?.[1],null,v?.[2]):'—';})]);
     rows.push(['資料狀態',...computed.map(x=>x.error?'載入失敗':!x.data?'尚未發生':!x.stats.scoreDates.length?'無單量資料':x.stats.scoreDates.length+' 個成績日／截止 '+x.stats.scoreDates.at(-1)+(x.stats.provisionalDays.length?'（'+x.stats.provisionalDays.length+' 天 DMS 暫估）':''))]);
-    const deltas=names.map(name=>[name,...computed.map((x,i)=>{const current=x.stats&&statMap(x.stats).get(name),old=computed[i-1]?.stats&&statMap(computed[i-1].stats).get(name);if(!current||!old)return '—';const delta=compareDelta(current[1],old[1],current[2]);return delta;})]);
+    const deltas=names.map(name=>[name,...computed.map((x,i)=>{
+      const current=x.stats&&statMap(x.stats).get(name),old=computed[i-1]?.stats&&statMap(computed[i-1].stats).get(name);
+      if(!current||!old)return '—';
+      if(name==='客單價')return compareDelta(statMap(x.stats).get('客單價變化')[1],0,'rate');
+      return compareDelta(current[1],old[1],current[2]);
+    })]);
     const heads=['指標',...computed.map(x=>(x.offset===0?'★ ':'')+(state.period==='week'?S.weekLabel(x.range.start):x.range.start.slice(0,7))+(x.stats?.provisionalDays?.length?'（暫估）':''))];
     return '<section class="analysis-panel timeline"><h3>'+(state.period==='week'?'五週':'五個月')+'成績比較｜前兩期・本期・後兩期</h3>'+trackingCharts(computed)+table(heads,rows)+'<details><summary>查看各期與前一期差異</summary>'+table(heads,deltas)+'</details><p>各欄按實際有效資料計算；資料涵蓋不相同時，差異僅供查核。— 表示缺資料／無法計算；期間有成績時，等餐、080、4128 沒有紀錄顯示 0；080、4128 以已匯入的檔案為準，尚未匯入的日期也會算成 0。</p></section>';
   }
   function trackingEvidence(data,r){const t=trackingStats(data,r),orders=t.orders,valid=orders.filter(x=>!x.fa&&!independentStoreCodes.has(x.code)),matched=orders.filter(x=>x.wait).length,notMatched=data.delays.filter(d=>!orders.some(x=>x.date===d.record_date&&x.code===String(d.store_code||'')&&orderTail(x.order)===orderTail(d.order_number))).length;
     const checks=[['去年同期TC（成績日）',Math.max(0,t.scoreDates.length-model(data,r).missingBaselineDays.length),t.scoreDates.length,'缺基準日：'+(model(data,r).missingBaselineDays.join('、')||'無')],['實際工時（成績日）',Math.max(0,t.scoreDates.length-model(data,r).missingHourDays.length),t.scoreDates.length,'缺工時日：'+(model(data,r).missingHourDays.join('、')||'無')],['配送距離',orders.filter(x=>x.distanceKm!==null).length,orders.length,'以 BY DATE 配對距離；未配對／空白不分入短距離'],['派單與預計抵達時間',orders.filter(x=>x.assigned!==null&&x.eta!==null).length,orders.length,'晚派＝預計抵達前 20 分鐘內才派單；時間欄位不是實際抵店紀錄'],['下單時間',orders.filter(x=>x.moment!==null).length,orders.length,'用於餐期與 30 分鐘至少 6 單集中單'],['可判讀併單',orders.filter(x=>x.departureGroupSize!==null).length,orders.length,'同外送員、同日、同店、離店 3 分鐘內；僅為批次線索，不推定路線順序'],['等餐配對',matched,data.delays.length,'未配對 '+notMatched+' 筆；無登記不等於沒有等餐']];
     let body='';
-    if(state.metric==='sstg'){const days=dates(r).map(date=>{const hasScore=t.scoreDates.includes(date),excluded=data.reports.some(x=>x.record_date===date&&x.score_excluded);const tc=hasScore?storeAnalytics(data,{start:date,end:date}).reduce((n,x)=>n+x.tc,0):null;return [date,dateLabel(date),fmt(tc),excluded?'不計成績':hasScore?'已匯入':'缺成績'];});body='<h3>單量變化證據｜逐日／星期</h3>'+table(['日期','星期','TC','狀態'],days)+'<p>SSSG 依 BI 週資料；若缺日期拆分或範圍不一致則留空。客單價、暫停接單、取消單、大單與活動成效尚無足夠欄位，不能判定原因。天氣與活動僅供對照，不直接認定因果。</p>';}
+    if(state.metric==='sstg'){
+      const days=dates(r).map(date=>{
+        const hasScore=t.scoreDates.includes(date),excluded=data.reports.some(x=>x.record_date===date&&x.score_excluded);
+        const tc=hasScore?storeAnalytics(data,{start:date,end:date}).reduce((n,x)=>n+x.tc,0):null;
+        return [date,dateLabel(date),fmt(tc),excluded?'不計成績':hasScore?'已匯入':'缺成績'];
+      });
+      body='<h3>單量變化證據｜逐日／星期</h3>'+table(['日期','星期','TC','狀態'],days);
+    }
     else if(state.metric==='d7'){const groups=[['距離 ≤2km',x=>x.distanceKm!==null&&x.distanceKm<=2],['距離 >2–4km',x=>x.distanceKm!==null&&x.distanceKm>2&&x.distanceKm<=4],['距離 >4km',x=>x.distanceKm!==null&&x.distanceKm>4],['距離資料不足',x=>x.distanceKm===null],['晚派',x=>x.late===true],['未晚派',x=>x.late===false],['派單時間不足',x=>x.late===null],['餐期',x=>x.moment!==null&&mealOrder(x)],['非餐期',x=>x.moment!==null&&!mealOrder(x)],['下單時間不足',x=>x.moment===null],['有等餐登記',x=>x.wait],['無等餐登記',x=>!x.wait],['集中單',x=>x.moment!==null&&x.cluster],['非集中單',x=>x.moment!==null&&!x.cluster],['單次出門 1 單',x=>x.departureGroupSize===1],['併單 2 單',x=>x.departureGroupSize===2],['併單 3 單以上',x=>x.departureGroupSize>=3],['併單資料不足',x=>x.departureGroupSize===null]];const failAll=k=>valid.filter(x=>x[k]==='N').length;body='<h3>D7／D25｜未達單量與影響範圍</h3>'+table(['因素','D7有效','D7','D7未達','占全部D7未達','D25有效','D25','D25未達','占全部D25未達'],groups.map(([label,test])=>{const list=valid.filter(test),metrics=k=>{const a=list.filter(x=>['Y','N'].includes(x[k])),n=a.filter(x=>x[k]==='N').length;return [a.length,pct(a.length?(a.length-n)/a.length:null),n,pct(failAll(k)?n/failAll(k):null)];};return [label,...metrics('d7'),...metrics('d25')];}))+'<p>每一種因素分開分組，跨因素不可相加；同距離與晚派的差異是關聯證據。尚缺完整實際抵店、備餐完成、送達與路線紀錄，不能直接歸責。</p>';}
     else if(state.metric==='fa'){body='<h3>供需線索｜逐日單量與工時</h3>'+table(['日期','總TC','自送TC','FA單','FA佔比','實際工時','TPLH'],dates(r).map(date=>{const d={start:date,end:date},s=model(data,d).summary,has=data.batches.some(x=>x.report_date===date&&x.report_type==='ByOrder');return [date,has?fmt(s.tc):'—',has?fmt(s.tc-s.fa):'—',has?fmt(s.fa):'—',has?pct(s.faShare):'—',fmt(s.actualHours,2),has?fmt(s.tplh,2):'—'];}))+'<p>TPLH 沿用自送 TC／有效實際工時；日工時不能拆成餐期人力。尚缺每時段出勤人數、可用人力及第三方改派原因，暫不判定人力不足。</p>';}
     else if(state.metric==='waiting'){const replies=data.delays.filter(x=>x.status==='completed').length;body='<h3>等餐紀錄完整度</h3>'+table(['登記筆數','已回覆','尚未回覆','配對訂單','未配對'],[[data.delays.length,replies,data.delays.length-replies,matched,notMatched]])+'<p>目前可分析餐廳、商圈、餐期、集中單與回覆原因。缺等餐開始／結束時間，不能計算平均或長時間等餐；原因空白不代表沒有備餐問題。</p>';}
     else {const rows=(data.feedback||[]),count=source=>rows.filter(x=>x.source_type===source).length;body='<h3>抱怨來源與缺項</h3>'+table(['來源','本期已讀取紀錄','狀態'],[['0800',count('0800'),count('0800')?'已讀取；完整度待確認':'無匯入紀錄，非確認零件'],['4128',count('4128'),count('4128')?'另列，不併入0800':'無匯入紀錄，非確認零件']])+'<p>0800／千單＝本期0800筆數÷本期有效TC×1000；來源或成績日不完整時不做表現判定。錯餐、漏給、延誤、無法配送與提早送達需依原始內容分開查核；尚未完成跨來源訂單配對與責任認定。</p>';}
     return '<section class="analysis-panel evidence">'+body+'</section><details class="analysis-panel"><summary>資料覆蓋與缺項清單</summary>'+table(['欄位','有資料／配對筆數','總筆數','限制'],checks)+'<p>分析來源：DMS BY ORDER／BY DATE、Power BI 去年TC、營運工時、等餐登記、0800／4128／GES。原始訂單與來源列由既有明細查核。</p></details>';
   }
-  function renderTrackingExport(data,r){const wb=XLSX.utils.book_new(),t=trackingStats(data,r),prov=provisionalIn(t,r);XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(t.values.map(([name,value,type])=>({指標:name,數值:value,型態:type,開始:r.start,結束:r.end,有效成績日:t.scoreDates.length,截止:t.scoreDates.at(-1)||'',單量來源:sourceText(name,prov),暫估日期:TC_DEPENDENT.has(name)?prov.join('、'):'',缺項:value===null?(name==='SSSG'?'缺資料或期間口徑未對齊':'缺資料或未確認完整來源'):''}))), '五大成績');const rows=(state.timeline||[]).flatMap(x=>x.data?trackingStats(x.data,x.range).values.filter(([name])=>trackingKeys(state.metric).includes(name)).map(([name,value])=>({開始:x.range.start,結束:x.range.end,指標:name,數值:value,暫估日期:TC_DEPENDENT.has(name)?provisionalIn(trackingStats(x.data,x.range),x.range).join('、'):''})): [{開始:x.range.start,結束:x.range.end,狀態:x.error||'尚未發生'}]);if(rows.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'前後兩期比較');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{SSSG:M.BUSINESS.weeklySalesLimitation ,時段人力:'缺時段工時與出勤',等餐分鐘:'缺開始與結束時間',因果:'因素差異僅為關聯證據',範圍:M.BUSINESS.scopeNote,零值:'等餐與080無紀錄不視為完整零件'}]),'缺項與限制');appendDetailSheets(wb,data,storeAnalytics(data,r),r);document.querySelectorAll('#metricContent table').forEach((table,index)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.table_to_sheet(table),'畫面分析'+(index+1)));XLSX.writeFile(wb,'T998_完整成績_'+({day:'日報',week:'週報',month:'月報'}[state.period]||'')+'_'+r.start+'.xlsx');}
+  function renderTrackingExport(data,r){
+    const wb=XLSX.utils.book_new(),t=trackingStats(data,r),prov=provisionalIn(t,r);
+    const scores=t.values.map(([name,value,type])=>({
+      指標:name,數值:value,型態:type,開始:r.start,結束:r.end,有效成績日:t.scoreDates.length,截止:t.scoreDates.at(-1)||'',
+      單量來源:sourceText(name,prov,t.sales.source),暫估日期:TC_DEPENDENT.has(name)?prov.join('、'):'',
+      缺項:value===null?'缺資料或未確認完整來源':''
+    }));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(scores),'五大成績');
+    const rows=(state.timeline||[]).flatMap(x=>{
+      const {start,end}=x.range;
+      if(!x.data)return [{開始:start,結束:end,狀態:x.error||'尚未發生'}];
+      const stats=trackingStats(x.data,x.range),provisional=provisionalIn(stats,x.range).join('、');
+      return stats.values.filter(([name])=>trackingKeys(state.metric).includes(name)).map(([name,value])=>({
+        開始:start,結束:end,指標:name,數值:value,暫估日期:TC_DEPENDENT.has(name)?provisional:''
+      }));
+    });
+    if(rows.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'前後兩期比較');
+    const limitations={時段人力:'缺時段工時與出勤',等餐分鐘:'缺開始與結束時間',因果:'因素差異僅為關聯證據',
+      範圍:M.BUSINESS.scopeNote,零值:'等餐與080無紀錄不視為完整零件'};
+    if(t.sales.source==='weekly')limitations.SSSG=M.BUSINESS.weeklySalesLimitation;
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([limitations]),'缺項與限制');
+    appendDetailSheets(wb,data,storeAnalytics(data,r),r);
+    document.querySelectorAll('#metricContent table').forEach((table,index)=>{
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.table_to_sheet(table),'畫面分析'+(index+1));
+    });
+    XLSX.writeFile(wb,'T998_完整成績_'+({day:'日報',week:'週報',month:'月報'}[state.period]||'')+'_'+r.start+'.xlsx');
+  }
   // 單量（TC）相關指標：Power BI 為準，尚未上傳 Power BI 的日期用 DMS 暫估
   const TC_DEPENDENT=new Set(['SSTG','TC','TPLH','自送TC','FA佔比','FA單數','等餐／TC','0800／千單']);
   function provisionalIn(stats,r){return (stats.provisionalDays||[]).filter(d=>d>=r.start&&d<=r.end).sort();}
-  function sourceText(name,prov){if(name==='SSSG')return 'BI 週檔';if(/^D(7|25)/.test(name))return 'DMS（ByOrder）';if(!TC_DEPENDENT.has(name))return '';return prov.length?'Power BI；'+prov.length+' 天用 DMS 暫估':'Power BI';}
+  function sourceText(name,prov,salesSource){
+    if(name==='SSSG')return ({daily:'Power BI 逐日',weekly:'BI 週檔'})[salesSource]||'';
+    if(['營業額','去年營業額','客單價'].includes(name))return salesSource==='daily'?'Power BI 逐日':'';
+    if(/^D(7|25)/.test(name))return 'DMS（ByOrder）';
+    if(!TC_DEPENDENT.has(name))return '';
+    return prov.length?'Power BI；'+prov.length+' 天用 DMS 暫估':'Power BI';
+  }
   function isoWeekBounds(year,week){const anchor=new Date(Date.UTC(year,0,4,12)),dow=(anchor.getUTCDay()+6)%7;anchor.setUTCDate(anchor.getUTCDate()-dow+(week-1)*7);const start=anchor.toISOString().slice(0,10),end=M.addDays(start,6);if(S.week(start).year!==year||S.week(start).number!==week)return null;return {start,end};}
   function parseWeeklySales(book, file) {
     for (const sheet of book.SheetNames) {
@@ -391,19 +569,17 @@
     weeklySales = weeklySales.filter(week => week.start !== row.week_start);
     weeklySales.push({
       start: row.week_start, end: row.week_end, file: row.source_file,
-      value: Number(row.center_sssg), stores: row.stores
+      value: num(row.center_sssg), stores: row.stores
     });
   }
 
   async function readWeeklySales(spans) {
-    const starts = spans.map(span => span.range.start);
-    const {data, error} = await db.from(weeklySalesTable).select('*').in('week_start', starts);
-    if (error) throw error;
-    for (const row of data) rememberWeeklySales(row);
-  }
-
-  function weeklySalesNote(start) {
-    return M.BUSINESS.weeklySalesNotes[start]||'';
+    const starts=spans.filter(({data,range})=>data&&!dailySalesFor(data,range).hasDailySales).map(x=>x.range.start);
+    if(!starts.length)return;
+    const {data,error}=await db.from(weeklySalesTable).select('*').in('week_start',starts);
+    if(error)throw error;
+    weeklySales=weeklySales.filter(x=>!starts.includes(x.start));
+    for(const row of data)rememberWeeklySales(row);
   }
 
   async function importWeeklySales(week) {
@@ -655,15 +831,17 @@
   function weeklyPage(ctx,r){
     if(state.period!=='week')return '<div class="ins-switch"><button type="button" class="ins-link primary" '+
       'data-ins-period="week">切換到週</button></div>';
-    const week={...S.range(r.start,'week'),label:S.weekLabel(r.start)},weeks=ctx.weeks;
-    const sssg=weeks.map(w=>{const x=weeklySales.find(y=>y.start===w.start);return x?{value:x.value,stores:x.stores||[]}:null;});
+    const week={...r,label:S.weekLabel(r.start)},weeks=ctx.weeks;
+    const sssg=weeks.map(w=>salesFor(ctx.data,w));
+    const currentSales=salesFor(ctx.data,week),previousSales=salesFor(ctx.data,fullWeek(M.addDays(week.start,-7)));
+    const salesComparison=M.compareSales(currentSales,previousSales);
     const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,
       independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,
       inScope:M.storeInScope,minOrders:I.WEEKLY_MIN_ORDERS});
     const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
     const raw=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,
       weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},
-      inScope:M.storeInScope,sssg,actions:ctx.weeklyActions,...weeklyInputs(ctx,week)});
+      inScope:M.storeInScope,sssg,salesComparison,actions:ctx.weeklyActions,...weeklyInputs(ctx,week)});
     const draft=state.weeklyRegenerate===r.start?raw:weeklyView(raw);state.weeklyDraft=draft;
     const title=weeklyTitle(week),editing=state.weeklyEdit===week.start||!weeklySaved(draft);
     const missing=draft.missing.concat(ctx.weeklyActionsError?['上週行動（讀取失敗）']:[]);
@@ -687,8 +865,11 @@
       const savedField=(label,value)=>'<p class="wk-pre">'+label+'：'+escape(value||'（待填）')+'</p>';
       const savedFields=showEmpty=>(showEmpty||n.root_cause?savedField('根源',n.root_cause):'')+
         (showEmpty||n.action_plan?savedField('行動（負責人／完成日）',n.action_plan):'');
-      if(sec.compact)return '<section class="wk-sec wk-compact"><h3>'+escape(heading+'　'+sec.issue.replace(/\n/g,'｜'))+
-        '</h3>'+savedFields(false)+'</section>';
+      if(sec.compact){
+        const {headingText,salesLine}=I.compactWeeklyIssue(sec);
+        return '<section class="wk-sec wk-compact"><h3>'+escape(heading+'　'+headingText)+'</h3>'+
+          (salesLine?'<p class="wk-pre">'+escape(salesLine)+'</p>':'')+savedFields(false)+'</section>';
+      }
       const header='<h3>'+escape(heading)+'</h3><p class="wk-pre wk-kpi">'+escape(sec.issue)+'</p>'+
         (sec.key==='feedback'&&sec.diff?'<p class="wk-pre">'+escape(sec.diff)+'</p>':'');
       const actionable=I.weeklyNeedsAction(sec);
@@ -1118,7 +1299,7 @@
     try{
       const ctx=await insightContext(r);
       if(metric==='weekly'){
-        try{await readWeeklySales(ctx.weeks.map(w=>({range:w})));}catch(e){}
+        try{await readWeeklySales(ctx.weeks.map(w=>({range:w,data:ctx.data})));}catch(e){}
         try{ctx.weeklyActions=await paged('t998_action_items','*',q=>q.eq('week_start',r.start)
           .eq('owner','週報').eq('archived',false),'id');}
         catch(e){ctx.weeklyActions=null;ctx.weeklyActionsError=true;}
@@ -1139,7 +1320,38 @@
     syncMetricTab();
     renderMetric(state.data,state.previous,range());
   });
-  async function loadReport(force=false){sharedDate.set(state.date,state.period);const id=++state.request,r=range();renderChoices();$('report').classList.add('hidden');$('metricTabs').classList.add('hidden');$('refresh').disabled=true;status('讀取成績中…');try{const data=await loadRange(r,force);if(id!==state.request)return;const pr=previousRange(r,data);const timeline=state.period==='day'?[]:await Promise.all([-2,-1,0,1,2].map(async offset=>{const span=state.period==='week'?fullWeek(M.addDays(r.start,offset*7)):M.range(addMonths(r.start,offset),'month');if(span.start>today())return {range:span,offset,data:null};try{return {range:span,offset,data:offset===0?data:await loadRange(span,force)};}catch(error){return {range:span,offset,data:null,error:error.message};}}));if(id!==state.request)return;if(state.period==='week'){try{await readWeeklySales(timeline);}catch(e){$('biStatus').textContent='週 SSSG 讀取失敗：'+e.message;}if(id!==state.request)return;}state.data=data;state.timeline=timeline;state.comparisonRange=pr;state.previous=timeline.find(x=>x.offset===-1)?.data||null;try{await weatherForRange(r);}catch(e){}if(id!==state.request)return;status('');$('report').classList.remove('hidden');renderMetric(data,state.previous,r);state.fullExport=()=>renderTrackingExport(data,r);$('export').onclick=()=>openExportMenu();$('export').textContent='匯出 ▾';$('export').setAttribute('aria-haspopup','dialog');}catch(e){if(id===state.request)status('載入失敗：'+e.message,true);}finally{if(id===state.request)$('refresh').disabled=false;}}
+  async function loadReport(force=false){
+    sharedDate.set(state.date,state.period);
+    const id=++state.request,r=range();
+    renderChoices();
+    $('report').classList.add('hidden');$('metricTabs').classList.add('hidden');$('refresh').disabled=true;
+    status('讀取成績中…');
+    try{
+      const data=await loadRange(r,force);
+      if(id!==state.request)return;
+      const pr=previousRange(r,data);
+      const timeline=state.period==='day'?[]:await Promise.all([-2,-1,0,1,2].map(async offset=>{
+        const span=state.period==='week'?fullWeek(M.addDays(r.start,offset*7)):M.range(addMonths(r.start,offset),'month');
+        if(span.start>today())return {range:span,offset,data:null};
+        try{return {range:span,offset,data:offset===0?data:await loadRange(span,force)};}
+        catch(error){return {range:span,offset,data:null,error:error.message};}
+      }));
+      if(id!==state.request)return;
+      if(state.period==='week'){
+        try{await readWeeklySales(timeline);}
+        catch(e){if(id===state.request)$('biStatus').textContent='週 SSSG 讀取失敗：'+e.message;}
+        if(id!==state.request)return;
+      }
+      state.data=data;state.timeline=timeline;state.comparisonRange=pr;state.previous=timeline.find(x=>x.offset===-1)?.data||null;
+      try{await weatherForRange(r);}catch(e){}
+      if(id!==state.request)return;
+      status('');$('report').classList.remove('hidden');
+      renderMetric(data,state.previous,r);
+      state.fullExport=()=>renderTrackingExport(data,r);
+      $('export').onclick=()=>openExportMenu();$('export').textContent='匯出 ▾';$('export').setAttribute('aria-haspopup','dialog');
+    }catch(e){if(id===state.request)status('載入失敗：'+e.message,true);}
+    finally{if(id===state.request)$('refresh').disabled=false;}
+  }
   document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{state.period=b.dataset.period;state.month=state.date.slice(0,7);renderChoices();loadReport();});$('periodDate').onchange=()=>{state.date=$('periodDate').value||today();state.month=state.date.slice(0,7);renderChoices();loadReport();};$('periodDate').onclick=e=>{try{e.target.showPicker?.();}catch(_){}};$('periodPrev').onclick=()=>changePeriod(-1);$('periodNext').onclick=()=>changePeriod(1);$('periodToday').onclick=()=>{state.date=today();state.month=state.date.slice(0,7);renderChoices();loadReport();};$('refresh').onclick=()=>loadReport(true);
   (async()=>{
     try{

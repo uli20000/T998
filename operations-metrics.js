@@ -64,6 +64,49 @@
     const stores=[],missing=[];for(const s of eligible){if(!source.index.has(date+'|'+s.name)){missing.push({code:s.code,name:s.restaurant_name,area:s.area});continue;}const v=source.actual(s.name,date);if(!v||v.fa===null)return null;stores.push({code:s.code,name:s.restaurant_name,area:s.area,tc:v.tc,fa:v.fa});}
     return {stores,missing};
   }
+  function dailySales(source,{start,end},reports=[]){
+    const excluded=new Set(reports.filter(r=>r.score_excluded).map(r=>String(r.record_date).slice(0,10)));
+    const emptySales=()=>({sales:null,pairedSales:null,priorYearSales:null,ticketSales:null,ticketTc:null});
+    const total=emptySales(),stores=new Map();
+    let hasDailySales=false;
+    const cell=(name,date)=>{
+      const key=date+'|'+name;
+      return source.salesConflicts.has(key)?null:source.index.get(key);
+    };
+    function addValue(t,key,value){t[key]=(t[key]??0)+value;}
+    for(const date of dates(start,end))for(const store of source.eligible(date)){
+      const row=cell(store.name,date),sales=number(row?.sales);
+      // SSSG：原始營業額÷去年同日原始營業額（新店計入），不排除停班日、不替換比較日
+      const prior=number(row?.prior_year_sales),independent=(BUSINESS.independentStores||[]).includes(store.code);
+      if(sales===null&&prior===null)continue;
+      if(sales!==null)hasDailySales=true;
+      const key=store.code||store.name;
+      if(!stores.has(key))stores.set(key,{...emptySales(),code:store.code,name:store.restaurant_name,area:store.area});
+      // 客單價＝營業額÷總 TC（不含 FA＝餐廳自接第三方平台單，總 TC 含自送與委外派送）
+      const tc=number(row.total_tc);
+      // 中心值（營業額、SSSG、客單價）都不含獨立店；店別照列
+      for(const target of independent?[stores.get(key)]:[total,stores.get(key)]){
+        if(sales!==null)addValue(target,'sales',sales);
+        addValue(target,'pairedSales',sales??0);addValue(target,'priorYearSales',prior??0);
+        if(sales!==null&&tc!==null&&tc>0){addValue(target,'ticketSales',sales);addValue(target,'ticketTc',tc);}
+      }
+    }
+    const finish=x=>{
+      const growth=ratio(x.pairedSales,x.priorYearSales);
+      return {...x,sssg:growth===null?null:growth-1,averageTicket:ratio(x.ticketSales,x.ticketTc)};
+    };
+    return {...finish(total),hasDailySales,stores:new Map([...stores].map(([key,value])=>[key,finish(value)]))};
+  }
+  function salesSssg(daily,weekly){
+    return daily.hasDailySales?{value:daily.sssg,source:'daily'}:
+      {value:weekly?.value??null,source:weekly?'weekly':null};
+  }
+  function compareSales(current,previous){
+    const change=(value,prior)=>{const q=ratio(value??null,prior??null);return q===null?null:q-1;};
+    return {priorAverageTicket:previous?.averageTicket??null,
+      ticketChange:change(current?.averageTicket,previous?.averageTicket),
+      tcChange:change(current?.ticketTc,previous?.ticketTc),salesChange:change(current?.ticketSales,previous?.ticketSales)};
+  }
   function buildOrders({rows,batches,history,mapping,catalog,reports,start,end,powerbiData}){
     rows=scopeData({rows,batches}).rows;
     const rangeAreas=areasForDate(start);
@@ -195,7 +238,9 @@
     if(prepared.conflicts.size)v.forecastWarnings.push('Power BI重複鍵內容衝突：'+prepared.conflicts.size+'筆，待核對');
     return v;
   }
-  const api={BUSINESS,AREAS,AC_ASSIGNMENTS,HISTORICAL_AC_ASSIGNMENTS,SCOPE_EFFECTIVE_DATE,REMOVED_STORES,storeInScope,areasForDate,acAssignmentsForDate,scopeData,NON_DELIVERY_STORES,GROWTH,FORECAST_TPLH,number,ratio,clean,duration,addDays,range,dates,weeks,latestBatches,areaFor,powerBiDay,build};
+  const api={BUSINESS,AREAS,AC_ASSIGNMENTS,HISTORICAL_AC_ASSIGNMENTS,SCOPE_EFFECTIVE_DATE,REMOVED_STORES,storeInScope,areasForDate,
+    acAssignmentsForDate,scopeData,NON_DELIVERY_STORES,GROWTH,FORECAST_TPLH,number,ratio,clean,duration,addDays,range,dates,weeks,
+    latestBatches,areaFor,powerBiDay,dailySales,salesSssg,compareSales,build};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.OpsMetrics=api;
 })(typeof window!=='undefined'?window:globalThis);
 

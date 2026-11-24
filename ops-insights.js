@@ -446,7 +446,7 @@
   function weeklyDraft({week,weeks=[],cells=[],targets={},independent=new Set(),excluded=new Set(),
     weekSummary=()=>null,anomalyList=[],notes=[],dataDays=null,inScope=()=>true,sssg=[],sstgStores=()=>[],storeSstgDay=()=>null,
     storeContext=()=>({}),rateThreshold=.05,daily=[],bigOrders=null,feedback=null,feedbackRows=[],newStores=new Set(),
-    delays=null,orders=[],scoreDates=null,events=[],actions=null}){
+    delays=null,orders=[],scoreDates=null,events=[],actions=null,salesComparison=null}){
     const rawNote=(key,start)=>notes.find(x=>x.week_start===start&&x.metric_key===key)||null;
     const note=(key,start)=>{
       const a=rawNote(key,start),partner={fa:'tplh',d7:'d25'}[key];if(!partner)return a;
@@ -640,6 +640,10 @@
       (sd===null?'—':sd>EPS?'▲':sd<-EPS?'▼':'→')+'\n'+sales.issue;
     if(known(sd)&&sd<-EPS){sales.problem=true;sales.compact=false;}
     if(known(sw?.value)!==known(ps?.value))sales.compact=false;
+    if(salesComparison){
+      const {tcChange,ticketChange,salesChange}=salesComparison;
+      sales.issue+=`\n單量 ${sgn(tcChange)}、客單價 ${sgn(ticketChange)}、營業額 ${sgn(salesChange)}`;
+    }
     const scored=start=>!scoreDates||scoreDates.some(d=>d>=start&&d<=addDays(start,6)&&!excluded.has(d));
     const tcChange=scored(week.start)&&scored(prevStart)?relativeChange(summary.tc,previous.tc):null;
     if(verifyChange(tcChange))sales.issue+=`\nTC ${int(summary.tc)}（上週 ${int(previous.tc)}，${sgn(tcChange)}）｜請確認資料`;
@@ -694,7 +698,7 @@
 
     fb.note=note('feedback',week.start);
     const sections=[...kpi,findings,fb],missing=[];
-    if(!known(sw?.value))missing.push('SSSG（本週未匯入 BI 週檔）');
+    if(!known(sw?.value))missing.push('SSSG');
     if(!known(summary.sstg))missing.push('SSTG（缺去年同期資料）');
     if(!known(summary.tplh))missing.push('TPLH（缺工時）');
     if(dataDays&&known(dataDays.hours)&&dataDays.hours<7)missing.push(`工時僅 ${dataDays.hours} 天`);
@@ -782,6 +786,12 @@
     if(sec.key==='feedback')return !!sec.issue&&!/未匯入|本週沒有/.test(sec.issue);
     return !sec.compact&&sec.control!=='uncontrollable'&&(!!sec.problem||!!sec.legacy);
   }
+  function compactWeeklyIssue(sec){
+    const lines=sec.issue.split('\n');
+    const index=sec.key==='sstg'?lines.findIndex(line=>line.startsWith('單量 ')&&line.includes('、客單價 ')):-1;
+    const [salesLine]=index<0?[]:lines.splice(index,1);
+    return {headingText:lines.join('｜'),salesLine};
+  }
   function weeklyText(draft,{title='',fills={},appendix=true,sections=true}={}){
     const lines=title?[title,'']:[];
     lines.push('【結論】',fills.conclusion?.issue??draft.conclusion.text,'');
@@ -790,7 +800,11 @@
     if(sections)draft.sections.forEach((sec,i)=>{
       const f=fills[sec.key]||{},n=sec.note||{};
       const heading=`${CN[i]||i+1}、${sec.label}`;
-      if(sec.compact)lines.push(heading+'　'+sec.issue.replace(/\n/g,'｜'));
+      if(sec.compact){
+        const {headingText,salesLine}=compactWeeklyIssue(sec);
+        lines.push(heading+'　'+headingText);
+        if(salesLine)lines.push(salesLine);
+      }
       else{
         lines.push(heading,sec.issue);
         if(sec.key==='feedback'&&sec.diff&&sec.diff!==sec.issue)lines.push(sec.diff);
@@ -933,7 +947,7 @@
   }
 
   const api={METRICS,CN,WEEKLY_NO_REASON,
-    addDays,byStore,center,value,fails,need,impact,streak,alerts,anomalies,weeklyDraft,weeklyText,
+    addDays,byStore,center,value,fails,need,impact,streak,alerts,anomalies,weeklyDraft,weeklyText,compactWeeklyIssue,
     restoreWeekly,weeklyMeta,weeklyNeedsAction,weeklyAppendix,weeklyEvidenceLines,mergeEvents,weeklyDelays,weeklyCommitments,WEEKLY_MIN_ORDERS,
     summaryEvidence,CIRCLE,pct,heatmap,byAc,WEEKDAYS,parseRanges,shiftByDate,staffing,dispatch,SLOTS,sheetNames,tableText,wordDoc};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.OpsInsights=api;

@@ -32,8 +32,14 @@
     const mapped=Array.isArray(mapping)?mapping:[...mapping].map(([restaurant_name,area_code])=>({restaurant_name,area_code}));
     const directory=new Map([...catalog.values()].map(s=>[clean(s.restaurant_name),String(s.store_code)]));
     const stores=[...new Map(mapped.map(s=>[clean(s.restaurant_name),{name:clean(s.restaurant_name),restaurant_name:s.restaurant_name,area:s.area_code,code:directory.get(clean(s.restaurant_name))||s.store_code||''}])).values()];
-    const index=new Map(),conflicts=new Set();
-    for(const h of history){if(h.period_code!=='full_day')continue;const name=clean(h.restaurant_name),date=String(h.record_date).slice(0,10),key=date+'|'+name,old=index.get(key);if(old&&['total_tc','tc_ex_third_party','prior_year_tc'].some(k=>number(old[k])!==number(h[k])))conflicts.add(key);else if(!old)index.set(key,h);}
+    const index=new Map(),conflicts=new Set(),salesConflicts=new Set();
+    for(const h of history){
+      if(h.period_code!=='full_day')continue;
+      const key=String(h.record_date).slice(0,10)+'|'+clean(h.restaurant_name),old=index.get(key);
+      if(!old){index.set(key,h);continue;}
+      if(['total_tc','tc_ex_third_party','prior_year_tc'].some(k=>number(old[k])!==number(h[k])))conflicts.add(key);
+      if(['sales','prior_year_sales','tc_ex_third_party'].some(k=>number(old[k])!==number(h[k])))salesConflicts.add(key);
+    }
     const eligible=date=>stores.filter(s=>!BUSINESS.nonDeliveryStores.includes(s.code)&&inScope(s.code,date,s.restaurant_name));
     const dmsDates=new Set(batches.filter(b=>b.report_type==='ByOrder'&&Number(b.row_count)>0).map(b=>b.report_date));
     const suspectDates=new Set();
@@ -73,7 +79,7 @@
         return {date,area,totalTc:tc,averageTc:average,baselineTc:baseline,missingPriorStores,countedStores:counted.length,storeCount:list.length,baselineDate:priorDate(date),baselineSubstitution:priorSubstitution(date),recentGrowth,method,switchThreshold:SETTINGS.switchThreshold,recommended:tc===null?null:tc/SETTINGS.tplh,thirdPartyCap:tc===null?null:tc*SETTINGS.thirdParty,historyWeeks:samples.length,targetWeeks:SETTINGS.weeks,samples,excludedSamples,excluded:!!reportMap.get(date)?.score_excluded};
       });
     }
-    return {stores,index,eligible,actual,priorYear,forecast,suspectDates,conflicts};
+    return {stores,index,eligible,actual,priorYear,forecast,suspectDates,conflicts,salesConflicts};
   }
   async function load(db,start,end,options={}){
     if(root.CENTER_CONFIG?.features?.scoreRevisions===true&&!root.ScoreReadSource&&!options.scoreBatches)throw Error("Revision reader is required; legacy fallback is disabled");
@@ -91,7 +97,8 @@
     for(let offset=0;;offset+=1000){const r=await db.from('t998_operations_daily_reports').select('record_date,score_excluded,special_notes').gte('record_date',first).lte('record_date',end).order('record_date').range(offset,offset+999);if(r.error)throw r.error;reports.push(...(r.data||[]));if((r.data||[]).length<1000)break;}
     return {history,batches,reports};
   }
-  const api={SETTINGS,FORMULA,clean,number,addDays,comparisonDate,priorDate,priorSubstitution,closureDay,isNewStore,weekStart,dates,sampleStart,prepare,load};
+  const api={SETTINGS,FORMULA,clean,number,addDays,comparisonDate,priorDate,priorSubstitution,closureDay,closedFor,
+    isNewStore,weekStart,dates,sampleStart,prepare,load};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.OpsForecast=api;
 })(typeof window!=='undefined'?window:globalThis);
 
