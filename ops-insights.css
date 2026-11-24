@@ -1,3 +1,4 @@
+.ins-signals:not([hidden]){display:contents}
 /* 儀表板 v2｜B 組（預警、影響度排名、週報草稿）。顏色沿用 analysis.html 的變數，夜間模式跟著切換。 */
 .metric-upload-row{grid-template-columns:repeat(5,minmax(0,1fr))}
 .ins-lead{margin:0;color:var(--muted);text-align:left;font-size:15px}

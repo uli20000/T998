@@ -1,11 +1,13 @@
 /* 儀表板 v2｜B 組計算：影響度排名（B1）、週報草稿（B2）、連續未達標預警（B3）、異常日（B4）。
  * 純計算，不碰資料庫與畫面；輸入是「每日 × 餐廳」的格子（cells），由 analysis-dashboard.js 從成績 ByOrder 整理後傳入。
  * cell：{date, code, name, area, tc, fa, d7Y, d7N, d25Y, d25N, wait}
- * 口徑與儀表板相同：D7／D25 只算非獨立店、排除第三方（FA）單；FA 佔比＝FA／TC（全部餐廳）。 */
+ * 口徑與儀表板相同：D7／D25 只算非獨立店、排除第三方（FA）單；中心 FA 佔比＝非獨立店 FA／TC。 */
 (function(root){
   'use strict';
   const EPS=1e-9;
   const Summary=root.OpsSummary||(typeof module!=='undefined'&&module.exports?require('./operations-summary.js'):null);
+  const M=root.OpsMetrics||(typeof module!=='undefined'&&module.exports?require('./operations-metrics.js'):null);
+  const inCenter=(s,independent)=>M.inCenterTotal(s.code,s.name,independent);
   const addDays=(date,n)=>Summary.addDays(date,n);
   const weekday=d=>['日','一','二','三','四','五','六'][new Date(d+'T12:00:00Z').getUTCDay()];
   const md=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
@@ -27,13 +29,19 @@
   /** 期間內依餐廳加總；excluded＝不計成績的日期。 */
   function byStore(cells,start,end,excluded=new Set()){
     const map=new Map();
-    for(const c of cells){if(c.date<start||c.date>end||excluded.has(c.date))continue;const key=c.code||c.name;const t=map.get(key)||blank(c);addInto(t,c);t.days++;map.set(key,t);}
+    for(const c of cells){
+      if(c.date<start||c.date>end||excluded.has(c.date))continue;
+      const key=c.code||c.name,t=map.get(key)||blank(c);
+      t.centerTc=(t.centerTc||0)+(c.centerTc??c.tc??0);
+      t.centerFa=(t.centerFa||0)+(c.centerFa??c.fa??0);
+      addInto(t,c);t.days++;map.set(key,t);
+    }
     return [...map.values()];
   }
-  /** 中心合計：D7／D25 用非獨立店，TC／FA／等餐用全部餐廳。 */
-  function center(stores,independent=new Set()){
+  /** 中心指標使用非獨立店，店別仍保留自身的數字。 */
+  function center(stores,independent){
     const t=blank({code:'',name:'中心'});
-    for(const s of stores){t.tc+=s.tc;t.fa+=s.fa;t.wait+=s.wait;if(!independent.has(s.code)){t.d7Y+=s.d7Y;t.d7N+=s.d7N;t.d25Y+=s.d25Y;t.d25N+=s.d25N;}}
+    for(const s of stores)if(inCenter(s,independent))addInto(t,{...s,tc:s.centerTc??s.tc,fa:s.centerFa??s.fa});
     return t;
   }
   function value(x,metric){
@@ -54,23 +62,45 @@
   }
 
   /** B1 影響度排名：依「補齊這家能幫中心補回幾單」排序。 */
-  function impact(stores,metric,{targets={},independent=new Set(),acOf=()=>null}={}){
+  function impact(stores,metric,{targets={},independent,acOf=()=>null}={}){
     const spec=METRICS[metric];if(!spec)throw new Error('不支援的指標：'+metric);
     const target=spec.targetKey?targets[spec.targetKey]??null:null;
-    const scoped=stores.filter(s=>(metric==='d7'||metric==='d25')?!independent.has(s.code)&&(s[metric+'Y']+s[metric+'N'])>0:s.tc>0);
-    const total=center(scoped,independent),centerValue=value(total,metric);
+    const isRate=metric==='d7'||metric==='d25',eligible=s=>isRate?s[metric+'Y']+s[metric+'N']>0:metric==='waiting'?s.wait>0:s.tc>0;
+    const scoped=stores.filter(eligible);
+    const centerStoreRows=stores.filter(s=>inCenter(s,independent))
+      .map(s=>({...s,tc:s.centerTc??s.tc,fa:s.centerFa??s.fa})).filter(eligible);
+    const total=center(centerStoreRows,independent),centerValue=value(total,metric);
     const gap=metric==='waiting'?null:need(total,metric,target);
-    // 百分比排名（最差＝1），用來對照「百分比最差不等於影響最大」
-    const worstOrder=scoped.filter(s=>value(s,metric)!==null).sort((a,b)=>spec.kind==='share'||metric==='waiting'?value(b,metric)-value(a,metric):value(a,metric)-value(b,metric));
-    const pctRank=new Map(worstOrder.map((s,i)=>[s.code||s.name,i+1]));
-    const list=scoped.map(s=>({code:s.code,name:s.name,area:s.area,ac:acOf(s.code),orders:metric==='d7'||metric==='d25'?s[metric+'Y']+s[metric+'N']:s.tc,value:value(s,metric),need:need(s,metric,target),pctRank:pctRank.get(s.code||s.name)||null}))
-      .filter(s=>s.need>0)
-      .sort((a,b)=>b.need-a.need||(spec.kind==='share'||metric==='waiting'?(b.value??0)-(a.value??0):(a.value??1)-(b.value??1))||a.name.localeCompare(b.name,'zh-Hant'));
-    const sumNeed=list.reduce((n,s)=>n+s.need,0);let cum=0,cut=-1;
-    for(let i=0;i<list.length;i++){cum+=list[i].need;list[i].cum=cum;list[i].share=gap?list[i].need/gap:sumNeed?list[i].need/sumNeed:null;list[i].cumShare=gap?cum/gap:sumNeed?cum/sumNeed:null;if(cut<0&&gap>0&&cum>=gap)cut=i;}
-    const acs=new Map();for(const s of list){const k=s.ac||'未設定 AC',a=acs.get(k)||{name:k,stores:0,need:0};a.stores++;a.need+=s.need;acs.set(k,a);}
-    const days=Math.max(1,...scoped.map(s=>s.days||1));
-    return {metric,label:spec.label,kind:spec.kind,target,center:{...total,value:centerValue,orders:metric==='d7'||metric==='d25'?total[metric+'Y']+total[metric+'N']:total.tc},gap,perDay:gap!==null?gap/days:null,days,stores:list,cut,sumNeed,acs:[...acs.values()].sort((a,b)=>b.need-a.need||a.name.localeCompare(b.name,'zh-Hant')),sentence:impactSentence({label:spec.label,kind:spec.kind,metric,value:centerValue,gap,list,cut,sumNeed})};
+    const compare=(a,b)=>spec.kind==='share'||metric==='waiting'?b.value-a.value:a.value-b.value;
+    function rank(list){
+      const rows=list.map(s=>({code:s.code,name:s.name,area:s.area,ac:acOf(s.code),
+        orders:isRate?s[metric+'Y']+s[metric+'N']:s.tc,value:value(s,metric),need:need(s,metric,target)}));
+      const ranks=new Map(rows.slice().sort(compare).map((s,i)=>[s.code||s.name,i+1]));
+      return rows.filter(s=>s.need>0).sort((a,b)=>b.need-a.need||compare(a,b)||a.name.localeCompare(b.name,'zh-Hant'))
+        .map(s=>({...s,pctRank:ranks.get(s.code||s.name)}));
+    }
+    const centerStores=rank(centerStoreRows),sumNeed=centerStores.reduce((n,s)=>n+s.need,0);
+    const centerShares=new Map(),acs=new Map();
+    let cum=0,cut=-1;
+    for(const [i,s] of centerStores.entries()){
+      cum+=s.need;
+      const divisor=gap||sumNeed;
+      s.cum=cum;s.share=divisor?s.need/divisor:null;s.cumShare=divisor?cum/divisor:null;
+      centerShares.set(s.code||s.name,s);
+      if(cut<0&&gap>0&&cum>=gap)cut=i;
+      const k=s.ac||'未設定 AC',a=acs.get(k)||{name:k,stores:0,need:0};
+      a.stores++;a.need+=s.need;acs.set(k,a);
+    }
+    const list=rank(scoped).map(s=>{
+      const c=centerShares.get(s.code||s.name);
+      return {...s,share:c?.share??null,cumShare:c?.cumShare??null};
+    });
+    const days=Math.max(1,...centerStoreRows.map(s=>s.days||1));
+    const orders=isRate?total[metric+'Y']+total[metric+'N']:total.tc;
+    return {metric,label:spec.label,kind:spec.kind,target,center:{...total,value:centerValue,orders},
+      gap,perDay:gap!==null?gap/days:null,days,stores:list,centerStores,cut,sumNeed,
+      acs:[...acs.values()].sort((a,b)=>b.need-a.need||a.name.localeCompare(b.name,'zh-Hant')),
+      sentence:impactSentence({label:spec.label,kind:spec.kind,metric,value:centerValue,gap,list:centerStores,cut,sumNeed})};
   }
   function impactSentence({label,kind,metric,value:v,gap,list,cut,sumNeed}){
     if(metric==='waiting'){if(!sumNeed)return '本期沒有等餐登記。';const top=list.slice(0,3);return `等餐登記 ${int(sumNeed)} 筆；${top.map(s=>s.name).join('、')} 這 ${top.length} 家占 ${pct(top.reduce((n,s)=>n+s.need,0)/sumNeed,0)}。`;}
@@ -86,7 +116,7 @@
   /** B3 連續未達標預警。
    * weeks：由舊到新，最後一期是所選週；days：由舊到新，最後一天是所選期間最後一天。
    * weekSummary(week)→{sstg,tplh}（中心，來自原本的成績計算，可為 null）。 */
-  function alerts({cells,weeks,days,targets={},independent=new Set(),excluded=new Set(),acOf=()=>null,weekSummary=()=>null,minOrders=20,weekRule=2,dayRule=3}){
+  function alerts({cells,weeks,days,targets={},independent,excluded=new Set(),acOf=()=>null,weekSummary=()=>null,minOrders=20,weekRule=2,dayRule=3}){
     const out=[];
     const weekStores=weeks.map(w=>byStore(cells,w.start,w.end,excluded));
     const weekCenter=weekStores.map(list=>list.length?center(list,independent):null);
@@ -94,7 +124,14 @@
     // 中心｜週指標
     for(const metric of ['d7','d25','fa']){
       const target=targets[METRICS[metric].targetKey],values=weekCenter.map(c=>c?value(c,metric):null),n=streak(values,metric,target);
-      if(n>=weekRule){const imp=impact(last,metric,{targets,independent,acOf});out.push({level:n>=3?'red':'orange',scope:'center',metric,weeks:n,title:`中心 ${METRICS[metric].label}｜連續 ${n} 週未達標`,detail:trend(weeks,values,n)+`（${targetText(metric,target)}）`+(imp.gap?`，本週${METRICS[metric].kind==='share'?'要少':'還差'} ${int(imp.gap)} 單；`+(imp.cut>=0?`補齊 ${imp.stores.slice(0,Math.min(imp.cut+1,5)).map(s=>s.name).join('、')}${imp.cut+1>5?' 等':' 這'} ${imp.cut+1} 家即可達標。`:'各店補齊仍不足，需全面提升。'):'。'),link:{tab:'impact',metric}});}
+      if(n<weekRule)continue;
+      const imp=impact(last,metric,{targets,independent,acOf}),share=METRICS[metric].kind==='share',nStores=imp.cut+1;
+      const names=imp.centerStores.slice(0,Math.min(nStores,5)).map(s=>s.name).join('、');
+      const plan=nStores?`補齊 ${names}${nStores>5?' 等':' 這'} ${nStores} 家即可達標。`:'各店補齊仍不足，需全面提升。';
+      const gap=imp.gap?`，本週${share?'要少':'還差'} ${int(imp.gap)} 單；${plan}`:'。';
+      out.push({level:n>=3?'red':'orange',scope:'center',metric,weeks:n,
+        title:`中心 ${METRICS[metric].label}｜連續 ${n} 週未達標`,
+        detail:trend(weeks,values,n)+`（${targetText(metric,target)}）`+gap,link:{tab:'impact',metric}});
     }
     for(const [key,label,target,isShare] of [['sstg','SSTG',targets.sstg,false],['tplh','TPLH',targets.tplh,false]]){
       const values=weeks.map(w=>{const s=weekSummary(w);return s?s[key]??null:null;});let n=0;for(let i=values.length-1;i>=0;i--){const v=values[i];if(v===null||v===undefined||target===null||target===undefined||(isShare?v<=target:v>=target))break;n++;}
@@ -105,7 +142,12 @@
       const target=targets[METRICS[metric].targetKey];if(target===null||target===undefined)continue;
       const keys=new Set(last.map(s=>s.code||s.name));
       for(const key of keys){
-        const series=weekStores.map(list=>{const s=list.find(x=>(x.code||x.name)===key);if(!s)return null;if(metric!=='fa'&&independent.has(s.code))return null;const orders=metric==='fa'?s.tc:s[metric+'Y']+s[metric+'N'];return orders>=minOrders?value(s,metric):null;});
+        const series=weekStores.map(list=>{
+          const s=list.find(x=>(x.code||x.name)===key);
+          if(!s||metric!=='fa'&&!inCenter(s,independent))return null;
+          const orders=metric==='fa'?s.tc:s[metric+'Y']+s[metric+'N'];
+          return orders>=minOrders?value(s,metric):null;
+        });
         const n=streak(series,metric,target);if(n<weekRule)continue;
         const s=last.find(x=>(x.code||x.name)===key),gap=need(s,metric,target),ac=acOf(s.code);
         out.push({level:n>=3?'red':'orange',scope:'store',metric,weeks:n,code:s.code,name:s.name,ac,need:gap,title:`${s.code?s.code+' ':''}${s.name}｜${METRICS[metric].label} 連續 ${n} 週未達標`,detail:trend(weeks,series,n)+`（${targetText(metric,target)}），本週${METRICS[metric].kind==='share'?'要少':'還要多'} ${int(gap)} 單。`+(ac?`AC：${ac}`:''),link:{tab:'impact',metric}});
@@ -134,9 +176,10 @@
 
   /** B4 異常日：和前 4 個同一星期幾比較。
    * context(date)→{rainMm, campaigns:[名稱], note}；tcThreshold＝單量差距比例，rateThreshold＝達成率差距（百分點）。 */
-  function anomalies({cells,dates,excluded=new Set(),independent=new Set(),context=()=>({}),
+  function anomalies({cells,dates,excluded=new Set(),independent,context=()=>({}),
     tcThreshold=0.15,rateThreshold=0.05,closedMin=10,lookback=4,inScope=()=>true,minOrders=0}){
     const has=new Set(cells.map(c=>c.date)),out=[];
+    const centerScored=new Set(cells.filter(c=>c.centerScored??inCenter(c,independent)).map(c=>c.date));
     const dayStores=new Map(),get=d=>{if(!dayStores.has(d))dayStores.set(d,byStore(cells,d,d,excluded));return dayStores.get(d);};
     for(const d of dates){
       if(excluded.has(d)||!has.has(d))continue;
@@ -144,18 +187,22 @@
       if(base.length<2)continue;
       // 基準日只算目標日仍在範圍內的店（例如 995 苗栗三店 11/1 起移出，前幾週的苗栗不能拿來比）
       const getBase=b=>get(b).filter(s=>inScope(s.code,d,s.name));
-      const today=center(get(d),independent),bases=base.map(b=>center(getBase(b),independent));
+      const today=center(get(d),independent),centerBase=base.filter(b=>centerScored.has(b));
+      const bases=centerBase.map(b=>center(getBase(b),independent));
       const usable=bases.filter(x=>x.tc>=minOrders);
-      const baseline=vs=>vs.length>=(minOrders?2:1)?average(vs):null;
+      const baseline=vs=>centerScored.has(d)&&centerBase.length>=2&&vs.length>=(minOrders?2:1)?average(vs):null;
       const avgTc=baseline(usable.map(x=>x.tc)),diffTc=avgTc&&today.tc>=minOrders?today.tc/avgTc-1:null;
       const dayRate=(x,m)=>x.tc>=minOrders&&validOrders(x,m)>=minOrders?value(x,m):null;
       const avgRate=m=>baseline(usable.map(x=>dayRate(x,m)).filter(x=>x!==null));
       const ctx=context(d)||{},flags=[];
-      if(diffTc!==null&&Math.abs(diffTc)>=tcThreshold)flags.push({kind:'tc',metric:'TC',value:today.tc,avg:avgTc,diff:diffTc,text:`TC ${int(today.tc)}，比近 ${base.length} 個週${weekday(d)}平均${diffTc<0?'少':'多'} ${pct(Math.abs(diffTc),0)}`});
+      if(diffTc!==null&&Math.abs(diffTc)>=tcThreshold){
+        const text=`TC ${int(today.tc)}，比近 ${centerBase.length} 個週${weekday(d)}平均${diffTc<0?'少':'多'} ${pct(Math.abs(diffTc),0)}`;
+        flags.push({kind:'tc',metric:'TC',value:today.tc,avg:avgTc,diff:diffTc,text});
+      }
       for(const m of ['d7','d25']){
         const v=dayRate(today,m),a=avgRate(m),label=METRICS[m].label;
         if(v!==null&&a!==null&&Math.abs(v-a)>=rateThreshold)flags.push({kind:'rate',metric:label,value:v,avg:a,diff:v-a,
-          text:`${label} ${pct(v)}，比近 ${base.length} 個週${weekday(d)}平均${v<a?'低':'高'} ${Math.abs((v-a)*100).toFixed(1)} 點`});
+          text:`${label} ${pct(v)}，比近 ${centerBase.length} 個週${weekday(d)}平均${v<a?'低':'高'} ${Math.abs((v-a)*100).toFixed(1)} 點`});
       }
       { const v=dayRate(today,'fa'),a=avgRate('fa');
         if(v!==null&&a!==null&&Math.abs(v-a)>=rateThreshold)flags.push({kind:'rate',metric:'FA 佔比',value:v,avg:a,diff:v-a,
@@ -175,15 +222,20 @@
       if(ctx.rainMm>0)reasons.push(`當天雨量 ${fmtNum(ctx.rainMm,ctx.rainMm<10?1:0)} mm`);
       if(ctx.campaigns?.length)reasons.push(`當天有優惠券：${ctx.campaigns.join('、')}`);
       if(ctx.note)reasons.push(`特殊事項：${ctx.note}`);
-      if(closed.length)reasons.push(`${closed.map(s=>s.name).join('、')} 當天 0 單（平常約 ${closed.map(s=>Math.round(s.avg)).join('／')} 單），可能停業或系統問題，請確認`);
-      if(!ctx.rainMm&&!ctx.campaigns?.length&&!ctx.note&&!closed.length)reasons.push('沒有記錄到天氣、優惠券或特殊事項');
+      if(!reasons.length)reasons.push('沒有記錄到天氣、優惠券或特殊事項');
       const worst=flags.slice().sort((a,b)=>Math.abs(b.kind==='tc'?b.diff/3:b.diff)-Math.abs(a.kind==='tc'?a.diff/3:a.diff))[0];
-      const icon=ctx.rainMm>=5?'🌧️':ctx.campaigns?.length?'🎟️':closed.length||flags.some(f=>f.kind==='tc')?'📦':'📉';
-      out.push({main:worst||null,others:flags.filter(f=>f!==worst),date:d,
-        label:`${md(d)}（${weekday(d)}）`,icon,flags,closed,reasons,context:ctx,baseDates:base,
-        title:`${md(d)}（${weekday(d)}）`+(worst?worst.text:'有餐廳 0 單'),
-        bad:flags.some(f=>(f.kind==='tc'&&f.diff<0)||(f.kind==='rate'&&!['FA 佔比','等餐'].includes(f.metric)&&f.diff<0)||
-          (['FA 佔比','等餐'].includes(f.metric)&&f.diff>0))||closed.length>0});
+      const label=`${md(d)}（${weekday(d)}）`;
+      if(worst){
+        const icon=ctx.rainMm>=5?'🌧️':ctx.campaigns?.length?'🎟️':flags.some(f=>f.kind==='tc')?'📦':'📉';
+        const bad=flags.some(f=>['FA 佔比','等餐'].includes(f.metric)?f.diff>0:f.diff<0);
+        out.push({scope:'center-day',main:worst,others:flags.filter(f=>f!==worst),date:d,label,icon,flags,closed:[],
+          reasons,context:ctx,baseDates:centerBase,title:label+worst.text,bad});
+      }
+      for(const store of closed){
+        const title=label+store.name+' 當天 0 單';
+        out.push({scope:'store',main:null,others:[],date:d,label,icon:'📦',flags:[],closed:[store],context:ctx,baseDates:base,title,bad:true,
+          reasons:[`平常約 ${Math.round(store.avg)} 單，可能停業或系統問題，請確認`]});
+      }
     }
     return out.sort((a,b)=>b.date.localeCompare(a.date));
   }
@@ -282,7 +334,7 @@
       if(!late)continue;
       const sameName=byName.get(normalize(row.restaurant_name));
       const store=row.store_code?byCode.get(codeKey(row.store_code)):sameName?.length===1?sameName[0]:null;
-      if(!store||independent.has(store.code))continue;
+      if(!store||!inCenter(store,independent))continue;
       const caseId=normalize(row.work_order)||normalize(row.source_key);
       const key=caseId?JSON.stringify([row.source_type,storeKey(store),caseId]):null;
       if(key&&seen.has(key))continue;
@@ -296,41 +348,44 @@
       .sort(([a,x],[b,y])=>y-x||a.name.localeCompare(b.name,'zh-Hant'))
       .map(([s,n])=>`${s.name} 遲到客訴 ${n} 件，但 D7 ${pct(value(s,'d7'))}／D25 ${pct(value(s,'d25'))} 優於中心，請查時段或外送員`);
   }
-  function weeklyDelays({delays,orders=[],week,summary={},excluded=new Set(),inScope=()=>true,scoreDates=null}){
+  function weeklyDelays({delays,orders=[],week,summary={},excluded=new Set(),inScope=()=>true,scoreDates=null,independent}){
     const available=Array.isArray(delays);
     const rows=(delays||[]).filter(x=>x.record_date>=week.start&&x.record_date<=week.end&&
       inScope(String(x.store_code||''),x.record_date,x.restaurant_name));
     const eligible=scoreDates?new Set(scoreDates):null;
     const counted=rows.filter(x=>!excluded.has(x.record_date)&&(!eligible||eligible.has(x.record_date)));
-    const ratio=available&&rows.length>0&&known(summary.tc)&&summary.tc>0&&eligible?counted.length/summary.tc:null;
+    const isCenter=row=>M.inCenterTotal(row.store_code,row.restaurant_name,independent);
+    const centerRows=rows.filter(isCenter),centerCounted=counted.filter(isCenter);
+    const ratio=available&&rows.length>0&&known(summary.tc)&&summary.tc>0&&eligible?centerCounted.length/summary.tc:null;
     const by=new Map(),reasons=new Map(),byReason=new Map(),replyGroups=new Map(),hours=new Map(),pending=new Set();
     let replied=0,unmatched=0;
     const orderGroups=groupBy(orders,o=>o.date+'|'+storeKey(o));
     for(const row of rows){
       const code=String(row.store_code||''),name=row.restaurant_name||code||'未分類餐廳',key=code||name;
       const s=by.get(key)||{code,name,n:0};s.n++;by.set(key,s);
+      const scoped=isCenter(row);
       if(row.status==='completed'){
-        replied++;
+        if(scoped)replied++;
         const reason=String(row.reason||'').trim().replace(/\s+/g,' ');
         if(reason){
           const storeReasons=byReason.get(key)||new Map();
           storeReasons.set(reason,(storeReasons.get(reason)||0)+1);byReason.set(key,storeReasons);
-          reasons.set(reason,(reasons.get(reason)||0)+1);
+          if(scoped)reasons.set(reason,(reasons.get(reason)||0)+1);
           const normalized=reason.normalize('NFKC').replace(/\s+/g,'');
           const kind=Object.keys(WAIT_REPLY_KEYWORDS).find(k=>WAIT_REPLY_KEYWORDS[k].some(word=>normalized.includes(word)))||'其他';
-          replyGroups.set(kind,(replyGroups.get(kind)||0)+1);
+          if(scoped)replyGroups.set(kind,(replyGroups.get(kind)||0)+1);
         }
-      }else pending.add(name);
+      }else if(scoped)pending.add(name);
       const same=orderGroups.get(row.record_date+'|'+key)||[];
       const full=String(row.order_number||'').trim(),exact=full?same.filter(o=>o.order===full):[];
       const tail=full.match(/\d{4}$/)?.[0];
       const matches=exact.length?exact:tail?same.filter(o=>String(o.order).endsWith(tail)):[];
       const hour=matches.length===1?matches[0].hour:null;
-      if(known(hour))hours.set(hour,(hours.get(hour)||0)+1);else unmatched++;
+      if(scoped){if(known(hour))hours.set(hour,(hours.get(hour)||0)+1);else unmatched++;}
     }
     const ranked=[...by.values()].sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name,'zh-Hant'));
-    return {count:available&&rows.length?rows.length:null,ratio,ranked,rows,counted,byReason,replied:rows.length?replied:null,
-      expected:rows.length||null,pending:[...pending],unmatched,
+    return {count:available&&rows.length?centerRows.length:null,ratio,ranked,rows,counted,centerCounted,byReason,
+      replied:rows.length?replied:null,expected:rows.length?centerRows.length:null,pending:[...pending],unmatched,
       reasons:mostReplies(reasons),replyGroups:['缺貨','量能','待確認','其他'].flatMap(k=>replyGroups.has(k)?[[k,replyGroups.get(k)]]:[]),
       hours:[...hours].sort((a,b)=>b[1]-a[1]).slice(0,3)};
   }
@@ -393,7 +448,7 @@
     const centerTotals=center(stores,independent),storeMap=new Map(stores.map(s=>[storeKey(s),s]));
     const waitAverage=rateOf(counted.length,centerTotals.tc);
     const byStoreDay=groupBy(cells,storeKey);
-    const timed=orders.filter(o=>!o.fa&&!independent.has(o.code)&&known(o.moment));
+    const timed=orders.filter(o=>!o.fa&&inCenter(o,independent)&&known(o.moment));
     const timeByStore=groupBy(timed,storeKey);
     const clusters=new Map([...timeByStore].map(([key,list])=>[key,clusteredOrders(list)]));
     const centerCluster=rateOf([...clusters.values()].reduce((n,count)=>n+count,0),timed.length);
@@ -443,7 +498,7 @@
       return out.slice(0,2);
     };
   }
-  function weeklyDraft({week,weeks=[],cells=[],targets={},independent=new Set(),excluded=new Set(),
+  function weeklyDraft({week,weeks=[],cells=[],targets={},independent,excluded=new Set(),
     weekSummary=()=>null,anomalyList=[],notes=[],dataDays=null,inScope=()=>true,sssg=[],sstgStores=()=>[],storeSstgDay=()=>null,
     storeContext=()=>({}),rateThreshold=.05,daily=[],bigOrders=null,feedback=null,feedbackRows=[],newStores=new Set(),
     delays=null,orders=[],scoreDates=null,events=[],actions=null,salesComparison=null,storeClosures=[]}){
@@ -469,7 +524,7 @@
       return storesAt.get(start);
     };
     const waitingAt=start=>{
-      if(!waits.has(start))waits.set(start,weeklyDelays({delays,orders,week:range(start),summary:sumAt(start),excluded,inScope,scoreDates}));
+      if(!waits.has(start))waits.set(start,weeklyDelays({delays,orders,week:range(start),summary:sumAt(start),excluded,inScope,scoreDates,independent}));
       return waits.get(start);
     };
     const valAt=(metric,start,code='')=>{
@@ -478,7 +533,7 @@
         if(!s)return null;
         if(metric==='waiting')return waitingAt(start).ranked.find(x=>x.code===String(code))?.n??null;
         if(metric==='sstg'||metric==='tplh')return null;
-        return independent.has(s.code)&&['d7','d25'].includes(metric)?null:value(s,metric);
+        return !inCenter(s,independent)&&['d7','d25'].includes(metric)?null:value(s,metric);
       }
       if(metric==='waiting')return waitingAt(start).ratio;
       if(metric==='sstg'||metric==='tplh')return sumAt(start)[metric]??null;
@@ -514,6 +569,7 @@
     const anoms=anomalyList.filter(a=>a.date>=week.start&&a.date<=week.end);
     const eventRows=events.slice();
     for(const a of anoms){
+      if(a.scope==='store')continue;
       const kinds=a.flags.map(f=>f.metric==='TC'?'sstg':f.metric==='FA 佔比'?'fa':f.metric==='等餐'?'waiting':f.metric.toLowerCase());
       const ctx=a.context||{};
       for(const name of ctx.campaigns||[])eventRows.push({date:a.date,name,kind:'優惠券',metrics:kinds});
@@ -545,7 +601,7 @@
       return ranked(week.start).flatMap((s,i)=>{
         let n=1,start=prevStart;
         while(available.has(start)&&top(start).some(p=>storeKey(p)===storeKey(s))){n++;start=addDays(start,-7);}
-        const long=n>=4||independent.has(s.code)||newStores.has(storeKey(s));
+        const long=n>=4||!inCenter(s,independent)||newStores.has(storeKey(s));
         const metric=records[s.metric],centerValue=metric.now;
         // 從前三以外補入時，仍須有劣於中心的表現。
         const worse=improve(s.value,centerValue,metric.lower);
@@ -661,7 +717,7 @@
     if(wait.replyGroups.length)waiting.evidence.push({text:'回覆分類：'+replyText(wait.replyGroups)});
     waiting.evidence.push({text:'集中時段：'+(wait.hours.length?wait.hours.map(([h,n])=>`${h} 時 ${n} 筆`).join('、'):'資料不足')+
       (wait.unmatched?`；${wait.unmatched} 筆缺時段或無法唯一配對`:'')});
-    const missingTc=known(wait.count)&&scoreDates?wait.count-wait.counted.length:0;
+    const missingTc=known(wait.count)&&scoreDates?wait.count-wait.centerCounted.length:0;
     if(missingTc>0)waiting.evidence.push({text:`${missingTc} 筆等餐缺對應成績日或不計成績`});
     waiting.wait=wait;
     // 店休：Power BI 與 DMS 都沒有單的店日（系統判定），同店連續日期合併
@@ -838,13 +894,24 @@
 
 
   /** C1 時段 × 星期熱圖。orders：{date, hour, code, fa, d7, d25, wait}；hour 為落單時間的小時（台灣時間），沒有時間的單另計 skipped。
-   *  口徑同上：D7／D25 只算非獨立店的非 FA 單；FA 佔比、等餐用全部單。單數少於 minOrders 的格子不給值，避免一兩張單就變紅。 */
+   *  口徑同上：D7／D25 只算非獨立店的非 FA 單；中心熱圖排除獨立店。單數少於 minOrders 的格子不給值，避免一兩張單就變紅。 */
   const WEEKDAYS=['一','二','三','四','五','六','日'];
-  function heatmap(orders,metric,{independent=new Set(),minOrders=5,hourList=null}={}){
+  function heatmap(orders,metric,{independent,minOrders=5,hourList=null,centerOnly=true}={}){
     if(!METRICS[metric])throw new Error('不支援的指標：'+metric);
     const grid=new Map(),hours=new Set(),all=blank({});let skipped=0;
-    const add=(t,o)=>{t.tc++;if(o.fa)t.fa++;else if(!independent.has(String(o.code||''))){const d7=String(o.d7||'').toUpperCase(),d25=String(o.d25||'').toUpperCase();if(d7==='Y')t.d7Y++;if(d7==='N')t.d7N++;if(d25==='Y')t.d25Y++;if(d25==='N')t.d25N++;}if(o.wait)t.wait++;};
+    const add=(t,o)=>{
+      t.tc++;
+      if(o.fa)t.fa++;
+      else if(inCenter(o,independent)){
+        for(const key of ['d7','d25']){
+          const flag=String(o[key]||'').toUpperCase();
+          if(flag==='Y'||flag==='N')t[key+flag]++;
+        }
+      }
+      if(o.wait)t.wait++;
+    };
     for(const o of orders){
+      if(centerOnly&&!inCenter(o,independent))continue;
       const h=Number(o.hour);
       if(o.hour===null||o.hour===undefined||!Number.isInteger(h)||h<0||h>23){skipped++;continue;}
       const wd=(new Date(o.date+'T12:00:00Z').getUTCDay()+6)%7,key=wd+'|'+h;
@@ -865,7 +932,7 @@
     return {metric,hours:list,rows,overall,skipped,total:all.tc+skipped,minOrders,worst};
   }
   /** 依 AC 分組（中心 → AC 層）。acOf(code) 取不到的歸「未分配」。 */
-  function byAc(stores,acOf=()=>null,independent=new Set()){
+  function byAc(stores,acOf=()=>null,independent){
     const map=new Map();
     for(const s of stores){const name=acOf(s.code)||'未分配';const g=map.get(name)||{name,stores:[]};g.stores.push(s);map.set(name,g);}
     return [...map.values()].map(g=>({name:g.name,stores:g.stores,total:center(g.stores,independent)}));

@@ -3,7 +3,8 @@
   const M=window.OpsMetrics,S=window.OpsSummary,$=id=>document.getElementById(id);
   const db=window.CenterRuntime.createClient(window.CENTER_CONFIG.supabaseUrl,window.CENTER_CONFIG.publishableKey);window.t998SupabaseClient=db;
   const labels={sstg:'SSTG',d7:'D7',d25:'D25',fa:'第三方佔比',waiting:'等餐',feedback:'080'};
-  const independentStoreCodes=new Set(M.BUSINESS.independentStores||[]);
+  const inCenter=o=>M.inCenterTotal(o.code,o.name);
+  const storeLabel=o=>o.name+(inCenter(o)?'':'（獨立店）');
   const sharedDate={key:'t998-shared-date-v1',get(){try{const x=JSON.parse(localStorage.getItem(this.key)||'null');if(x&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&['day','week','month'].includes(x.period)&&Date.now()-x.at<43200000)return x;}catch(e){}return null;},set(date,period){try{localStorage.setItem(this.key,JSON.stringify({date,period,at:Date.now()}));}catch(e){}}};
   const state={period:'day',date:null,month:null,metric:'sstg',stores:[],catalog:new Map(),cache:new Map(),weather:new Map(),data:null,previous:null,comparisonRange:null,request:0};
   const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -155,10 +156,28 @@
   }
   function syncMetricTab(){document.querySelectorAll('[data-metric]').forEach(button=>{const active=button.dataset.metric===state.metric;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});}
   function metricTitle(metric){return labels[metric]||labels.sstg;}
-  function sstgPage(data,rows,r){const weatherGroups=new Map(),daily=dailyStoreAnalytics(data,r),current=model(data,r);for(const x of daily){const city=cityForStore(x.storeCode,x.area),wx=weatherRow(x.date,city),condition=!wx?'無天氣資料':Number(wx.precipitation)>0||wx.trace?'有降雨':'未測得降雨',key=x.area,g=weatherGroups.get(key)||{conditions:new Set(),storeDays:0};g.conditions.add(condition);g.storeDays++;weatherGroups.set(key,g);}const areas=M.areasForDate(r.start).map(([code,name])=>{const x=current.areas.get(code),w=weatherGroups.get(code);return {code,name,tc:x?.tc??null,prior:x?.prior??null,sstg:x?.sstg??null,stores:rows.filter(s=>s.area===code).length,weather:w?[...w.conditions].sort().join('、'):'無天氣資料',storeDays:w?.storeDays||0};}).filter(x=>x.stores>0).sort((a,b)=>(b.sstg??-Infinity)-(a.sstg??-Infinity)),ranked=rankedStores(rows,'sstg'),rankRows=ranked.map((x,i)=>[i<3?'前三':'後五',x.code,x.name,regionName(x.area),pct(x.sstg)]);return sssgRanking(data,r)+'<section class="analysis-panel"><h3>本期餐廳 SSTG 排名｜'+goalText('sstg',goalSstg)+'</h3>'+table(['區段','店號','餐廳','商圈','SSTG'],rankRows)+'</section><section class="analysis-panel"><h3>商圈 SSTG 與天氣</h3>'+table(['商圈','天氣','餐廳數','餐廳日','TC','去年同期 TC','SSTG'],areas.map(x=>[x.name,x.weather,fmt(x.stores),fmt(x.storeDays),fmt(x.tc),fmt(x.prior),pct(x.sstg)]))+'</section>';}
+  function sstgPage(data,rows,r){
+    const weatherGroups=new Map(),current=model(data,r);
+    for(const x of dailyStoreAnalytics(data,r)){
+      const wx=weatherRow(x.date,cityForStore(x.storeCode,x.area));
+      const condition=!wx?'無天氣資料':Number(wx.precipitation)>0||wx.trace?'有降雨':'未測得降雨';
+      const g=weatherGroups.get(x.area)||{conditions:new Set(),storeDays:0};
+      g.conditions.add(condition);g.storeDays++;weatherGroups.set(x.area,g);
+    }
+    const areas=M.areasForDate(r.start).map(([code,name])=>{
+      const x=current.areas.get(code),w=weatherGroups.get(code);
+      return {name,tc:x?.tc??null,prior:x?.prior??null,sstg:x?.sstg??null,
+        stores:rows.filter(s=>s.area===code).length,weather:w?[...w.conditions].sort().join('、'):'無天氣資料',storeDays:w?.storeDays||0};
+    }).filter(x=>x.stores>0).sort((a,b)=>(b.sstg??-Infinity)-(a.sstg??-Infinity));
+    const rankRows=rankedStores(rows,'sstg').map((x,i)=>[i<3?'前三':'後五',x.code,storeLabel(x),regionName(x.area),pct(x.sstg)]);
+    const areaRows=areas.map(x=>[x.name,x.weather,fmt(x.stores),fmt(x.storeDays),fmt(x.tc),fmt(x.prior),pct(x.sstg)]);
+    return sssgRanking(data,r)+'<section class="analysis-panel"><h3>本期餐廳 SSTG 排名｜'+goalText('sstg',goalSstg)+'</h3>'+
+      table(['區段','店號','餐廳','商圈','SSTG'],rankRows)+'</section><section class="analysis-panel"><h3>商圈 SSTG 與天氣</h3>'+
+      table(['商圈','天氣','餐廳數','餐廳日','TC','去年同期 TC','SSTG'],areaRows)+'</section>';
+  }
   function orderMoment(value,date){const direct=dateTime(value);if(direct!==null)return direct;const m=String(value||'').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);return m?Date.parse(date+'T'+String(m[1]).padStart(2,'0')+':'+m[2]+':'+(m[3]||'00')+'+08:00'):null;}
   // 等餐／TC 分子只算有單量的日期（排除不計成績日、尚無單量的今天與未來日期），與分母 TC 同一批日期
-  function scoredDelays(data,dates){const set=new Set(dates);return (data.delays||[]).filter(x=>set.has(String(x.record_date).slice(0,10)));}
+  function scoredDelays(data,dates){const set=new Set(dates);return M.centerDelayRows(data.delays||[]).filter(x=>set.has(String(x.record_date).slice(0,10)));}
   function analysisOrders(data,r){
     const batches=new Map(data.batches.map(b=>[b.id,b])),excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),waitSet=new Set(data.delays.map(x=>String(x.record_date)+'|'+String(x.store_code||'')+'|'+orderTail(x.order_number))),byDateOrders=new Map(),byDateTails=new Map(),orders=[],seen=new Set(),areaMap=new Map(data.mapping.map(x=>[M.clean(x.restaurant_name),x.area_code]));
     for(const row of data.rows){const b=batches.get(row.batch_id);if(!b||b.report_type!=='ByDate'||b.report_date<r.start||b.report_date>r.end||excluded.has(b.report_date))continue;const base=b.report_date+'|'+String(row.store_code||'')+'|',full=String(row.order_number||'').trim();if(full&&!byDateOrders.has(base+full))byDateOrders.set(base+full,row);const tk=base+'#'+orderTail(row.order_number),t=byDateTails.get(tk);byDateTails.set(tk,t===undefined?row:(t===row?row:null));}
@@ -174,12 +193,22 @@
     return orders;
   }
   function periodSplit(orders){const groups={meal:{label:'餐期',orders:[]},nonmeal:{label:'非餐期',orders:[]}};for(const x of orders){if(x.moment===null)continue;const d=new Date(x.moment),hour=(d.getUTCHours()+8)%24,meal=(hour>=11&&hour<13)||(hour>=18&&hour<20);groups[meal?'meal':'nonmeal'].orders.push(x);}return Object.values(groups).map(g=>{const n=g.orders.length,fa=g.orders.filter(x=>x.fa).length,wait=g.orders.filter(x=>x.wait).length;return [g.label,fmt(n),fmt(fa),pct(n?fa/n:null),fmt(wait),pct(n?wait/n:null)];});}
-  function concentrationRows(data,r){const orders=analysisOrders(data,r),timed=orders.filter(x=>x.moment!==null),groups=[{name:'集中單',list:timed.filter(x=>x.cluster)},{name:'非集中單',list:timed.filter(x=>!x.cluster)}];const rows=groups.map(g=>{const n=g.list.length,fa=g.list.filter(x=>x.fa).length,wait=g.list.filter(x=>x.wait).length;return [g.name,fmt(n),fmt(fa),pct(n?fa/n:null),fmt(wait),pct(n?wait/n:null)];});const missing=orders.filter(x=>x.moment===null).length;if(missing)rows.push(['資料不足',fmt(missing),'—','—','—','—']);return {orders,rows};}
   function mealOrder(x){const hour=(new Date(x.moment).getUTCHours()+8)%24;return (hour>=11&&hour<13)||(hour>=18&&hour<20);}
   function waitRankRows(orders,kind){const specs={cluster:['集中單等餐',x=>x.moment!==null&&x.cluster],noncluster:['非集中單等餐',x=>x.moment!==null&&!x.cluster],meal:['餐期等餐',x=>x.moment!==null&&mealOrder(x)],nonmeal:['非餐期等餐',x=>x.moment!==null&&!mealOrder(x)]},[label,test]=specs[kind],groups=new Map();for(const x of orders){if(!test(x))continue;const key=x.code||x.name,g=groups.get(key)||{code:x.code,name:x.name,total:0,wait:0};g.total++;if(x.wait)g.wait++;groups.set(key,g);}const rows=[...groups.values()].filter(x=>x.wait>0).sort((a,b)=>(b.wait/b.total)-(a.wait/a.total)||b.wait-a.wait||a.name.localeCompare(b.name,'zh-Hant')).slice(0,3).map((x,i)=>[i+1,x.code,x.name,fmt(x.wait),fmt(x.total),pct(x.total?x.wait/x.total:null)]);return {label,rows};}
   function waitRankPanel(orders,kind){const x=waitRankRows(orders,kind);return '<section class="analysis-panel"><h4>'+x.label+'｜前三名餐廳</h4>'+table(['名次','店號','餐廳','等餐筆數','該組訂單數','等餐比例'],x.rows)+'</section>';}
   function waitGroupSummaryPanel(orders,kind){const specs=kind==='cluster'?[['集中單',x=>x.moment!==null&&x.cluster],['非集中單',x=>x.moment!==null&&!x.cluster]]:[['餐期',x=>x.moment!==null&&mealOrder(x)],['非餐期',x=>x.moment!==null&&!mealOrder(x)]];const rows=specs.map(([label,test])=>{const group=orders.filter(test),wait=group.filter(x=>x.wait).length;return [label,fmt(group.length),fmt(wait),pct(group.length?wait/group.length:null)];});return '<section class="analysis-panel"><h4>'+(kind==='cluster'?'集中單／非集中單等餐比例':'餐期／非餐期等餐比例')+'</h4>'+table(['訂單群組','有效訂單','等餐單','等餐比例'],rows)+'</section>';}
-  function factorComparisonPanel(orders,metric,title,groupFor){const key=String(metric).toLowerCase(),all=orders.filter(x=>!independentStoreCodes.has(x.code)&&!x.fa&&['Y','N'].includes(x[key])&&(!groupFor.include||groupFor.include(x))),known=all.filter(x=>groupFor(x)!==null),missing=all.filter(x=>groupFor(x)===null),groups=groupFor.groups.map(([label,test])=>{const list=known.filter(test),wins=list.filter(x=>x[key]==='Y').length;return [label,fmt(list.length),fmt(wins),pct(list.length?wins/list.length:null)];});if(missing.length)groups.push(['資料不足',fmt(missing.length),fmt(missing.filter(x=>x[key]==='Y').length),'—']);return '<section class="analysis-panel"><h4>'+title+'</h4>'+table([groupFor.columnLabel||'訂單群組','有效訂單','達成單','達成率'],groups)+'</section>';}
+  function factorComparisonPanel(orders,metric,title,groupFor){
+    const key=String(metric).toLowerCase();
+    const all=orders.filter(x=>inCenter(x)&&!x.fa&&['Y','N'].includes(x[key])&&(!groupFor.include||groupFor.include(x)));
+    const known=all.filter(x=>groupFor(x)!==null),missing=all.filter(x=>groupFor(x)===null);
+    const groups=groupFor.groups.map(([label,test])=>{
+      const list=known.filter(test),wins=list.filter(x=>x[key]==='Y').length;
+      return [label,fmt(list.length),fmt(wins),pct(list.length?wins/list.length:null)];
+    });
+    if(missing.length)groups.push(['資料不足',fmt(missing.length),fmt(missing.filter(x=>x[key]==='Y').length),'—']);
+    return '<section class="analysis-panel"><h4>'+title+'</h4>'+
+      table([groupFor.columnLabel||'訂單群組','有效訂單','達成單','達成率'],groups)+'</section>';
+  }
   function factorComparisonPanels(data,r,metric){const orders=analysisOrders(data,r),by=(fn,labels)=>{fn.groups=labels;return fn;},meal=x=>x.moment===null?null:mealOrder(x);return [
     factorComparisonPanel(orders,metric,'等餐分析',by(x=>x.wait,[['有等餐登記',x=>x.wait],['無等餐登記',x=>!x.wait]])),
     factorComparisonPanel(orders,metric,'晚派分析',by(x=>x.late,[['晚派（抵達前 20 分鐘內派單）',x=>x.late],['未晚派',x=>!x.late]])),
@@ -188,12 +217,63 @@
     factorComparisonPanel(orders,metric,'距離分析',by(x=>x.distanceKm===null?null:x.distanceKm<=2,[['2 公里內',x=>x.distanceKm!==null&&x.distanceKm<=2],['超過 2 公里',x=>x.distanceKm!==null&&x.distanceKm>2]])),
     factorComparisonPanel(orders,metric,'併單分析｜同外送員同日離店 3 分鐘內',Object.assign(by(x=>x.departureGroupSize===null?null:x.departureGroupSize>=3,[['剛好 2 單',x=>x.departureGroupSize===2],['3 單以上',x=>x.departureGroupSize>=3]]),{include:x=>x.departureGroupSize>=2,columnLabel:'出門單量'}))
   ].join('');}
-  function d7d25Page(data,rows,r){const nonIndependent=rows.filter(x=>!independentStoreCodes.has(String(x.code))),ranked7=rankedStores(nonIndependent,'d7'),ranked25=rankedStores(nonIndependent,'d25'),factors=metric=>'<section class="analysis-panel factor-section"><h3>'+metric+'｜非獨立店因素比較</h3><div class="analysis-grid factor-grid">'+factorComparisonPanels(data,r,metric)+'</div></section>';return '<div class="analysis-grid"><section class="analysis-panel"><h3>非獨立店 D7 排名｜前三名與後五名（'+goalText('d7')+'）</h3>'+table(['名次','店號','餐廳','商圈','D7','等餐／TC','晚派單比例'],ranked7.map((x,i)=>[i<3?'前三':'後五',x.code,x.name,regionName(x.area),pct(x.d7),pct(x.waitRatio),pct(x.lateShare)]))+'</section><section class="analysis-panel"><h3>非獨立店 D25 排名｜前三名與後五名（'+goalText('d25')+'）</h3>'+table(['名次','店號','餐廳','商圈','D25','等餐／TC','晚派單比例'],ranked25.map((x,i)=>[i<3?'前三':'後五',x.code,x.name,regionName(x.area),pct(x.d25),pct(x.waitRatio),pct(x.lateShare)]))+'</section></div>';}
+  function d7d25Page(data,rows,r){
+    const ranking=metric=>{
+      const label=metric.toUpperCase();
+      const ranks=rankedStores(rows,metric).map((x,i)=>[
+        i<3?'前三':'後五',x.code,storeLabel(x),regionName(x.area),pct(x[metric]),pct(x.waitRatio),pct(x.lateShare)
+      ]);
+      return '<section class="analysis-panel"><h3>餐廳 '+label+' 排名｜前三名與後五名（'+goalText(metric)+'）</h3>'+
+        table(['名次','店號','餐廳','商圈',label,'等餐／TC','晚派單比例'],ranks)+'</section>';
+    };
+    return '<div class="analysis-grid">'+ranking('d7')+ranking('d25')+'</div>';
+  }
 
-  function faPage(data,previous,rows,r){const current=model(data,r),prior=previous?model(previous,previousRange(r)):null,areas=M.areasForDate(r.start).map(([code,name])=>{const a=current.areas.get(code),pa=prior?.areas.get(code),hours=current.hourTotals.get(code)?.hours||0,priorHours=prior?.hourTotals.get(code)?.hours||0,tplh=current.missingHourDays.length?null:M.ratio(a?.nonfa??null,hours),priorTplh=M.ratio(pa?.nonfa??null,priorHours);return {code,name,a,pa,tplh,priorTplh};}).filter(x=>x.a&&(x.a.tc||x.a.fa||x.a.prior));const ranked=rankedStores(rows.filter(x=>!independentStoreCodes.has(String(x.code))),'fa'),concentration=concentrationRows(data,r),period=periodSplit(concentration.orders);return '<section class="analysis-panel"><h3>非獨立店 FA 佔比排名｜前三名與後五名（'+goalText('faShareMax',goalFa)+'）</h3>'+table(['名次','店號','餐廳','商圈','FA佔比','FA單','TC','區域 TPLH'],ranked.map((x,i)=>[i<3?'較佳':'待改善',x.code,x.name,regionName(x.area),pct(x.faShare),fmt(x.fa),fmt(x.tc),fmt(areas.find(a=>a.code===x.area)?.tplh,2)]))+'</section>'+basicFactors(concentration.orders,'fa')+'<section class="analysis-panel"><h3>區域 TPLH｜'+goalText('tplh',goalTplh)+'</h3>'+table((state.period==='day'?['區域','FA佔比','實際工時','TPLH（扣 FA）']:['區域','FA佔比','實際工時','TPLH（扣 FA）','前期 TPLH','變化']),areas.map(x=>{const a=x.a;return (state.period==='day'?[x.name,pct(a.faShare),fmt(current.hourTotals.get(x.code)?.hours,2),fmt(x.tplh,2)]:[x.name,pct(a.faShare),fmt(current.hourTotals.get(x.code)?.hours,2),fmt(x.tplh,2),fmt(x.priorTplh,2),x.tplh!==null&&x.priorTplh!==null?fmt(x.tplh-x.priorTplh,2):'—']);}))+'</section>';}
+  function faPage(data,previous,rows,r){
+    const current=model(data,r),prior=previous?model(previous,previousRange(r)):null;
+    const areas=M.areasForDate(r.start).map(([code,name])=>{
+      const a=current.areas.get(code),pa=prior?.areas.get(code);
+      const hours=current.hourTotals.get(code)?.hours||0,priorHours=prior?.hourTotals.get(code)?.hours||0;
+      const tplh=current.missingHourDays.length?null:M.ratio(a?.nonfa??null,hours),priorTplh=M.ratio(pa?.nonfa??null,priorHours);
+      return {code,name,a,tplh,priorTplh};
+    }).filter(x=>x.a&&(x.a.tc||x.a.fa||x.a.prior));
+    const ranks=rankedStores(rows,'fa').map((x,i)=>[
+      i<3?'較佳':'待改善',x.code,storeLabel(x),regionName(x.area),pct(x.faShare),fmt(x.fa),fmt(x.tc),fmt(areas.find(a=>a.code===x.area)?.tplh,2)
+    ]);
+    const day=state.period==='day',columns=['區域','FA佔比','實際工時','TPLH（扣 FA）'];
+    if(!day)columns.push('前期 TPLH','變化');
+    const areaRows=areas.map(x=>{
+      const row=[x.name,pct(x.a.faShare),fmt(current.hourTotals.get(x.code)?.hours,2),fmt(x.tplh,2)];
+      if(!day)row.push(fmt(x.priorTplh,2),x.tplh!==null&&x.priorTplh!==null?fmt(x.tplh-x.priorTplh,2):'—');
+      return row;
+    });
+    const orders=analysisOrders(data,r).filter(inCenter);
+    return '<section class="analysis-panel"><h3>餐廳 FA 佔比排名｜前三名與後五名（'+goalText('faShareMax',goalFa)+'）</h3>'+
+      table(['名次','店號','餐廳','商圈','FA佔比','FA單','TC','區域 TPLH'],ranks)+'</section>'+basicFactors(orders,'fa')+
+      '<section class="analysis-panel"><h3>區域 TPLH｜'+goalText('tplh',goalTplh)+'</h3>'+table(columns,areaRows)+'</section>';
+  }
   const reasonDefs=[['備餐／餐點製作',['製作','備餐','出餐','餐點','炸','烤','包裝','備料']],['尖峰／人力不足',['忙','尖峰','排隊','人力','人手','廚房','單多']],['設備／系統問題',['設備','機器','故障','系統','當機','印單','網路']],['訂單／交接溝通',['訂單','單號','通知','未收到','聯繫','溝通','交接','找不到']]];
   function reasonCategory(text){return reasonDefs.find(([,keys])=>keys.some(k=>String(text||'').includes(k)))?.[0]||'其他';}
-  function waitingPage(rows,data,r){const delays=data.delays,category=new Map();for(const x of delays){if(x.status!=='completed'||!x.reason)continue;const key=reasonCategory(x.reason);category.set(key,(category.get(key)||0)+1);}const cats=[...category].sort((a,b)=>b[1]-a[1]),ranked=sortedFor(rows,'waiting').filter(x=>x.wait>0).slice(0,5),concentration=concentrationRows(data,r),detail=delays.slice().sort((a,b)=>String(b.record_date).localeCompare(String(a.record_date))||String(b.created_at).localeCompare(String(a.created_at))).slice(0,50).map(x=>[x.record_date,x.store_code,x.restaurant_name,x.order_number,x.status==='completed'?'已回覆':'待回覆',x.reason||'—']);const clusterGroup='<div class="wait-analytics-group"><h3>集中單／非集中單等餐比例</h3><div class="analysis-grid wait-rank-grid">'+waitRankPanel(concentration.orders,'cluster')+waitRankPanel(concentration.orders,'noncluster')+'</div></div>',mealGroup='<div class="wait-analytics-group"><h3>餐期／非餐期等餐比例</h3><div class="analysis-grid wait-rank-grid">'+waitRankPanel(concentration.orders,'meal')+waitRankPanel(concentration.orders,'nonmeal')+'</div></div>';return '<section class="analysis-panel"><h3>等餐筆數最高餐廳｜前五名</h3>'+table(['名次','店號','餐廳','商圈','等餐筆數','TC','等餐／TC'],ranked.map((x,i)=>[i+1,x.code,x.name,regionName(x.area),fmt(x.wait),fmt(x.tc),pct(x.waitRatio)]))+'</section>'+basicFactors(concentration.orders,'waiting')+clusterGroup+mealGroup+'<div class="analysis-grid"><section class="analysis-panel"><h3>等餐原因分類</h3>'+table(['原因類別','已回覆筆數'],cats.map(x=>[x[0],fmt(x[1])]))+'</section><section class="analysis-panel"><h3>等餐明細</h3>'+table(['日期','店號','餐廳','訂單編號','狀態','原因'],detail)+'</section></div>';}
+  function waitingPage(rows,data,r){
+    const delays=data.delays,category=new Map();
+    for(const x of M.centerDelayRows(delays)){
+      if(x.status!=='completed'||!x.reason)continue;
+      const key=reasonCategory(x.reason);category.set(key,(category.get(key)||0)+1);
+    }
+    const cats=[...category].sort((a,b)=>b[1]-a[1]),ranked=sortedFor(rows,'waiting').filter(x=>x.wait>0).slice(0,5);
+    const orders=analysisOrders(data,r);
+    const detail=delays.slice().sort((a,b)=>String(b.record_date).localeCompare(String(a.record_date))||String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0,50).map(x=>[x.record_date,x.store_code,x.restaurant_name,x.order_number,x.status==='completed'?'已回覆':'待回覆',x.reason||'—']);
+    const group=(title,keys)=>'<div class="wait-analytics-group"><h3>'+title+'</h3><div class="analysis-grid wait-rank-grid">'+
+      keys.map(key=>waitRankPanel(orders,key)).join('')+'</div></div>';
+    const ranks=ranked.map((x,i)=>[i+1,x.code,storeLabel(x),regionName(x.area),fmt(x.wait),fmt(x.tc),pct(x.waitRatio)]);
+    return '<section class="analysis-panel"><h3>等餐筆數最高餐廳｜前五名</h3>'+
+      table(['名次','店號','餐廳','商圈','等餐筆數','TC','等餐／TC'],ranks)+'</section>'+basicFactors(orders.filter(inCenter),'waiting')+
+      group('集中單／非集中單等餐比例',['cluster','noncluster'])+group('餐期／非餐期等餐比例',['meal','nonmeal'])+
+      '<div class="analysis-grid"><section class="analysis-panel"><h3>等餐原因分類</h3>'+
+      table(['原因類別','已回覆筆數'],cats.map(x=>[x[0],fmt(x[1])]))+'</section><section class="analysis-panel"><h3>等餐明細</h3>'+
+      table(['日期','店號','餐廳','訂單編號','狀態','原因'],detail)+'</section></div>';
+  }
   function complaintCode(row){const match=String(row?.main_topic||'').trim().match(/^([HASPCM])(?:\s|$)/i);return match?match[1].toUpperCase():'OTHER';}
   function complaintCodeCounts(rows){const counts=new Map();for(const row of rows){const code=complaintCode(row);counts.set(code,(counts.get(code)||0)+1);}const order=['H','A','S','P','C','M','OTHER'];return [...counts].map(([code,count])=>({name:code,count})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name)||b.count-a.count);}
   function restaurantComplaintCodes(rows){return complaintCodeCounts(rows).map(x=>x.name+'×'+fmt(x.count)).join('、')||'—';}
@@ -209,7 +289,18 @@
     const volume='<section class="analysis-panel feedback-volume"><h3>本期資料量</h3>'+table(['來源','資料量'],[['0800 外送抱怨',fmt(c0800.length)],['4128 '+M.BUSINESS.centerName,fmt(c4128.length)],...(['week','month'].includes(state.period)?[['期間完全一致的 GES 餐廳彙總',fmt(ges.length)+' 間']]:[])])+'</section>';
     return '<div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>0800 抱怨分類</h3>'+table(state.period==='day'?['代碼','當日']:['代碼','本期','前期','差異'],state.period==='day'?topicRows.map(row=>row.slice(0,2)):topicRows)+'</section><section class="analysis-panel"><h3>0800 餐廳排行（排除外送中心）</h3>'+table(['名次','餐廳','抱怨筆數','抱怨代碼'],topTies(stores0800,10).map((x,i)=>[stores0800.findIndex(y=>y.count===x.count)+1,x.name,fmt(x.count),restaurantComplaintCodes(x.rows)]))+'</section></div><div class="analysis-grid feedback-pair"><section class="analysis-panel"><h3>4128 '+escape(M.BUSINESS.centerName)+'</h3>'+table(['名次','店號','餐廳','紀錄筆數'],topTies(stores4128,10).map((x,i)=>[stores4128.findIndex(y=>y.count===x.count)+1,x.code||'—',x.name,fmt(x.count)]))+'</section>'+gesPanel+'</div>';
   }
-  function comparisonValues(data,r,metric){const rows=storeAnalytics(data,r),summary=model(data,r).summary,total=key=>rows.reduce((n,x)=>n+(x[key]||0),0),tc=summary.tc;if(metric==='sstg')return [['SSTG',summary.tc!==null?summary.sstg:null,'rate'],['TC',summary.tc,'count']];if(metric==='d7'||metric==='d25'){const y7=total('d7Y'),n7=total('d7N'),y25=total('d25Y'),n25=total('d25N');return [['D7',y7+n7?y7/(y7+n7):null,'rate'],['D25',y25+n25?y25/(y25+n25):null,'rate']];}if(metric==='fa')return [['FA 佔比',summary.faShare,'rate'],['TPLH',summary.tplh,'decimal'],['TC',tc,'count']];if(metric==='waiting')return [['等餐筆數',data.delays.length,'count'],['等餐／TC',tc?scoredDelays(data,[...model(data,r).days.values()].filter(d=>d.tcSource&&!d.scoreExcluded).map(d=>d.date)).length/tc:null,'rate']];const fb=data.feedback||[];return [['0800 抱怨',fb.filter(x=>x.source_type==='0800').length,'count'],['4128 紀錄',fb.filter(x=>x.source_type==='4128').length,'count']];}
+  function comparisonValues(data,r,metric){
+    const {summary,days}=model(data,r),tc=summary.tc;
+    if(metric==='sstg')return [['SSTG',summary.sstg,'rate'],['TC',tc,'count']];
+    if(metric==='d7'||metric==='d25')return [['D7',summary.d7,'rate'],['D25',summary.d25,'rate']];
+    if(metric==='fa')return [['FA 佔比',summary.faShare,'rate'],['TPLH',summary.tplh,'decimal'],['TC',tc,'count']];
+    if(metric==='waiting'){
+      const scored=[...days.values()].filter(d=>d.tcComplete).map(d=>d.date);
+      return [['等餐筆數',M.centerDelayRows(data.delays).length,'count'],['等餐／TC',M.ratio(scoredDelays(data,scored).length,tc),'rate']];
+    }
+    const fb=data.feedback||[];
+    return [['0800 抱怨',fb.filter(x=>x.source_type==='0800').length,'count'],['4128 紀錄',fb.filter(x=>x.source_type==='4128').length,'count']];
+  }
   function compareValue(a,b,type){if(type==='rate')return pct(a);if(type==='decimal')return fmt(a,2);return fmt(a);}
   function compareDelta(a,b,type){if(a===null||a===undefined||b===null||b===undefined||!Number.isFinite(Number(a))||!Number.isFinite(Number(b)))return '—';const d=Number(a)-Number(b);return type==='rate'?(d>0?'+':'')+fmt(d*100,1)+'%':(d>0?'+':'')+fmt(d,type==='decimal'?2:0);}
   function dailyComparisonPanel(data,previous,r,priorRange,metric){if(state.period!=='day')return '';const current=comparisonValues(data,r,metric),prior=previous?comparisonValues(previous,priorRange,metric):[],priorMap=new Map(prior.map(x=>[x[0],x])),label=priorRange?.special?'特殊日對當週六':'上週同日',rows=current.map(([name,value,type])=>{const old=priorMap.get(name);return [name,compareValue(value,old?.[1],type),compareValue(old?.[1],old?.[1],type),compareDelta(value,old?.[1],type)];});return '<section class="analysis-panel daily-comparison"><h3>日檢視差異對比｜'+label+'（'+(priorRange?.start||'—')+'）</h3>'+table(['指標','本日','比較日','差異'],rows)+'</section>';}
@@ -232,7 +323,8 @@
     const evidence=trackingEvidence(data,r),cut=evidence.indexOf('<details class="analysis-panel">');
     const mainEvidence=cut<0?evidence:evidence.slice(0,cut),coverage=cut<0?'':evidence.slice(cut);
     box.onclick=null;
-    box.innerHTML=trackingOverview(data,r)+periodNotes(data,r)+trackingComparison()+mainEvidence+content+
+    const signals=ALERT_METRICS[metric]?'<div id="metricSignals" class="ins-signals" hidden></div>':'';
+    box.innerHTML=trackingOverview(data,r)+periodNotes(data,r)+trackingComparison()+signals+mainEvidence+content+
       (metric==='feedback'?feedbackVolume(data):'')+coverage;
     $('biUploadFooter').classList.toggle('hidden',metric!=='sstg');
     $('feedbackUploadFooter').classList.toggle('hidden',metric!=='feedback');
@@ -252,7 +344,11 @@
     return insightContext(r).then(ctx=>{
       if(render!==metricRender||request!==state.request)return;
       const html=alertsSection(ctx,r,metric)+(metric==='sstg'?anomaliesSection(ctx,r):'');
-      if(html)box.insertAdjacentHTML('afterbegin',html);
+      if(html){
+        const section=$('metricSignals');
+        section.innerHTML=html;
+        section.hidden=false;
+      }
     }).catch(error=>console.warn('預警資料讀取失敗',error));
   }
   function renderChoices(){
@@ -271,11 +367,14 @@
     return {原因:meta?.reason||'',追上週:x.metric_key==='conclusion'?(meta?.commitments?.text||''):follow};}
   function appendDetailSheets(wb,data,rows,r){
     const result=model(data,r),summary=result.summary;
+    const scored=[...result.days.values()].filter(d=>d.tcComplete).map(d=>d.date);
+    const delayCount=summary.tc===null?null:M.centerDelayRows(data.delays).length;
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{週期:state.period,期間:periodLabel(r),
       TC來源:result.provisionalDays.length?'Power BI；尚未上傳 Power BI 日期用 DMS 暫估：'+result.provisionalDays.join('、'):'Power BI',D7D25來源:'DMS（ByOrder）',
       預估公式:window.OpsForecast.FORMULA,預估TC:summary.forecast,預估工時:summary.forecastHours,TC預估達成率:summary.tcAchievement,達成率採計實際TC:summary.attainmentActual,
       達成率採計預估TC:summary.attainmentForecast,資料提示:result.forecastWarnings.join('；'),TC:summary.tc,去年同期TC:summary.prior,去年比較口徑:'前52週同星期，依當期餐廳範圍',FA:summary.fa,
-      FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,等餐筆數:data.delays.length,
+      FA佔比:summary.faShare,SSTG:summary.sstg,D7:summary.d7,D25:summary.d25,實際工時:summary.actualHours,TPLH:summary.tplh,
+      等餐筆數:delayCount,等餐比例:M.ratio(scoredDelays(data,scored).length,summary.tc),
       不計成績日期:data.reports.filter(x=>x.score_excluded).map(x=>x.record_date).join('、')}]),'營運摘要');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(result.forecastDetails.map(x=>({日期:x.date,區域:x.area,預估TC:x.excluded?null:x.totalTc,
       需求工時:x.excluded?null:x.recommended,預估依據:x.method,去年TC:x.baselineTc,缺去年未計入:(x.missingPriorStores||[]).map(s=>s.name||s.code).join('、'),去年對應日期:x.baselineDate,
@@ -360,13 +459,17 @@
   function feedbackVolume(data){const f=data.feedback||[];return '<section class="analysis-panel"><h3>本期資料量</h3>'+table(['來源','資料量'],[['0800 外送抱怨',fmt(f.filter(x=>x.source_type==='0800').length)],['4128 '+M.BUSINESS.centerName,fmt(f.filter(x=>x.source_type==='4128').length)],['GES 餐廳彙總',fmt(f.filter(x=>x.source_type==='GES').length)+' 間']])+'<p>2026 年 10 月以指定的兩份十月檔為準；查詢範圍超出十月時，其他日期來源完整度待確認。無匯入紀錄不表示零件。</p></section>';}
   function basicFactors(orders,kind){const groups=[['集中單',x=>x.moment!==null&&x.cluster],['非集中單',x=>x.moment!==null&&!x.cluster],['下單時間不足',x=>x.moment===null],['餐期',x=>x.moment!==null&&mealOrder(x)],['非餐期',x=>x.moment!==null&&!mealOrder(x)]];const total=orders.filter(x=>kind==='fa'?x.fa:x.wait).length;return '<section class="analysis-panel"><h3>'+(kind==='fa'?'FA':'等餐')+'｜因素與影響範圍</h3>'+table(['因素','有效訂單','FA單','FA佔比','占全部FA單','已配對等餐','等餐比例','占全部已配對等餐'],groups.map(([name,test])=>{const a=orders.filter(test),fa=a.filter(x=>x.fa).length,wait=a.filter(x=>x.wait).length,totalFA=orders.filter(x=>x.fa).length,totalWait=orders.filter(x=>x.wait).length;return [name,fmt(a.length),fmt(fa),pct(a.length?fa/a.length:null),pct(totalFA?fa/totalFA:null),fmt(wait),pct(a.length?wait/a.length:null),pct(totalWait?wait/totalWait:null)];}))+'<p>各因素分組分開計算；等餐只計可配對的登記，未配對另列。分時工時不足，無法計算分組 TPLH。</p></section>';}
   function trackingStats(data,r){
-    const built=model(data,r),summary=built.summary,orders=analysisOrders(data,r),valid=key=>orders.filter(x=>!x.fa&&!independentStoreCodes.has(x.code)&&['Y','N'].includes(x[key])),rate=key=>{const list=valid(key);return list.length?list.filter(x=>x[key]==='Y').length/list.length:null;};
+    const built=model(data,r),summary=built.summary,orders=analysisOrders(data,r);
+    const valid=key=>orders.filter(x=>!x.fa&&inCenter(x)&&['Y','N'].includes(x[key]));
+    const rate=key=>{const list=valid(key);return list.length?list.filter(x=>x[key]==='Y').length/list.length:null;};
     const scoreDates=[...built.days.values()].filter(d=>d.tcSource&&!d.scoreExcluded&&d.date>=r.start&&d.date<=r.end).map(d=>d.date).sort(),provisionalDays=built.provisionalDays;
-    const fb=data.feedback||[],count=source=>fb.filter(x=>x.source_type===source).length,tc=scoreDates.length?summary.tc:null;
+    const fb=data.feedback||[],count=source=>fb.filter(x=>x.source_type===source).length,tc=summary.tc;
+    const delays=M.centerDelayRows(data.delays);
     const sales=salesFor(data,r),salesComparison=M.compareSales(sales,dailySalesFor(data,previousRange(r,data)));
+    const centerComplaints=fb.filter(x=>x.source_type==='0800'&&M.inCenterTotal(x.store_code,x.restaurant_name)).length;
     const complaintsComplete=r.start>='2026-10-01'&&r.end<='2026-10-31'&&
       !data.reports.some(d=>d.score_excluded&&fb.some(x=>x.source_type==='0800'&&x.record_date===d.record_date));
-    return {summary,orders,scoreDates,provisionalDays,sales,values:[
+    return {summary,orders,delays,scoreDates,provisionalDays,sales,values:[
       ['SSSG',sales.value,'rate'],['SSTG',summary.sstg,'rate'],['TC',tc,'count'],['去年TC',summary.priorN?summary.prior:null,'count'],
       ['營業額',sales.sales,'decimal'],['去年營業額',sales.priorYearSales,'decimal'],['客單價',sales.averageTicket,'decimal'],
       ['上期客單價',salesComparison.priorAverageTicket,'decimal'],['客單價變化',salesComparison.ticketChange,'rate'],
@@ -374,17 +477,17 @@
       ['D7有效單',tc===null?null:valid('d7').length,'count'],['D25',rate('d25'),'rate'],
       ['D25達成單',tc===null?null:valid('d25').filter(x=>x.d25==='Y').length,'count'],['D25有效單',tc===null?null:valid('d25').length,'count'],
       ['TPLH',summary.tplh,'decimal'],['自送TC',tc===null?null:summary.nonfa,'count'],['FA佔比',tc?summary.faShare:null,'rate'],
-      ['FA單數',tc!==null?summary.fa:null,'count'],['實際工時',summary.actualHours,'decimal'],['等餐登記',tc===null?null:data.delays.length,'count'],
+      ['FA單數',tc!==null?summary.fa:null,'count'],['實際工時',summary.actualHours,'decimal'],['等餐登記',tc===null?null:delays.length,'count'],
       ['等餐／TC',tc?scoredDelays(data,scoreDates).length/tc:null,'rate'],['0800',tc===null?null:count('0800'),'count'],
-      ['0800／千單',tc&&complaintsComplete?count('0800')/tc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']
+      ['0800／千單',tc&&complaintsComplete?centerComplaints/tc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']
     ]};
   }
   function statMap(stats){return new Map(stats.values.map(x=>[x[0],x]));}
   function trackingOverview(data,r) {
     const stats=trackingStats(data,r), values=statMap(stats);
-    const replies=data.delays.filter(row=>row.status==='completed').length;
-    values.set('已回覆',['已回覆',data.delays.length?replies:null,'count']);
-    values.set('待回覆',['待回覆',data.delays.length?data.delays.length-replies:null,'count']);
+    const replies=stats.delays.filter(row=>row.status==='completed').length;
+    values.set('已回覆',['已回覆',stats.delays.length?replies:null,'count']);
+    values.set('待回覆',['待回覆',stats.delays.length?stats.delays.length-replies:null,'count']);
     const ges=gesForRange(data.feedback,r);
     const validGes=ges.filter(row=>Number.isFinite(row.osat_survey)&&row.response_count>0);
     const responses=validGes.reduce((sum,row)=>sum+row.response_count,0);
@@ -460,20 +563,36 @@
     const heads=['指標',...computed.map(x=>(x.offset===0?'★ ':'')+(state.period==='week'?S.weekLabel(x.range.start):x.range.start.slice(0,7))+(x.stats?.provisionalDays?.length?'（暫估）':''))];
     return '<section class="analysis-panel timeline"><h3>'+(state.period==='week'?'五週':'五個月')+'成績比較｜前兩期・本期・後兩期</h3>'+trackingCharts(computed)+table(heads,rows)+'<details><summary>查看各期與前一期差異</summary>'+table(heads,deltas)+'</details><p>各欄按實際有效資料計算；資料涵蓋不相同時，差異僅供查核。— 表示缺資料／無法計算；期間有成績時，等餐、080、4128 沒有紀錄顯示 0；080、4128 以已匯入的檔案為準，尚未匯入的日期也會算成 0。</p></section>';
   }
-  function trackingEvidence(data,r){const t=trackingStats(data,r),orders=t.orders,valid=orders.filter(x=>!x.fa&&!independentStoreCodes.has(x.code)),matched=orders.filter(x=>x.wait).length,notMatched=data.delays.filter(d=>!orders.some(x=>x.date===d.record_date&&x.code===String(d.store_code||'')&&orderTail(x.order)===orderTail(d.order_number))).length;
+  function trackingEvidence(data,r){
+    const t=trackingStats(data,r),orders=t.orders.filter(inCenter),valid=orders.filter(x=>!x.fa);
+    const matched=orders.filter(x=>x.wait).length;
+    const notMatched=t.delays.filter(d=>!orders.some(x=>x.date===d.record_date&&x.code===String(d.store_code||'')&&orderTail(x.order)===orderTail(d.order_number))).length;
     const checks=[['去年同期TC（成績日）',Math.max(0,t.scoreDates.length-model(data,r).missingBaselineDays.length),t.scoreDates.length,'缺基準日：'+(model(data,r).missingBaselineDays.join('、')||'無')],['實際工時（成績日）',Math.max(0,t.scoreDates.length-model(data,r).missingHourDays.length),t.scoreDates.length,'缺工時日：'+(model(data,r).missingHourDays.join('、')||'無')],['配送距離',orders.filter(x=>x.distanceKm!==null).length,orders.length,'以 BY DATE 配對距離；未配對／空白不分入短距離'],['派單與預計抵達時間',orders.filter(x=>x.assigned!==null&&x.eta!==null).length,orders.length,'晚派＝預計抵達前 20 分鐘內才派單；時間欄位不是實際抵店紀錄'],['下單時間',orders.filter(x=>x.moment!==null).length,orders.length,'用於餐期與 30 分鐘至少 6 單集中單'],['可判讀併單',orders.filter(x=>x.departureGroupSize!==null).length,orders.length,'同外送員、同日、同店、離店 3 分鐘內；僅為批次線索，不推定路線順序'],['等餐配對',matched,data.delays.length,'未配對 '+notMatched+' 筆；無登記不等於沒有等餐']];
     let body='';
     if(state.metric==='sstg'){
       const days=dates(r).map(date=>{
         const hasScore=t.scoreDates.includes(date),excluded=data.reports.some(x=>x.record_date===date&&x.score_excluded);
-        const tc=hasScore?storeAnalytics(data,{start:date,end:date}).reduce((n,x)=>n+x.tc,0):null;
+        const tc=hasScore?model(data,{start:date,end:date}).summary.tc:null;
         return [date,dateLabel(date),fmt(tc),excluded?'不計成績':hasScore?'已匯入':'缺成績'];
       });
       body='<h3>單量變化證據｜逐日／星期</h3>'+table(['日期','星期','TC','狀態'],days);
     }
     else if(state.metric==='d7'){const groups=[['距離 ≤2km',x=>x.distanceKm!==null&&x.distanceKm<=2],['距離 >2–4km',x=>x.distanceKm!==null&&x.distanceKm>2&&x.distanceKm<=4],['距離 >4km',x=>x.distanceKm!==null&&x.distanceKm>4],['距離資料不足',x=>x.distanceKm===null],['晚派',x=>x.late===true],['未晚派',x=>x.late===false],['派單時間不足',x=>x.late===null],['餐期',x=>x.moment!==null&&mealOrder(x)],['非餐期',x=>x.moment!==null&&!mealOrder(x)],['下單時間不足',x=>x.moment===null],['有等餐登記',x=>x.wait],['無等餐登記',x=>!x.wait],['集中單',x=>x.moment!==null&&x.cluster],['非集中單',x=>x.moment!==null&&!x.cluster],['單次出門 1 單',x=>x.departureGroupSize===1],['併單 2 單',x=>x.departureGroupSize===2],['併單 3 單以上',x=>x.departureGroupSize>=3],['併單資料不足',x=>x.departureGroupSize===null]];const failAll=k=>valid.filter(x=>x[k]==='N').length;body='<h3>D7／D25｜未達單量與影響範圍</h3>'+table(['因素','D7有效','D7','D7未達','占全部D7未達','D25有效','D25','D25未達','占全部D25未達'],groups.map(([label,test])=>{const list=valid.filter(test),metrics=k=>{const a=list.filter(x=>['Y','N'].includes(x[k])),n=a.filter(x=>x[k]==='N').length;return [a.length,pct(a.length?(a.length-n)/a.length:null),n,pct(failAll(k)?n/failAll(k):null)];};return [label,...metrics('d7'),...metrics('d25')];}))+'<p>每一種因素分開分組，跨因素不可相加；同距離與晚派的差異是關聯證據。尚缺完整實際抵店、備餐完成、送達與路線紀錄，不能直接歸責。</p>';}
-    else if(state.metric==='fa'){body='<h3>供需線索｜逐日單量與工時</h3>'+table(['日期','總TC','自送TC','FA單','FA佔比','實際工時','TPLH'],dates(r).map(date=>{const d={start:date,end:date},s=model(data,d).summary,has=data.batches.some(x=>x.report_date===date&&x.report_type==='ByOrder');return [date,has?fmt(s.tc):'—',has?fmt(s.tc-s.fa):'—',has?fmt(s.fa):'—',has?pct(s.faShare):'—',fmt(s.actualHours,2),has?fmt(s.tplh,2):'—'];}))+'<p>TPLH 沿用自送 TC／有效實際工時；日工時不能拆成餐期人力。尚缺每時段出勤人數、可用人力及第三方改派原因，暫不判定人力不足。</p>';}
-    else if(state.metric==='waiting'){const replies=data.delays.filter(x=>x.status==='completed').length;body='<h3>等餐紀錄完整度</h3>'+table(['登記筆數','已回覆','尚未回覆','配對訂單','未配對'],[[data.delays.length,replies,data.delays.length-replies,matched,notMatched]])+'<p>目前可分析餐廳、商圈、餐期、集中單與回覆原因。缺等餐開始／結束時間，不能計算平均或長時間等餐；原因空白不代表沒有備餐問題。</p>';}
+    else if(state.metric==='fa'){
+      const rows=dates(r).map(date=>{
+        const {summary:s}=model(data,{start:date,end:date});
+        return [date,fmt(s.tc),fmt(s.nonfa),fmt(s.fa),pct(s.faShare),fmt(s.actualHours,2),fmt(s.tplh,2)];
+      });
+      body='<h3>供需線索｜逐日單量與工時</h3>'+table(['日期','總TC','自送TC','FA單','FA佔比','實際工時','TPLH'],rows)+
+        '<p>TPLH 沿用自送 TC／有效實際工時。</p>';
+    }
+    else if(state.metric==='waiting'){
+      const replies=t.delays.filter(x=>x.status==='completed').length;
+      const rows=t.summary.tc===null&&!t.delays.length?[['—','—','—','—','—']]:[[t.delays.length,replies,t.delays.length-replies,matched,notMatched]];
+      body='<h3>等餐紀錄完整度</h3>'+table(['登記筆數','已回覆','尚未回覆','配對訂單','未配對'],rows)+
+        '<p>目前可分析餐廳、商圈、餐期、集中單與回覆原因。缺等餐開始／結束時間，不能計算平均或長時間等餐；'+
+        '原因空白不代表沒有備餐問題。</p>';
+    }
     else {const rows=(data.feedback||[]),count=source=>rows.filter(x=>x.source_type===source).length;body='<h3>抱怨來源與缺項</h3>'+table(['來源','本期已讀取紀錄','狀態'],[['0800',count('0800'),count('0800')?'已讀取；完整度待確認':'無匯入紀錄，非確認零件'],['4128',count('4128'),count('4128')?'另列，不併入0800':'無匯入紀錄，非確認零件']])+'<p>0800／千單＝本期0800筆數÷本期有效TC×1000；來源或成績日不完整時不做表現判定。錯餐、漏給、延誤、無法配送與提早送達需依原始內容分開查核；尚未完成跨來源訂單配對與責任認定。</p>';}
     return '<section class="analysis-panel evidence">'+body+'</section><details class="analysis-panel"><summary>資料覆蓋與缺項清單</summary>'+table(['欄位','有資料／配對筆數','總筆數','限制'],checks)+'<p>分析來源：DMS BY ORDER／BY DATE、Power BI 去年TC、營運工時、等餐登記、0800／4128／GES。原始訂單與來源列由既有明細查核。</p></details>';
   }
@@ -666,13 +785,38 @@
   // 每日 × 餐廳格子：訂單來自成績 ByOrder（與 D7 頁同一套判讀），等餐筆數用等餐登記
   function insightCells(data,r){
     const map=new Map(),key=(d,code,name)=>d+'|'+(code||M.clean(name));
-    for(const o of analysisOrders(data,r)){const k=key(o.date,o.code,o.name);let c=map.get(k);if(!c){c={date:o.date,code:o.code,name:o.name,area:o.area,tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,wait:0};map.set(k,c);}c.tc++;if(o.fa)c.fa++;else{if(o.d7==='Y')c.d7Y++;if(o.d7==='N')c.d7N++;if(o.d25==='Y')c.d25Y++;if(o.d25==='N')c.d25N++;}}
+    const byDate=new Map(),getCell=(date,s)=>{
+      const k=key(date,s.code,s.name);
+      if(!map.has(k))map.set(k,{date,code:s.code,name:s.name,area:s.area,tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,wait:0});
+      return map.get(k);
+    };
+    for(const o of analysisOrders(data,r)){
+      const c=getCell(o.date,o),list=byDate.get(o.date)||[];
+      list.push({store_code:o.code,restaurant_name:o.name,area_code:o.area,fa:o.fa});
+      byDate.set(o.date,list);
+      if(o.fa)continue;
+      if(o.d7==='Y'||o.d7==='N')c['d7'+o.d7]++;
+      if(o.d25==='Y'||o.d25==='N')c['d25'+o.d25]++;
+    }
     const source=baselineSource(data),excludedDays=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date));
-    for(const date of S.dates(r.start,r.end)){if(excludedDays.has(date))continue;const pbi=M.powerBiDay(source,date);if(!pbi)continue;const miss=new Set(pbi.missing.map(m=>String(m.code)));
-      for(const c of map.values())if(c.date===date&&!miss.has(String(c.code))){c.tc=0;c.fa=0;}
-      for(const x of pbi.stores){const k=key(date,x.code,x.name);let c=map.get(k);if(!c){c={date,code:x.code,name:x.name,area:x.area,tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,wait:0};map.set(k,c);}c.tc=x.tc;c.fa=x.fa;}}
-    for(const w of data.delays||[]){const d=String(w.record_date);if(d<r.start||d>r.end)continue;const code=String(w.store_code||''),k=key(d,code,w.restaurant_name);let c=map.get(k);if(!c){c={date:d,code,name:state.catalog.get(code)?.restaurant_name||w.restaurant_name||'未分類餐廳',area:'',tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,wait:0};map.set(k,c);}c.wait++;}
-    return [...map.values()];
+    const orderDays=new Set(data.batches.filter(b=>b.report_type==='ByOrder').map(b=>b.report_date)),centerScoreDates=new Set();
+    for(const date of S.dates(r.start,r.end)){
+      if(excludedDays.has(date))continue;
+      const raw=byDate.get(date)||[],hasDms=orderDays.has(date);
+      const volume=M.orderVolume(source,date,raw,hasDms);
+      const center=M.orderVolume(source,date,raw,hasDms,{centerOnly:true});
+      if(center.source)centerScoreDates.add(date);
+      for(const c of map.values())if(c.date===date){c.tc=0;c.fa=0;c.centerTc=0;c.centerFa=0;}
+      for(const x of volume.stores){const c=getCell(date,x);c.tc=x.tc;c.fa=x.fa;c.centerTc=0;c.centerFa=0;}
+      for(const x of center.stores){const c=getCell(date,x);c.centerTc=x.tc;c.centerFa=x.fa;}
+    }
+    for(const w of data.delays||[]){
+      const d=String(w.record_date);
+      if(d<r.start||d>r.end)continue;
+      const code=String(w.store_code||''),name=state.catalog.get(code)?.restaurant_name||w.restaurant_name||'未分類餐廳';
+      getCell(d,{code,name,area:''}).wait++;
+    }
+    return [...map.values()].map(c=>({...c,centerScored:centerScoreDates.has(c.date)}));
   }
   // 預警與週報要看前幾週：所選期間最後一週往前 5 週（異常日要比前 4 個同星期）
   async function insightContext(r){
@@ -683,9 +827,9 @@
     const excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),cells=insightCells(data,span);
     const weeks=[];for(let s=M.addDays(lastWeek.start,-49);s<=lastWeek.start;s=M.addDays(s,7))weeks.push({start:s,end:M.addDays(s,6),label:S.weekLabel(s)});
     const summaries=new Map(),weekSummary=w=>{if(!summaries.has(w.start)){let v=null;try{const m=model(data,{start:w.start,end:w.end});v={...m.summary,missingHourDays:m.missingHourDays||[]};}catch(e){v=null;}summaries.set(w.start,v);}return summaries.get(w.start);};
-    const cities=[...new Set(cells.map(c=>cityForStore(c.code,c.area)).filter(Boolean))];
+    const cities=[...new Set(cells.filter(inCenter).map(c=>cityForStore(c.code,c.area)).filter(Boolean))];
     const context=d=>{const rain=cities.map(city=>weatherRow(d,city)).filter(Boolean).map(w=>Number(w.precipitation)||0);const report=data.reports.find(x=>x.record_date===d);return {rainMm:rain.length?Math.max(...rain):0,campaigns:(data.campaigns||[]).filter(c=>c.active_from<=d&&c.active_to>=d).map(c=>c.campaign_name),note:String(report?.special_notes||'').trim()};};
-    return {data,span,cells,excluded,weeks,weekSummary,context,acOf:acOfFor(r.end),independent:independentStoreCodes};
+    return {data,span,cells,excluded,weeks,weekSummary,context,acOf:acOfFor(r.end)};
   }
   const levelDot={red:'🔴',orange:'🟠',yellow:'🟡'};
   function insightLink(link,text){
@@ -694,9 +838,17 @@
     if(!tab)return '';
     return '<button type="button" class="ins-link" data-ins-tab="'+escape(tab)+'" data-ins-metric="'+escape(link.metric||'')+'">'+escape(text)+'</button>';
   }
+  function signalsSection(title,rows,item){
+    const center=rows.filter(x=>x.scope==='center'||x.scope==='center-day').slice(0,3);
+    const stores=rows.filter(x=>x.scope==='store');
+    if(!center.length&&!stores.length)return '';
+    const items=list=>'<ul class="ins-list">'+list.map(item).join('')+'</ul>';
+    const details=stores.length?'<details class="ins-more"><summary>其他 '+stores.length+' 項</summary>'+items(stores)+'</details>':'';
+    return '<section class="analysis-panel ins-panel"><h3>'+title+'</h3>'+(center.length?items(center):'')+details+'</section>';
+  }
   function alertsSection(ctx,r,metric){
     const options=rules();
-    const alerts=I.alerts({cells:ctx.cells,weeks:ctx.weeks,days:S.dates(M.addDays(r.end,-13),r.end),targets,independent:ctx.independent,
+    const alerts=I.alerts({cells:ctx.cells,weeks:ctx.weeks,days:S.dates(M.addDays(r.end,-13),r.end),targets,
       excluded:ctx.excluded,acOf:ctx.acOf,weekSummary:ctx.weekSummary,weekRule:options.alertWeeks,dayRule:options.alertDays})
       .filter(a=>ALERT_METRICS[metric].includes(a.metric));
     if(!alerts.length)return '';
@@ -704,48 +856,70 @@
       '<div><b>'+escape(a.title)+'</b><p>'+escape(a.detail)+'</p><div class="ins-actions">'+insightLink(a.link,'看影響度排名')+
       '<button type="button" class="ins-link" data-add-action="'+escape(a.metric)+'" data-store="'+escape(a.scope==='store'?a.code||'':'')+
       '">＋新增行動</button></div></div></li>';
-    const show=3,list=items=>'<ul class="ins-list">'+items.map(alertItem).join('')+'</ul>';
-    const more=alerts.length>show?'<details class="ins-more"><summary>其他 '+(alerts.length-show)+' 項</summary>'+list(alerts.slice(show))+'</details>':'';
-    return '<section class="analysis-panel ins-panel"><h3>🔔 連續未達標預警 <span class="ins-count">'+alerts.length+'</span></h3>'+
-      list(alerts.slice(0,show))+more+'</section>';
+    return signalsSection('🔔 連續未達標預警',alerts,alertItem);
   }
   function anomaliesSection(ctx,r){
     const days=state.period==='day'?S.dates(M.addDays(r.end,-6),r.end):S.dates(r.start,r.end);
     const options=rules();
-    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,independent:ctx.independent,context:ctx.context,
+    const anomalies=I.anomalies({cells:ctx.cells,dates:days,excluded:ctx.excluded,context:ctx.context,
       tcThreshold:options.anomalyTc,rateThreshold:options.anomalyRate,inScope:M.storeInScope});
     if(!anomalies.length)return '';
-    const items=anomalies.map(a=>'<li class="ins-item '+(a.bad?'ins-orange':'ins-blue')+'"><span class="ins-dot" aria-hidden="true">'+
+    const item=a=>'<li class="ins-item '+(a.bad?'ins-orange':'ins-blue')+'"><span class="ins-dot" aria-hidden="true">'+
       a.icon+'</span><div><b>'+escape(a.title)+'</b><p>'+escape([...a.others.map(f=>f.text),...a.reasons].join('；'))+'。</p>'+
-      '<div class="ins-actions"><button type="button" class="ins-link" data-ins-day="'+a.date+'">看當天</button></div></div></li>').join('');
-    return '<section class="analysis-panel ins-panel"><h3>📉 異常日 <span class="ins-count">'+anomalies.length+'</span></h3>'+
-      '<ul class="ins-list">'+items+'</ul></section>';
+      '<div class="ins-actions"><button type="button" class="ins-link" data-ins-day="'+a.date+'">看當天</button></div></div></li>';
+    return signalsSection('📉 異常日',anomalies,item);
   }
   function impactPage(stores,r,metric){
-    const imp=I.impact(stores,metric,{targets,independent:independentStoreCodes,acOf:acOfFor(r.end)}),isRate=imp.kind==='rate',isCount=imp.kind==='count';
+    const imp=I.impact(stores,metric,{targets,acOf:acOfFor(r.end)}),isRate=imp.kind==='rate',isCount=imp.kind==='count';
     const heading='<h3>'+escape(isRate?'D7／D25':imp.label)+'影響度排名</h3>';
     const tabs=isRate?'<div class="ins-mtabs" role="group" aria-label="影響度指標">'+[['d7','D7'],['d25','D25']].map(([k,l])=>
       '<button type="button" data-impact-metric="'+k+'" class="'+(k===metric?'active':'')+'" aria-pressed="'+(k===metric)+'">'+l+'</button>'
     ).join('')+'</div>':'';
     const unit=state.period==='day'?'這天':state.period==='week'?'這週':'這個月';
-    if(imp.center.value===null||(isCount&&!imp.sumNeed)){
+    if(!imp.stores.length&&(imp.center.value===null||isCount&&!imp.sumNeed)){
       return heading+tabs+'<div class="empty">'+(isCount?'本期沒有等餐登記（不代表實際沒有等餐）':'本期沒有可判讀的訂單')+'</div>';
     }
-    const head=isCount?[['等餐登記',fmt(imp.sumNeed)+' 筆',fmt(imp.stores.length)+' 家有登記'],['最多的一家',imp.stores[0].name,fmt(imp.stores[0].need)+' 筆'],['前三家占',pct(imp.stores.slice(0,3).reduce((n,s)=>n+s.need,0)/imp.sumNeed),'依筆數，不依比例']]
-      :[[imp.label+' '+unit+(isRate?'（非獨立店）':''),pct(imp.center.value),isRate?fmt(imp.center[metric+'Y'])+'／'+fmt(imp.center.orders)+' 單':fmt(imp.center.fa)+'／'+fmt(imp.center.tc)+' 單'],[isRate?'目標':'上限',pct(imp.target),isRate?'需 '+fmt(Math.ceil(imp.target*imp.center.orders-1e-9))+' 單':'最多 '+fmt(Math.floor(imp.target*imp.center.tc+1e-9))+' 張 FA 單'],['中心缺口',imp.gap?fmt(imp.gap)+' 單':'已達標',imp.gap&&imp.days>1?'每天約 '+fmt(imp.perDay,1)+' 單':''],['達標方案',imp.gap?(imp.cut>=0?'補齊前 '+(imp.cut+1)+' 家':'全部補齊仍不足'):'—',imp.gap?(imp.cut>=0?fmt(imp.stores[imp.cut].cum)+' ≥ '+fmt(imp.gap)+' 單':'各店缺口合計 '+fmt(imp.sumNeed)+' 單'):'']];
+    const centerStores=imp.centerStores,cutStore=centerStores[imp.cut],most=centerStores[0];
+    const sameStore=(a,b)=>b&&(a.code||a.name)===(b.code||b.name);
+    const topRatio=M.ratio(centerStores.slice(0,3).reduce((n,s)=>n+s.need,0),imp.sumNeed);
+    const breakdown=isRate?fmt(imp.center[metric+'Y'])+'／'+fmt(imp.center.orders)+' 單':fmt(imp.center.fa)+'／'+fmt(imp.center.tc)+' 單';
+    const goalCount=isRate?'需 '+fmt(Math.ceil(imp.target*imp.center.orders-1e-9))+' 單':'最多 '+fmt(Math.floor(imp.target*imp.center.tc+1e-9))+' 張 FA 單';
+    const cutText=imp.cut>=0?'補齊前 '+(imp.cut+1)+' 家':'全部補齊仍不足';
+    const plan=cutStore?fmt(cutStore.cum)+' ≥ '+fmt(imp.gap)+' 單':'各店缺口合計 '+fmt(imp.sumNeed)+' 單';
+    const head=isCount?[
+      ['等餐登記',fmt(imp.sumNeed)+' 筆',fmt(centerStores.length)+' 家有登記'],
+      ['最多的一家',most?.name||'—',most?fmt(most.need)+' 筆':''],['前三家占',pct(topRatio),'依筆數，不依比例']
+    ]:[
+      [imp.label+' '+unit+(isRate?'（非獨立店）':''),pct(imp.center.value),imp.center.value===null?'':breakdown],
+      [isRate?'目標':'上限',pct(imp.target),imp.target===null?'':goalCount],
+      ['中心缺口',imp.center.value===null||imp.target===null?'—':imp.gap?fmt(imp.gap)+' 單':'已達標',imp.gap&&imp.days>1?'每天約 '+fmt(imp.perDay,1)+' 單':''],
+      ['達標方案',imp.gap?cutText:'—',imp.gap?plan:'']
+    ];
     const cards='<div class="ins-head">'+head.map(([a,b,c],i)=>'<div class="ins-m'+(!isCount&&i===2&&imp.gap?' bad':'')+'"><span>'+escape(a)+'</span><b>'+escape(b)+'</b><em>'+escape(c)+'</em></div>').join('')+'</div>';
     const maxNeed=Math.max(1,...imp.stores.map(s=>s.need));
     const verb=isCount?'等餐筆數':isRate?'還要多幾單':'要少幾張 FA';
-    const rows=imp.stores.map((s,i)=>'<tr class="'+(i===imp.cut?'ins-cut':imp.cut>=0&&i>imp.cut?'ins-after':'')+'"><td>'+(i+1)+'</td><td class="ins-name">'+escape((s.code?s.code+' ':'')+s.name)+'</td><td>'+escape(s.ac||'—')+'</td><td>'+fmt(s.orders)+'</td>'+(isCount?'':'<td>'+pct(s.value)+'</td>')+'<td><div class="ins-bar"><i style="width:'+(s.need/maxNeed*100).toFixed(1)+'%"></i></div><b>'+fmt(s.need)+'</b></td><td>'+(i===0?pct(s.share,0):'<span class="ins-cum">累計</span> '+pct(s.cumShare,0))+'</td>'+(isCount?'':'<td class="ins-faint">'+fmt(s.pctRank)+'</td>')+'</tr>').join('');
+    const rows=imp.stores.map((s,i)=>{
+      const name=escape((s.code?s.code+' ':'')+storeLabel(s));
+      const share=i===0||s.cumShare===null?pct(s.share,0):'<span class="ins-cum">累計</span> '+pct(s.cumShare,0);
+      return '<tr class="'+(sameStore(s,cutStore)?'ins-cut':'')+'"><td>'+(i+1)+'</td><td class="ins-name">'+name+
+        '</td><td>'+escape(s.ac||'—')+'</td><td>'+fmt(s.orders)+'</td>'+(isCount?'':'<td>'+pct(s.value)+'</td>')+
+        '<td><div class="ins-bar"><i style="width:'+(s.need/maxNeed*100).toFixed(1)+'%"></i></div><b>'+fmt(s.need)+'</b></td><td>'+share+
+        '</td>'+(isCount?'':'<td class="ins-faint">'+fmt(s.pctRank)+'</td>')+'</tr>';
+    }).join('');
     const table='<div class="scroll"><table class="table ins-table"><thead><tr><th>#</th><th>餐廳</th><th>AC</th><th>'+(isRate?'有效單':'訂單')+'</th>'+(isCount?'':'<th>'+escape(imp.label)+'</th>')+'<th>'+verb+'</th><th>'+(imp.gap?'占中心缺口':'占合計')+'</th>'+(isCount?'':'<th>百分比排名</th>')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
-    const how=isCount?'依等餐登記筆數排序，不依比例：大店比例低但筆數多，一樣排前面。':imp.gap?('中心'+unit+(isRate?'要再多 '+fmt(imp.gap)+' 張 '+imp.label+' 達成單（訂單總數不變，是現有訂單裡要多 '+fmt(imp.gap)+' 張準時）。':'要少 '+fmt(imp.gap)+' 張 FA 單。')+(imp.cut>=0?imp.stores.slice(0,imp.cut+1).map(s=>s.name).join('、')+' 這 '+(imp.cut+1)+' 家各自補到'+(isRate?'目標':'上限內')+'，合計 '+fmt(imp.stores[imp.cut].cum)+' 單，中心就達標。':'各店都補到目標仍不夠，需要全面提升。')):imp.label+' 已達標；下表是仍未達標的餐廳，補齊可再拉高。';
-    const worstPct=imp.stores.filter(s=>s.pctRank===1)[0];
+    const needed=isRate?'要再多 '+fmt(imp.gap)+' 張 '+imp.label+' 達成單（現有訂單裡多 '+fmt(imp.gap)+' 張準時）。':'要少 '+fmt(imp.gap)+' 張 FA 單。';
+    const path=cutStore?centerStores.slice(0,imp.cut+1).map(s=>s.name).join('、')+' 這 '+(imp.cut+1)+' 家各自補到'+
+      (isRate?'目標':'上限內')+'，合計 '+fmt(cutStore.cum)+' 單，中心就達標。':'中心各店補到目標仍不夠，需要全面提升。';
+    const status=imp.center.value===null||imp.target===null?'—':imp.label+' 已達標；下表是仍未達標的餐廳。';
+    const how=isCount?'依等餐登記筆數排序，不依比例：大店比例低但筆數多，一樣排前面。':imp.gap?'中心'+unit+needed+path:status;
+    const worstPct=imp.stores.find(s=>s.pctRank===1&&s.share!==null);
     const note=worstPct&&imp.stores.indexOf(worstPct)>0?worstPct.name+'百分比最差，但'+(isRate?'有效單只有 '+fmt(worstPct.orders)+' 張':'訂單只有 '+fmt(worstPct.orders)+' 張')+'，補齊只多 '+fmt(worstPct.need)+' 單，排第 '+(imp.stores.indexOf(worstPct)+1)+'。':'';
     const acTable='<div class="scroll"><table class="table"><thead><tr><th>AC</th><th>'+(isCount?'有登記的店':'未達標店')+'</th><th>'+verb+'</th></tr></thead><tbody>'+imp.acs.map(a=>'<tr><td>'+escape(a.name)+'</td><td>'+fmt(a.stores)+'</td><td>'+fmt(a.need)+'</td></tr>').join('')+'</tbody></table></div>';
     const formula=isCount?'等餐筆數＝等餐登記筆數（含未配對到訂單的登記）。':isRate?'還要多幾單＝有效單 ×'+pct(imp.target,0)+' − 已達成單（無條件進位），只列未達標的店；有效單＝非獨立店、非第三方、D7／D25 為 Y 或 N 的單。':'要少幾張＝FA 單 − 訂單 × '+pct(imp.target,0)+'（無條件捨去），只列超過上限的店。';
     return heading+tabs+'<p class="ins-lead">依「補齊這家能幫中心補回幾單」排序，不是依百分比。小店百分比再低，單量少，影響也小。</p>'+cards+
       '<div class="ins-how"><b>怎麼達標：</b>'+escape(how)+(note?' '+escape(note):'')+'</div>'+
-      '<div class="ins-grid2"><section class="analysis-panel"><h3>餐廳｜依影響度</h3>'+table+'<p class="ins-foot ins-explain">'+escape(formula)+(imp.cut>=0?' 紅色虛線以上的店補齊，中心就達標。':'')+'</p></section>'+
+      '<div class="ins-grid2"><section class="analysis-panel"><h3>餐廳｜依影響度</h3>'+table+
+      '<p class="ins-foot ins-explain">'+escape(formula)+'</p></section>'+
       '<div class="ins-col"><section class="analysis-panel"><h3>AC｜負責的'+(isCount?'等餐':'缺口')+'</h3>'+acTable+(imp.gap&&imp.sumNeed>imp.gap?'<p class="ins-foot ins-explain">各店缺口加總 '+fmt(imp.sumNeed)+' 單，大於中心缺口 '+fmt(imp.gap)+' 單，因為有些店超過目標，抵掉了一部分。</p>':'')+'</section>'+
       '</div></div>';
   }
@@ -762,7 +936,7 @@
     // 大單：餐點金額門檻以上，本週對上週
     const amt=o=>Number(String((o.raw||{})['餐點金額']??'').replace(/,/g,''));
     const big=list=>{const by=new Map();let n=0,amount=0;for(const o of list){const a=amt(o);if(!Number.isFinite(a)||a<BIG_ORDER_MIN)continue;n++;amount+=a;by.set(o.name,(by.get(o.name)||0)+1);}return {n,amount,by};};
-    const bn=big(orders),bp=big(prevOrders),names=new Set([...bn.by.keys(),...bp.by.keys()]);
+    const bn=big(orders.filter(inCenter)),bp=big(prevOrders.filter(inCenter)),names=new Set([...bn.by.keys(),...bp.by.keys()]);
     const bigOrders=orders.length||prevOrders.length?{min:BIG_ORDER_MIN,now:{n:bn.n,amount:bn.amount},prev:{n:bp.n,amount:bp.amount},stores:[...names].map(name=>({name,now:bn.by.get(name)||0,prev:bp.by.get(name)||0}))}:null;
     // 附錄沿用成績共用口徑。
     const daily=S.dates(week.start,week.end).map(date=>{
@@ -840,10 +1014,10 @@
     const currentSales=salesFor(ctx.data,week),previousSales=salesFor(ctx.data,fullWeek(M.addDays(week.start,-7)));
     const salesComparison=M.compareSales(currentSales,previousSales);
     const anomalyList=I.anomalies({cells:ctx.cells,dates:S.dates(r.start,r.end),excluded:ctx.excluded,
-      independent:ctx.independent,context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,
+      context:ctx.context,tcThreshold:rules().anomalyTc,rateThreshold:rules().anomalyRate,
       inScope:M.storeInScope,minOrders:I.WEEKLY_MIN_ORDERS});
     const sum=ctx.weekSummary(week),hoursDays=sum?7-(sum.missingHourDays||[]).filter(d=>d>=r.start&&d<=r.end).length:null;
-    const raw=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,independent:ctx.independent,excluded:ctx.excluded,
+    const raw=I.weeklyDraft({week,weeks,cells:ctx.cells,targets,excluded:ctx.excluded,
       weekSummary:ctx.weekSummary,anomalyList,notes:ctx.data.weeklyNotes||[],dataDays:{hours:hoursDays},
       inScope:M.storeInScope,sssg,salesComparison,actions:ctx.weeklyActions,storeClosures:weekClosures(ctx,week),...weeklyInputs(ctx,week)});
     const draft=state.weeklyRegenerate===r.start?raw:weeklyView(raw);state.weeklyDraft=draft;
@@ -1023,7 +1197,7 @@
   const fmtDelta=(k,d)=>d===null||!Number.isFinite(d)?'—':k==='tplh'?(d>=0?'+':'−')+fmt(Math.abs(d),2):k==='waiting'?(d>=0?'+':'−')+fmt(Math.abs(d)):(d>=0?'+':'−')+fmt(Math.abs(d*100),1)+' 點';
   // 一段期間的指標：餐廳（code）或中心（code 為空）；TPLH／SSTG 中心值用原本的成績計算
   function rangeMetrics(data,cells,range,code){
-    const excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),stores=I.byStore(cells,range.start,range.end,excluded),x=code?stores.find(s=>s.code===code):I.center(stores,independentStoreCodes);
+    const excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),stores=I.byStore(cells,range.start,range.end,excluded),x=code?stores.find(s=>s.code===code):I.center(stores);
     const out={tc:x?x.tc:null,d7:x?I.value(x,'d7'):null,d25:x?I.value(x,'d25'):null,fa:x?I.value(x,'fa'):null,waiting:x?x.wait:null,tplh:null,sstg:null,hoursDays:null};
     try{if(code){const s=storeAnalytics(data,range).find(s=>s.code===code);out.sstg=s?.sstg??null;}else{const m=model(data,range);out.sstg=m.summary.sstg??null;out.tplh=m.summary.tplh??null;out.hoursDays=S.dates(range.start,range.end).length-(m.missingHourDays||[]).length;}}catch(e){}
     return out;
@@ -1032,11 +1206,14 @@
   state.storeCode=null;
   async function storePage(ctx,r){
     const stores=[...state.catalog.values()].filter(s=>M.storeInScope(s.store_code,r.end)).sort((a,b)=>a.store_code.localeCompare(b.store_code));
-    if(!state.storeCode||!stores.some(s=>s.store_code===state.storeCode)){const worst=I.impact(I.byStore(ctx.cells,r.start,r.end,ctx.excluded),'d7',{targets,independent:independentStoreCodes}).stores[0];state.storeCode=worst?.code||stores[0]?.store_code||null;}
+    if(!state.storeCode||!stores.some(s=>s.store_code===state.storeCode)){
+      const ranked=I.impact(I.byStore(ctx.cells,r.start,r.end,ctx.excluded),'d7',{targets}).centerStores;
+      state.storeCode=ranked[0]?.code||stores[0]?.store_code||'';
+    }
     const code=state.storeCode,store=state.catalog.get(code),ac=ctx.acOf(code),weeks=ctx.weeks.slice(-8);
     let lines=[];try{lines=await pagedLine({start:weeks[0].start,end:weeks.at(-1).end});}catch(e){lines=null;}
     const todayStr=today(),per=weeks.map(w=>{const m=rangeMetrics(ctx.data,ctx.cells,w,code),days=S.dates(w.start,[w.end,todayStr].sort()[0]).filter(d=>!ctx.excluded.has(d)&&ctx.cells.some(c=>c.date===d&&c.code===code&&c.tc>0)),signed=lines?days.filter(d=>lines.some(l=>l.record_date===d&&l.store_code===code&&l.line_completed&&l.signature_completed)).length:null;const ges=(ctx.data.feedback||[]).filter(f=>f.source_type==='GES'&&f.period_start<=w.end&&f.period_end>=w.start&&(f.store_code===code||M.clean(f.restaurant_name)===M.clean(store?.restaurant_name))).map(f=>Number(f.osat_survey)).filter(Number.isFinite);return {...m,line:lines?[signed,days.length]:null,ges:ges.length?ges.reduce((a,b)=>a+b,0)/ges.length:null};});
-    const independent=independentStoreCodes.has(code);
+    const independent=!M.inCenterTotal(code);
     const rowsSpec=[['d7','D7'],['d25','D25'],['fa','FA 佔比'],['waiting','等餐筆數'],['line','劃線簽名'],['sstg','SSTG'],['ges','GES OSAT']];
     const cell=(k,v)=>k==='line'?(v&&v[1]>0?fmt(v[0])+'／'+fmt(v[1]):'—'):k==='ges'?(v===null?'—':pct(v)):fmtMetric(k,v);
     const isBad=(k,v)=>{if(v===null||v===undefined)return false;if(k==='line')return v&&v[1]>0&&v[0]<v[1];const t=metricTarget(k);if(t===null||t===undefined)return false;return I.fails(v,k==='fa'?'fa':'d7',t)&&(k==='fa'?v>t:v<t);};
@@ -1131,16 +1308,16 @@
     return 'background:'+(diff<0?'rgba(200,16,46,':'rgba(30,140,70,')+a.toFixed(2)+')';
   }
   async function drillPage(r){
-    const D=state.drill,k=D.metric,data=state.data,independent=independentStoreCodes;
+    const D=state.drill,k=D.metric,data=state.data;
     try{await weatherForRange(r);}catch(e){}
     const excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),cells=insightCells(data,r),stores=I.byStore(cells,r.start,r.end,excluded),acOf=acOfFor(r.end);
-    const needOf=x=>(k==='d7'||k==='d25')&&x.code&&independent.has(x.code)?null:I.need(x,k,drillTarget(k));
-    const acs=I.byAc(stores,acOf,independent).sort((a,b)=>(needOf(b.total)||0)-(needOf(a.total)||0)||a.name.localeCompare(b.name,'zh-Hant'));
+    const needOf=x=>(k==='d7'||k==='d25')&&x.code&&!inCenter(x)?null:I.need(x,k,drillTarget(k));
+    const acs=I.byAc(stores,acOf).sort((a,b)=>(needOf(b.total)||0)-(needOf(a.total)||0)||a.name.localeCompare(b.name,'zh-Hant'));
     if(D.store&&!stores.some(s=>s.code===D.store)){D.store='';D.date='';}
     if(D.store&&!D.ac)D.ac=acOf(D.store)||'未分配';
     if(D.ac&&!acs.some(a=>a.name===D.ac)){D.ac='';D.store='';D.date='';}
     if(D.date&&(D.date<r.start||D.date>r.end))D.date='';
-    const ac=acs.find(a=>a.name===D.ac),store=stores.find(s=>s.code===D.store),total=I.center(stores,independent);
+    const ac=acs.find(a=>a.name===D.ac),store=stores.find(s=>s.code===D.store),total=I.center(stores);
     const scope=store?[store]:ac?ac.stores:stores,scopeCodes=new Set(scope.map(s=>s.code));
     const orders=analysisOrders(data,r).filter(o=>!excluded.has(o.date));
     const name=s=>escape((s.code?s.code+' ':'')+(state.catalog.get(s.code)?.restaurant_name||s.name));
@@ -1158,7 +1335,9 @@
       level='<h3>各 AC</h3><div class="scroll"><table class="table dr-table">'+head('AC')+'<tbody>'+acs.map(a=>row('data-drill-ac="'+escape(a.name)+'"',escape(a.name)+' <small>'+a.stores.length+' 家</small>',a.total)).join('')+'</tbody></table></div>';
     }else if(!store){
       const list=ac.stores.slice().sort((a,b)=>(needOf(b)??-1)-(needOf(a)??-1)||(k==='waiting'?b.wait-a.wait:0)||a.code.localeCompare(b.code));
-      level='<h3>AC '+escape(ac.name)+'｜各餐廳</h3><div class="scroll"><table class="table dr-table">'+head('餐廳')+'<tbody>'+list.map(s=>row('data-drill-store="'+escape(s.code)+'"',name(s),s,independent.has(s.code)?' <small>（獨立店）</small>':'')).join('')+'</tbody></table></div>';
+      const rows=list.map(s=>row('data-drill-store="'+escape(s.code)+'"',name(s),s,!inCenter(s)?' <small>（獨立店）</small>':''));
+      level='<h3>AC '+escape(ac.name)+'｜各餐廳</h3><div class="scroll"><table class="table dr-table">'+head('餐廳')+
+        '<tbody>'+rows.join('')+'</tbody></table></div>';
     }else if(!D.date){
       const city=cityForStore(store.code,store.area),todayStr=today(),days=S.dates(r.start,[r.end,todayStr].sort()[0]);
       const countHead=k==='fa'?'FA 單':k==='waiting'?'':'達成';
@@ -1177,10 +1356,12 @@
     // 熱圖：範圍跟著上面選到的層級（中心／AC／餐廳），期間是上方選的日期範圍
     // 外送時段（預設 10:30–22:30）：時段外的訂單不列入熱圖，下方註明筆數
     const dh=M.BUSINESS.deliveryHours||{start:'10:30',end:'22:30'},toMin=t=>{const [a,b]=String(t).split(':').map(Number);return a*60+(b||0);},dhStart=toMin(dh.start),dhEnd=toMin(dh.end),minuteOf=ms=>ms===null||ms===undefined||!Number.isFinite(ms)?null:Math.floor((ms+8*3600000)/60000)%1440;
-    const scoped=orders.filter(o=>scopeCodes.has(o.code)),inHours=scoped.filter(o=>{const m=minuteOf(o.moment);return m!==null&&m>=dhStart&&m<=dhEnd;}),outHours=scoped.filter(o=>{const m=minuteOf(o.moment);return m!==null&&(m<dhStart||m>dhEnd);}).length;
+    const scoped=orders.filter(o=>scopeCodes.has(o.code)&&(store||inCenter(o)));
+    const inHours=scoped.filter(o=>{const m=minuteOf(o.moment);return m!==null&&m>=dhStart&&m<=dhEnd;});
+    const outHours=scoped.filter(o=>{const m=minuteOf(o.moment);return m!==null&&(m<dhStart||m>dhEnd);}).length;
     const hourList=[];for(let h=Math.floor(dhStart/60);h<=Math.floor(dhEnd/60);h++)hourList.push(h);
     const hourHead=h=>h===Math.floor(dhStart/60)&&dhStart%60?dh.start:h+' 時';
-    const hm=I.heatmap(inHours.map(o=>({date:o.date,hour:hourOf(o.moment),code:o.code,fa:o.fa,d7:o.d7,d25:o.d25,wait:o.wait})),k,{independent,hourList});
+    const hm=I.heatmap(inHours.map(o=>({date:o.date,hour:hourOf(o.moment),code:o.code,fa:o.fa,d7:o.d7,d25:o.d25,wait:o.wait})),k,{hourList,centerOnly:!store});
     const rows=hm.rows.filter(rw=>rw.cells.some(c=>c.tc>0)),max=Math.max(0,...rows.flatMap(rw=>rw.cells.map(c=>c.value||0)));
     const scopeLabel=store?name(store):ac?'AC '+escape(ac.name):'中心';
     const heat=!rows.length?'<p class="ins-foot">這段期間沒有可用的落單時間。</p>':'<div class="scroll"><table class="table dr-heat"><thead><tr><th></th>'+hm.hours.map(h=>'<th>'+hourHead(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(rw=>'<tr><th>週'+rw.weekday+'</th>'+rw.cells.map(c=>{const title=c.tc?'週'+rw.weekday+' '+c.hour+' 時：'+(k==='waiting'?'等餐 '+fmt(c.value)+' 筆／':'')+fmt(c.tc)+' 單':'沒有訂單';return '<td style="'+heatStyle(k,c.value,max)+'" title="'+escape(title)+'">'+(c.value===null?(c.tc?'<span class="ins-faint">·</span>':''):k==='waiting'?fmt(c.value):fmt(c.value*100,1))+'</td>';}).join('')+'</tr>').join('')+'</tbody></table></div>';
@@ -1213,7 +1394,10 @@
     const data=state.data,excluded=new Set(data.reports.filter(x=>x.score_excluded).map(x=>x.record_date)),cells=insightCells(data,r),m=model(data,r),todayStr=today();
     const dates=S.dates(r.start,[r.end,todayStr].sort()[0]),std=Number(M.BUSINESS.forecast?.tplh)||2.5;
     let shift=null,shiftError='';try{shift=I.shiftByDate(await readShift(r),dates);}catch(e){shiftError=e.message||String(e);}
-    const days=dates.map(d=>{const day=m.days.get?m.days.get(d):null,x=day?.metrics||{},c=I.center(I.byStore(cells,d,d,excluded),independentStoreCodes);return {date:d,tc:x.tc||0,nonfa:x.nonfa||0,hours:day?.actualHours??null,d7:I.value(c,'d7'),excluded:excluded.has(d)};});
+    const days=dates.map(d=>{
+      const day=m.days.get(d),x=day?.tplhVolume||{},c=I.center(I.byStore(cells,d,d,excluded));
+      return {date:d,tc:x.tc||0,nonfa:x.nonfa||0,hours:day?.actualHours??null,d7:I.value(c,'d7'),excluded:excluded.has(d)};
+    });
     const st=I.staffing(days,{shift:shift||new Map(),tplh:std,overHours:STAFF_OVER_HOURS,d7Target:targets.d7});
     const tag=row=>row.verdict==='over'?'<span class="sf-tag bad">排太多</span>':row.verdict==='under'?'<span class="sf-tag warn">偏少（D7 '+pct(row.d7)+'）</span>':row.verdict==='ok'?'<span class="sf-tag ok">合理</span>':row.verdict==='nohours'?'<span class="sf-tag part">缺工時</span>':row.verdict==='excluded'?'<span class="sf-tag part">不計成績</span>':'<span class="sf-tag part">沒有成績</span>';
     const tplhCls=v=>v!==null&&Number.isFinite(targets.tplh)&&v<targets.tplh-1e-9?'st-bad':'';

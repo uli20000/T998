@@ -1,5 +1,5 @@
 /* 總覽頁（UI 改版第 2 步）。數字一律取自 OpsReport.overview（與匯總資料同一套計算），
- * 待處理清單只讀資料表，不寫入。缺資料顯示「資料不足」，不顯示 0。 */
+ * 待處理清單只讀資料表，不寫入。缺資料顯示「—」。 */
 (function(){
   'use strict';
   const E=id=>document.getElementById(id);
@@ -18,10 +18,12 @@
   const percent=value=>num(value*100,Number.isInteger(value*100)?0:1)+'%';
   const KPI=[
     // 期間還沒過完：比「截至今日（有單量日期）的預估」，不比整期預估
-    {key:'tc',label:'TC',fmt:v=>num(v),target:s=>s.cmpForecast,targetText:s=>s.cmpForecast==null?'預估資料不足':(s.toDate?'截至今日預估 ':'預估 ')+num(s.cmpForecast),ok:(v,s)=>s.cmpForecast==null?null:(s.toDate?s.attainmentActual??v:v)>=s.cmpForecast},
+    {key:'tc',label:'TC',fmt:v=>num(v),target:s=>s.cmpForecast,
+      targetText:s=>s.cmpForecast==null?'預估資料不足':(s.toDate?'截至今日預估 ':'預估 ')+num(s.cmpForecast),
+      ok:(_v,s)=>s.tcAchievement==null?null:s.tcAchievement>=1},
     {key:'sstg',label:'SSTG',fmt:pct,...goal('sstg',v=>(v>0?'+':'')+percent(v),min)},
-    {key:'d7',label:'D7',scope:'全部餐廳',fmt:pct,...goal('d7',percent,min)},
-    {key:'d25',label:'D25',scope:'全部餐廳',fmt:pct,...goal('d25',percent,min)},
+    {key:'d7',label:'D7',scope:'非獨立店',fmt:pct,...goal('d7',percent,min)},
+    {key:'d25',label:'D25',scope:'非獨立店',fmt:pct,...goal('d25',percent,min)},
     {key:'faShare',label:'FA 佔比',fmt:pct,...goal('faShareMax',v=>'≤'+percent(v),max)},
     {key:'tplh',label:'TPLH',fmt:v=>num(v,2),...goal('tplh',v=>num(v,1),min)}
   ];
@@ -55,9 +57,13 @@
   function renderKpis(o){
     const toDate=o.range&&o.range.end>opsToday();o.summary={...o.summary,toDate,cmpForecast:toDate?o.summary.attainmentForecast:o.summary.forecast};
     E('uoKpis').innerHTML=KPI.map(k=>{
-      const v=o.hasScores||k.key==='tc'&&o.summary.tc?o.summary[k.key]:null,shown=v==null?null:k.fmt(v),ok=shown==null?null:k.ok(v,o.summary);
+      const v=o.hasScores||k.key==='tplh'?o.summary[k.key]:null,shown=v==null?null:k.fmt(v),ok=shown==null?null:k.ok(v,o.summary);
       const cls=shown==null?'na':ok===null?'':ok?'ok':'bad';
-      return '<button type="button" class="uo-kpi '+cls+'" data-go="analysis"><span>'+k.label+(k.scope?'<small class="scope-note">'+k.scope+'</small>':'')+(shown!=null&&(o.provisionalDays||[]).length&&TC_KPIS.has(k.key)?'<small class="scope-note" title="尚未上傳 Power BI，先用 DMS 單量，上傳後自動更新">暫估</small>':'')+'</span><b>'+(shown??'資料不足')+'</b><em>'+esc(k.targetText(o.summary))+'</em></button>';
+      const scope=k.scope?'<small class="scope-note">'+k.scope+'</small>':'';
+      const estimate=shown!=null&&(o.provisionalDays||[]).length&&TC_KPIS.has(k.key)?
+        '<small class="scope-note" title="尚未上傳 Power BI，先用 DMS 單量，上傳後自動更新">暫估</small>':'';
+      return '<button type="button" class="uo-kpi '+cls+'" data-go="analysis"><span>'+k.label+scope+estimate+
+        '</span><b>'+(shown??'—')+'</b><em>'+esc(k.targetText(o.summary))+'</em></button>';
     }).join('');
   }
   function waitHtml(o){
@@ -91,8 +97,10 @@
   function acBars(acs){const max=Math.max(0,...acs.map(x=>x.count));return acs.map(x=>bar(x.name,x.count,max,x.count+' 筆','red')).join('');}
   function pendCard(rows,monthStart,o){
     if(!rows.length)return okBox(o.zero);
-    const r=rankByAc(rows,monthStart);
-    return '<div class="uo-split"><div>'+bigNum(rows.length,'筆',o.unit)+acBars(r.acs)+(r.other?'<p class="uo-note">另有 '+r.other+' 筆不在 AC 負責範圍（店號未對到）</p>':'')+'</div>'+
+    const r=rankByAc(rows,monthStart),centerRows=o.centerRows??rows;
+    const center=centerRows===rows?r:rankByAc(centerRows,monthStart);
+    const other=center.other?'<p class="uo-note">另有 '+center.other+' 筆不在 AC 負責範圍（店號未對到）</p>':'';
+    return '<div class="uo-split"><div>'+bigNum(centerRows.length,'筆',o.unit)+acBars(center.acs)+other+'</div>'+
       '<div><h3>待回饋最多的餐廳</h3>'+top3(r.top,x=>x.rows.length+' 筆',o.sub)+(r.tied?'<p class="uo-note">另有 '+r.tied+' 家同筆數並列</p>':'')+link(o.go,o.goText)+'</div></div>';
   }
   async function loadPendingVehicles(){
@@ -128,7 +136,12 @@
     loadPendingVehicles().then(v=>set('uoPendVehicle',vehicleHtml(v)),e=>fail('uoPendVehicle',e));
     window.OpsReport.readRows('t998_delay_orders','store_code,restaurant_name,record_date,status',q=>q.gte('record_date',m.start).lte('record_date',m.end).eq('status','pending'))
       .then(rows=>{rows=window.OpsMetrics.scopeData({delay:rows}).delay.filter(x=>!window.OpsMetrics.NON_DELIVERY_STORES.has(String(x.store_code)));
-        set('uoPendDelay',pendCard(rows,m.start,{zero:'餐廳都已回覆等餐原因',unit:'餐廳還沒回覆等餐原因',go:'ops:delay',goText:'到等餐紀錄',sub:x=>(x.ac?x.ac+'｜':'')+'最早 '+md(x.rows.map(r=>r.record_date).sort()[0])}));},e=>fail('uoPendDelay',e));
+        const centerRows=window.OpsMetrics.centerDelayRows(rows);
+        set('uoPendDelay',pendCard(rows,m.start,{centerRows,zero:'餐廳都已回覆等餐原因',
+          unit:'餐廳還沒回覆等餐原因',go:'ops:delay',goText:'到等餐紀錄',
+          sub:x=>(x.ac?x.ac+'｜':'')+'最早 '+md(x.rows.map(r=>r.record_date).sort()[0])
+        }));
+      },e=>fail('uoPendDelay',e));
     if(!window.OpsAReplyAdmin?.readRange)set('uoPendA','<p class="uo-empty">此中心尚未開通 A 項回饋（需先啟用新版月份回覆連結）</p>');
     else window.OpsAReplyAdmin.readRange(m).then(rows=>{rows=rows.filter(x=>x.reply?.status!=='completed');
         set('uoPendA',pendCard(rows,m.start,{zero:'餐廳都已回饋 A 項',unit:'0800 A 項還沒填根源與行動',go:'ops:a0800',goText:'到 A 項回饋',sub:x=>{const c=new Map();for(const r of x.rows){const k=r.item_1||'其他';c.set(k,(c.get(k)||0)+1);}return (x.ac?x.ac+'｜':'')+[...c].map(([k,n])=>k+' '+n).join('、');}}));},e=>fail('uoPendA',e));
