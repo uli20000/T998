@@ -466,9 +466,13 @@
     const fb=data.feedback||[],count=source=>fb.filter(x=>x.source_type===source).length,tc=summary.tc;
     const delays=M.centerDelayRows(data.delays);
     const sales=salesFor(data,r),salesComparison=M.compareSales(sales,dailySalesFor(data,previousRange(r,data)));
-    const centerComplaints=fb.filter(x=>x.source_type==='0800'&&M.inCenterTotal(x.store_code,x.restaurant_name)).length;
-    const complaintsComplete=r.start>='2026-10-01'&&r.end<='2026-10-31'&&
-      !data.reports.some(d=>d.score_excluded&&fb.some(x=>x.source_type==='0800'&&x.record_date===d.record_date));
+    // 0800／千單：只算已匯入 0800 的日期（期間起日～最後一筆 0800 日期），TC 取同一批日期；不計成績日兩邊都排除
+    const c0800=fb.filter(x=>x.source_type==='0800'&&M.inCenterTotal(x.store_code,x.restaurant_name)),
+      coverEnd=c0800.map(x=>String(x.record_date).slice(0,10)).sort().at(-1)||null,cut=coverEnd&&coverEnd<r.end?coverEnd:r.end;
+    const skip=new Set(data.reports.filter(d=>d.score_excluded).map(d=>d.record_date));
+    let complaintTc=null,centerComplaints=0;
+    if(coverEnd){try{complaintTc=cut===r.end?tc:model(data,{start:r.start,end:cut}).summary.tc;}catch(e){complaintTc=null;}
+      centerComplaints=c0800.filter(x=>{const d=String(x.record_date).slice(0,10);return d<=cut&&!skip.has(d);}).length;}
     return {summary,orders,delays,scoreDates,provisionalDays,sales,values:[
       ['SSSG',sales.value,'rate'],['SSTG',summary.sstg,'rate'],['TC',tc,'count'],['去年TC',summary.priorN?summary.prior:null,'count'],
       ['營業額',sales.sales,'decimal'],['去年營業額',sales.priorYearSales,'decimal'],['客單價',sales.averageTicket,'decimal'],
@@ -479,7 +483,7 @@
       ['TPLH',summary.tplh,'decimal'],['自送TC',tc===null?null:summary.nonfa,'count'],['FA佔比',tc?summary.faShare:null,'rate'],
       ['FA單數',tc!==null?summary.fa:null,'count'],['實際工時',summary.actualHours,'decimal'],['等餐登記',tc===null?null:delays.length,'count'],
       ['等餐／TC',tc?scoredDelays(data,scoreDates).length/tc:null,'rate'],['0800',tc===null?null:count('0800'),'count'],
-      ['0800／千單',tc&&complaintsComplete?centerComplaints/tc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']
+      ['0800／千單',complaintTc?centerComplaints/complaintTc*1000:null,'decimal'],['4128',tc===null?null:count('4128'),'count']
     ]};
   }
   function statMap(stats){return new Map(stats.values.map(x=>[x[0],x]));}
@@ -504,7 +508,9 @@
     const tiles=({2:'two-tiles',5:'five-tiles'})[keys.length]||'';
     return '<section class="analysis-panel score-overview"><h3>本期成績'+coverage+provNote+'</h3><div class="score-tiles '+tiles+'">'+keys.map(key=>{
       const item=values.get(key);
-      return '<article class="score-tile"><h4>'+escape(key)+(key==='D7'||key==='D25'?'<small class="scope-note">非獨立店</small>':'')+(prov.length&&TC_DEPENDENT.has(key)?'<small class="scope-note">暫估</small>':'')+'</h4><strong>'+escape(compareValue(item?.[1],null,item?.[2]))+'</strong></article>';
+      const estimate=prov.length&&TC_DEPENDENT.has(key)?'<small class="scope-note">暫估</small>':'';
+      return '<article class="score-tile"><h4>'+escape(key)+estimate+'</h4><strong>'+
+        escape(compareValue(item?.[1],null,item?.[2]))+'</strong></article>';
     }).join('')+'</div></section>';
   }
   function trackingCharts(computed){
@@ -890,7 +896,7 @@
       ['等餐登記',fmt(imp.sumNeed)+' 筆',fmt(centerStores.length)+' 家有登記'],
       ['最多的一家',most?.name||'—',most?fmt(most.need)+' 筆':''],['前三家占',pct(topRatio),'依筆數，不依比例']
     ]:[
-      [imp.label+' '+unit+(isRate?'（非獨立店）':''),pct(imp.center.value),imp.center.value===null?'':breakdown],
+      [imp.label+' '+unit+'',pct(imp.center.value),imp.center.value===null?'':breakdown],
       [isRate?'目標':'上限',pct(imp.target),imp.target===null?'':goalCount],
       ['中心缺口',imp.center.value===null||imp.target===null?'—':imp.gap?fmt(imp.gap)+' 單':'已達標',imp.gap&&imp.days>1?'每天約 '+fmt(imp.perDay,1)+' 單':''],
       ['達標方案',imp.gap?cutText:'—',imp.gap?plan:'']
@@ -915,7 +921,7 @@
     const worstPct=imp.stores.find(s=>s.pctRank===1&&s.share!==null);
     const note=worstPct&&imp.stores.indexOf(worstPct)>0?worstPct.name+'百分比最差，但'+(isRate?'有效單只有 '+fmt(worstPct.orders)+' 張':'訂單只有 '+fmt(worstPct.orders)+' 張')+'，補齊只多 '+fmt(worstPct.need)+' 單，排第 '+(imp.stores.indexOf(worstPct)+1)+'。':'';
     const acTable='<div class="scroll"><table class="table"><thead><tr><th>AC</th><th>'+(isCount?'有登記的店':'未達標店')+'</th><th>'+verb+'</th></tr></thead><tbody>'+imp.acs.map(a=>'<tr><td>'+escape(a.name)+'</td><td>'+fmt(a.stores)+'</td><td>'+fmt(a.need)+'</td></tr>').join('')+'</tbody></table></div>';
-    const formula=isCount?'等餐筆數＝等餐登記筆數（含未配對到訂單的登記）。':isRate?'還要多幾單＝有效單 ×'+pct(imp.target,0)+' − 已達成單（無條件進位），只列未達標的店；有效單＝非獨立店、非第三方、D7／D25 為 Y 或 N 的單。':'要少幾張＝FA 單 − 訂單 × '+pct(imp.target,0)+'（無條件捨去），只列超過上限的店。';
+    const formula=isCount?'等餐筆數＝等餐登記筆數（含未配對到訂單的登記）。':isRate?'還要多幾單＝有效單 ×'+pct(imp.target,0)+' − 已達成單（無條件進位），只列未達標的店；有效單＝非第三方、D7／D25 為 Y 或 N 的單。':'要少幾張＝FA 單 − 訂單 × '+pct(imp.target,0)+'（無條件捨去），只列超過上限的店。';
     return heading+tabs+'<p class="ins-lead">依「補齊這家能幫中心補回幾單」排序，不是依百分比。小店百分比再低，單量少，影響也小。</p>'+cards+
       '<div class="ins-how"><b>怎麼達標：</b>'+escape(how)+(note?' '+escape(note):'')+'</div>'+
       '<div class="ins-grid2"><section class="analysis-panel"><h3>餐廳｜依影響度</h3>'+table+
@@ -1247,7 +1253,7 @@
       const result=!inSpan?'<span class="ins-faint">超出讀取範圍</span>':!complete?'<span class="ac-tag ac-wait">追蹤中</span>':better===null?'—':better>step?'<span class="ac-tag ac-good">有改善</span>':better<-step?'<span class="ac-tag ac-bad">沒改善</span>':'<span class="ac-tag">變化小</span>';
       return '<tr><td>'+escape(S.weekLabel(a.week_start))+'</td><td class="ins-name">'+escape(a.target_label)+'</td><td class="ins-name">'+escape(a.action)+'</td><td>'+escape(metricNames[k]||k)+'</td><td>'+fmtMetric(k,b)+'</td><td>'+fmtMetric(k,f)+'</td><td>'+fmtDelta(k,d)+'</td><td>'+result+'</td><td>'+escape(a.owner||'—')+'</td><td><button type="button" class="ins-link" data-archive="'+a.id+'">封存</button></td></tr>';}).join('');
     const form='<form id="actionForm" class="ac-form"><label>週次<input type="date" name="week_start" value="'+thisWeek+'" required></label><label>對象<select name="store_code"><option value="">中心</option>'+stores.map(s=>'<option value="'+escape(s.store_code)+'"'+(pre.store===s.store_code?' selected':'')+'>'+escape(s.store_code+' '+s.restaurant_name)+'</option>').join('')+'</select></label><label>指標<select name="metric_key">'+Object.entries(metricNames).map(([k,l])=>'<option value="'+k+'"'+(pre.metric===k?' selected':'')+'>'+l+'</option>').join('')+'</select></label><label class="ac-wide">行動<input name="action" maxlength="500" required placeholder="例如：出餐前 5 分鐘通知外送員"></label><label>負責<input name="owner" list="acList" maxlength="40"><datalist id="acList">'+acs.map(a=>'<option value="'+escape(a)+'">').join('')+'</datalist></label><button type="submit" class="ins-link primary">新增行動</button><span class="wk-status" id="actionStatus" role="status"></span></form>';
-    const tracking='<section class="analysis-panel"><h3>行動追蹤與成效</h3><p class="ins-foot" style="margin-top:0">每筆行動記下後，系統自動比較「行動前兩週」與「行動後兩週」（從行動那週的星期一算起）。</p>'+(actions===null?'<div class="empty">行動清單讀取失敗：'+escape(error)+'（資料表可能尚未建立）</div>':form+(actions.length?'<div class="scroll"><table class="table ins-table ac-table"><thead><tr><th>週次</th><th>對象</th><th>行動</th><th>指標</th><th>行動前</th><th>行動後</th><th>變化</th><th>結果</th><th>負責</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty">還沒有行動，從上面新增第一筆。</div>'))+'<p class="ins-foot ins-explain">有改善＝往目標方向超過 1 個百分點（TPLH 0.1、等餐 1 筆）；行動後還不滿兩週顯示「追蹤中」。中心的 D7／D25 只算非獨立店。</p></section>';
+    const tracking='<section class="analysis-panel"><h3>行動追蹤與成效</h3><p class="ins-foot" style="margin-top:0">每筆行動記下後，系統自動比較「行動前兩週」與「行動後兩週」（從行動那週的星期一算起）。</p>'+(actions===null?'<div class="empty">行動清單讀取失敗：'+escape(error)+'（資料表可能尚未建立）</div>':form+(actions.length?'<div class="scroll"><table class="table ins-table ac-table"><thead><tr><th>週次</th><th>對象</th><th>行動</th><th>指標</th><th>行動前</th><th>行動後</th><th>變化</th><th>結果</th><th>負責</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty">還沒有行動，從上面新增第一筆。</div>'))+'<p class="ins-foot ins-explain">有改善＝往目標方向超過 1 個百分點（TPLH 0.1、等餐 1 筆）；行動後還不滿兩週顯示「追蹤中」。</p></section>';
     const a0=fullWeek(r.end),b0={start:M.addDays(a0.start,-7),end:M.addDays(a0.end,-7)};
     const compare='<section class="analysis-panel"><h3>自訂比較</h3><form id="compareForm" class="cmp-form"><span>A</span><input type="date" name="as" value="'+a0.start+'"><span>–</span><input type="date" name="ae" value="'+a0.end+'"><b>vs</b><span>B</span><input type="date" name="bs" value="'+b0.start+'"><span>–</span><input type="date" name="be" value="'+b0.end+'"><button type="submit" class="ins-link primary">比較</button></form><div class="cmp-quick">快速選 B：<button type="button" class="ins-link" data-cmp="7">上週</button><button type="button" class="ins-link" data-cmp="28">4 週前</button><button type="button" class="ins-link" data-cmp="364">去年同週</button></div><div id="compareOut"></div></section>';
     return tracking+compare;
@@ -1260,7 +1266,7 @@
       const keys=[['tc','TC'],['d7','D7'],['d25','D25'],['fa','FA 佔比'],['waiting','等餐筆數'],['tplh','TPLH'],['sstg','SSTG']];
       const diff=(k,a,b)=>a===null||b===null||a===undefined||b===undefined?'—':k==='tc'?(b?((a/b-1)>=0?'+':'−')+pct(Math.abs(a/b-1)):'—'):fmtDelta(k,a-b);
       const v=(k,m)=>{const R=m===ma?A:B;return k==='tc'?fmt(m.tc):fmtMetric(k,m[k])+(k==='tplh'&&m.hoursDays!==null?' <small class="ins-faint">'+m.hoursDays+'／'+S.dates(R.start,R.end).length+' 天</small>':'');};
-      out.innerHTML='<div class="scroll"><table class="table"><thead><tr><th>指標</th><th>A '+escape(A.start.slice(5)+'–'+A.end.slice(5))+'</th><th>B '+escape(B.start.slice(5)+'–'+B.end.slice(5))+'</th><th>差（A−B）</th></tr></thead><tbody>'+keys.map(([k,l])=>'<tr><th>'+l+'</th><td>'+v(k,ma)+'</td><td>'+v(k,mb)+'</td><td>'+diff(k,ma[k],mb[k])+'</td></tr>').join('')+'</tbody></table></div><p class="ins-foot ins-explain">D7／D25 只算非獨立店；TPLH 後面的小字是有工時的天數。「—」＝沒有資料。</p>';
+      out.innerHTML='<div class="scroll"><table class="table"><thead><tr><th>指標</th><th>A '+escape(A.start.slice(5)+'–'+A.end.slice(5))+'</th><th>B '+escape(B.start.slice(5)+'–'+B.end.slice(5))+'</th><th>差（A−B）</th></tr></thead><tbody>'+keys.map(([k,l])=>'<tr><th>'+l+'</th><td>'+v(k,ma)+'</td><td>'+v(k,mb)+'</td><td>'+diff(k,ma[k],mb[k])+'</td></tr>').join('')+'</tbody></table></div><p class="ins-foot ins-explain">TPLH 後面的小字是有工時的天數。「—」＝沒有資料。</p>';
     }catch(e){out.innerHTML='<div class="empty">讀取失敗：'+escape(e.message||e)+'</div>';}
   }
   async function targetsPage(){
@@ -1344,7 +1350,11 @@
       const body=days.map(d=>{const c=cells.find(x=>x.date===d&&x.code===store.code),skip=excluded.has(d),x=c||{tc:0,fa:0,d7Y:0,d7N:0,d25Y:0,d25N:0,wait:0},v=skip?null:I.value(x,k),w=city?weatherRow(d,city):null,rain=w?Number(w.precipitation)||0:null;
         const cnt=k==='fa'?fmt(x.fa):k==='waiting'?'':fmt(x[k+'Y']);
         return '<tr><th>'+(x.tc&&!skip?'<button type="button" class="dr-row" data-drill-date="'+d+'">'+escape(Number(d.slice(5,7))+'/'+Number(d.slice(8,10))+' '+'日一二三四五六'[new Date(d+'T12:00:00Z').getUTCDay()])+'</button>':escape(Number(d.slice(5,7))+'/'+Number(d.slice(8,10))+' '+'日一二三四五六'[new Date(d+'T12:00:00Z').getUTCDay()]))+(skip?' <small>不計成績</small>':'')+'</th><td>'+(skip?'—':fmt(x.tc))+'</td>'+(countHead?'<td>'+(skip?'—':cnt)+'</td>':'')+'<td class="'+drillCls(k,v)+'">'+drillFmt(k,v)+'</td><td>'+(skip?'—':fmt(x.wait))+'</td><td>'+(rain===null?'—':rain>=1?'🌧️ '+fmt(rain,1)+' mm':'—')+'</td></tr>';}).join('');
-      level='<h3>'+name(store)+'｜逐日</h3><div class="scroll"><table class="table dr-table"><thead><tr><th>日期</th><th>TC</th>'+(countHead?'<th>'+countHead+'</th>':'')+'<th>'+valHead+'</th><th>等餐登記</th><th>雨量'+(city?'（'+escape(city)+'）':'')+'</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(independent.has(store.code)&&(k==='d7'||k==='d25')?'<p class="ins-foot ins-explain">這家是獨立店：中心 D7／D25 不算它，這裡只顯示它自己的數字。</p>':'');
+      const scopeNote=!inCenter(store)&&(k==='d7'||k==='d25')
+        ?'<p class="ins-foot ins-explain">這家是獨立店：中心 D7／D25 不算它，這裡只顯示它自己的數字。</p>':'';
+      level='<h3>'+name(store)+'｜逐日</h3><div class="scroll"><table class="table dr-table"><thead><tr><th>日期</th><th>TC</th>'+
+        (countHead?'<th>'+countHead+'</th>':'')+'<th>'+valHead+'</th><th>等餐登記</th><th>雨量'+(city?'（'+escape(city)+'）':'')+
+        '</th></tr></thead><tbody>'+body+'</tbody></table></div>'+scopeNote;
     }else{
       const reasons=new Map();for(const w of data.delays||[])if(String(w.record_date)===D.date&&String(w.store_code||'')===store.code)reasons.set(orderTail(w.order_number),String(w.reason||'').trim()||'未填原因');
       const dayOrders=orders.filter(o=>o.date===D.date&&o.code===store.code).sort((a,b)=>(a.moment??Infinity)-(b.moment??Infinity));
@@ -1369,7 +1379,7 @@
     const legend=k==='waiting'?'顏色越深＝等餐登記越多（只算對得到訂單的登記）。只列外送時段 '+dh.start+'–'+dh.end+(outHours?'，時段外 '+fmt(outHours)+' 單未列入':'')+'。':'紅＝未達目標、綠＝達標，差越多顏色越深；目標 '+(k==='fa'?'≤':'')+pct(drillTarget(k))+'。'+'只列外送時段 '+dh.start+'–'+dh.end+(outHours?'，時段外 '+fmt(outHours)+' 單未列入':'')+'。';
     return '<p class="ins-lead">從中心一路往下看到單筆訂單：點表格裡的名稱往下一層，點上方路徑回上一層。下方熱圖跟著目前這一層。</p>'+metricBtns+crumbs+
       '<section class="analysis-panel">'+level+'</section>'+
-      '<section class="analysis-panel"><h3>'+valHead+' 時段 × 星期熱圖（'+scopeLabel+'）</h3>'+heat+'<p class="ins-lead" style="margin:10px 0 0">'+escape(worstText)+'</p><p class="ins-foot ins-explain">'+legend+' 時段依落單時間；格子數字為 '+(k==='waiting'?'筆數':'百分比')+'，「·」＝單數不足 '+hm.minOrders+' 張不判斷。'+(hm.skipped?'有 '+fmt(hm.skipped)+' 張單沒有落單時間，未列入。':'')+(k==='d7'||k==='d25'?'D7／D25 只算非獨立店、非第三方單。':'')+'</p></section>';
+      '<section class="analysis-panel"><h3>'+valHead+' 時段 × 星期熱圖（'+scopeLabel+'）</h3>'+heat+'<p class="ins-lead" style="margin:10px 0 0">'+escape(worstText)+'</p><p class="ins-foot ins-explain">'+legend+' 時段依落單時間；格子數字為 '+(k==='waiting'?'筆數':'百分比')+'，「·」＝單數不足 '+hm.minOrders+' 張不判斷。'+(hm.skipped?'有 '+fmt(hm.skipped)+' 張單沒有落單時間，未列入。':'')+(k==='d7'||k==='d25'?'D7／D25 只算非第三方單。':'')+'</p></section>';
   }
   function drillClick(t){
     const D=state.drill;

@@ -22,8 +22,8 @@
       targetText:s=>s.cmpForecast==null?'預估資料不足':(s.toDate?'截至今日預估 ':'預估 ')+num(s.cmpForecast),
       ok:(_v,s)=>s.tcAchievement==null?null:s.tcAchievement>=1},
     {key:'sstg',label:'SSTG',fmt:pct,...goal('sstg',v=>(v>0?'+':'')+percent(v),min)},
-    {key:'d7',label:'D7',scope:'非獨立店',fmt:pct,...goal('d7',percent,min)},
-    {key:'d25',label:'D25',scope:'非獨立店',fmt:pct,...goal('d25',percent,min)},
+    {key:'d7',label:'D7',fmt:pct,...goal('d7',percent,min)},
+    {key:'d25',label:'D25',fmt:pct,...goal('d25',percent,min)},
     {key:'faShare',label:'FA 佔比',fmt:pct,...goal('faShareMax',v=>'≤'+percent(v),max)},
     {key:'tplh',label:'TPLH',fmt:v=>num(v,2),...goal('tplh',v=>num(v,1),min)}
   ];

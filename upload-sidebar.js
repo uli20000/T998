@@ -11,7 +11,8 @@
   catch(e){tab=crypto.randomUUID();}
   const key=scope+'|'+tab,activeKey='upload-active|'+scope;
   const isAdmin=!!E('adminApp'),labels={scores:'每日成績',staffing:'TC／工時',bi:'BI 週 SSSG',feedback:'GES／0800／4128'};
-  let queue=[],busy=false,storage;
+  let queue=[],done=[],busy=false,storage;
+  const doneKey='done|'+scope;
   // 獨立上傳頁：佔用主內容區（側欄、頂部列保留），不插進總覽或其他頁面。
   const frame=side.closest('.ui-frame'),main=frame.querySelector('.ui-main'),content=main.querySelector('.ui-content');
   const TYPES=[['scores','每日成績','ByDate＋ByOrder 各一份，日期範圍相同'],['staffing','TC／工時','每日 TC、實際工時，可放同一個 Excel'],['bi','BI 週 SSSG','含 SSSG%_wk 的 Power BI 週檔，可用 CSV'],['feedback','GES／0800／4128','GES 問卷、0800 客訴、4128 工單']];
@@ -21,7 +22,7 @@
       '<section class="us-card us-pick"><h2>選擇檔案</h2><label class="us-picker"><b>＋ 選擇檔案或拖放到這裡</b><small>可一次選多個 Excel／CSV，系統依內容自動分配</small><input type="file" multiple accept=".xlsx,.xls,.xlsm,.csv" aria-label="上傳並自動分配檔案"></label>'+
         '<p class="us-message" role="status" aria-live="polite"></p>'+
         '<ul class="us-types">'+TYPES.map(([k,l,d])=>'<li data-route="'+k+'"><b>'+l+'</b><small>'+d+'</small><em></em></li>').join('')+'</ul></section>'+
-      '<section class="us-card us-queue"><h2>待辦檔案</h2><p class="us-empty us-queue-empty">尚未選擇檔案</p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button></section>'+
+      '<section class="us-card us-queue"><h2>待辦檔案</h2><p class="us-empty us-queue-empty">尚未選擇檔案</p><div class="us-list"></div><button type="button" class="us-clear" hidden>清空待辦檔案</button><div class="us-done" hidden><h3>最近已匯入</h3><ul></ul></div></section>'+
     '</div>'+
     '<section class="us-card us-workspace" id="uploadWorkspace"><h2>核對與匯入</h2><p id="uploadWorkspaceStatus" class="us-ws-status" role="status"></p><p class="us-empty us-ws-empty">在待辦檔案按「開啟核對」後，預覽比對與匯入結果會留在這裡。</p><div class="us-slot"></div></section>';
   const trigger=document.createElement('button');trigger.type='button';trigger.className='ui-item us-trigger';
@@ -74,9 +75,28 @@
     const db=await openStorage();
     return new Promise((resolve,reject)=>{const tx=db.transaction('queues','readwrite');tx.objectStore('queues').put(value,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
   }
-  async function restore(){
+  async function restore(k=key){
     const db=await openStorage();
-    return new Promise((resolve,reject)=>{const r=db.transaction('queues').objectStore('queues').get(key);r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});
+    return new Promise((resolve,reject)=>{const r=db.transaction('queues').objectStore('queues').get(k);r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});
+  }
+  async function persistDone(value){
+    const db=await openStorage();
+    return new Promise((resolve,reject)=>{const tx=db.transaction('queues','readwrite');tx.objectStore('queues').put(value,doneKey);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+  }
+  // 匯入成功後：移出待辦、記到「最近已匯入」（本機保留最近 20 筆）
+  const RESULT={staffing:['staffingImportMessage',t=>/^已匯入/.test(t)],scores:['opsScoreMessage',t=>/^完成匯入/.test(t)],
+    feedback:['opsFeedbackMessage',t=>/^完成匯入/.test(t)],bi:['biStatus',t=>/已正式匯入並讀回|無重複/.test(t)&&!/失敗|不一致/.test(t)]};
+  function watchResult(group){
+    const [id,ok]=RESULT[group.route]||[];const node=id&&E(id);if(!node)return;
+    const before=node.textContent;
+    const obs=new MutationObserver(()=>{const t=node.textContent.trim();if(t===before||!ok(t))return;obs.disconnect();markDone(group,t).catch(fail);});
+    obs.observe(node,{childList:true,characterData:true,subtree:true});
+  }
+  async function markDone(group,summary){
+    const at=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
+    done=[{route:group.route,names:group.items.map(x=>x.file.name),at,summary:summary.split('\n')[0].slice(0,80)},...done].slice(0,20);
+    queue=queue.filter(x=>x.id!==group.id);await persist(queue);await persistDone(done);render();
+    message.textContent='已匯入並移出待辦：'+group.items.map(x=>x.file.name).join('、');
   }
   function setBusy(value){busy=value;picker.disabled=value;clear.disabled=value;list.querySelectorAll('button').forEach(b=>b.disabled=value);}
   function render(){
@@ -94,6 +114,8 @@
         const next=queue.filter(x=>x.id!==group.id);try{await persist(next);queue=next;render();}catch(e){fail(e);}
       };actions.append(remove);card.append(actions);list.append(card);
     }
+    const box=page.querySelector('.us-done'),ul=box.querySelector('ul');ul.replaceChildren();box.hidden=!done.length;
+    for(const d of done){const li=document.createElement('li');li.textContent=d.at+'｜'+(labels[d.route]||'')+'｜'+d.names.join('、')+'｜'+d.summary;ul.append(li);}
     setBusy(busy);
   }
   function fail(e){message.textContent='處理失敗：'+(e.message||e)+'；原檔保留，請重試。';if(gateOpen())setPage(true,{focus:false});}
@@ -177,13 +199,13 @@
         E('biPreview').replaceChildren();
       }
     }
-    reveal(workspace);
+    reveal(workspace);watchResult(group);
     group.status='已開啟核對；預覽與結果在「核對與匯入」';await persist(queue);render();
   }
   // Resume a destination only after the existing sign-in gate has opened.
   async function start(){
     try{
-      queue=await restore();
+      queue=await restore();try{done=await restore(doneKey);}catch(e){done=[];}
       // Recheck files rejected by the previous mixed-format classifier after this update.
       if(queue.some(g=>g.items.some(i=>i.error?.includes('同檔含多種匯入格式')))){
         const retryFiles=queue.flatMap(g=>g.items.map(i=>i.file));queue=[];await selectFiles(retryFiles);

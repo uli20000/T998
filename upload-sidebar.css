@@ -74,3 +74,7 @@
 #opsScoresPanel .ops-upload-block :is(.ops-score-upload,.ui-drop-tip){display:none!important}
 .ops-upload-block .ops-go-upload{display:none}
 #opsScoresPanel .ops-upload-block .ops-go-upload{display:inline-flex;margin:4px 0 8px}
+.us-done{margin-top:12px;padding-top:10px;border-top:1px solid var(--ui-line)}
+.us-done h3{margin:0 0 6px;font-size:15px;font-weight:800}
+.us-done ul{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.us-done li{font-size:13px;line-height:1.5;color:var(--ui-muted);overflow-wrap:anywhere}
