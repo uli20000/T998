@@ -284,9 +284,9 @@
     const G=window.GesComments,rows=all.filter(x=>x.source_type==='GES_COMMENT').sort((a,b)=>String(b.raw_fields?.時間||b.record_date).localeCompare(String(a.raw_fields?.時間||a.record_date)));
     if(!G)return '';
     const tags=x=>G.tagText(x.content);
-    // 五大項＋總數＝6 格，格子大小一致（桌面 6×1、平板 3×2、手機 2×3）；有意見時 0 則就是 0
-    const tile=(label,value)=>'<div class="kpi"><div class="kpi-label">'+escape(label)+'</div><div class="kpi-value">'+value+'</div></div>';
-    const countTiles=rows.length?'<div class="kpis ges-kpis">'+G.summarize(rows).map(x=>tile(x.label,fmt(x.count))).join('')+tile('意見總數',fmt(rows.length))+'</div>':'<div class="empty">此期間沒有 GES 意見</div>';
+    // 格子只顯示代碼（H／A／P／S／Other），滑鼠移上去看全名；五大項＋總數＝6 格，格子大小一致（桌面 6×1、平板 3×2、手機 2×3）；有意見時 0 則就是 0
+    const tile=(label,value,title)=>'<div class="kpi"'+(title?' title="'+escape(title)+'"':'')+'><div class="kpi-label">'+escape(label)+'</div><div class="kpi-value">'+value+'</div></div>';
+    const countTiles=rows.length?'<div class="kpis ges-kpis">'+G.summarize(rows).map(x=>tile(x.label.split(' ')[0],fmt(x.count),x.label)).join('')+tile('總數',fmt(rows.length))+'</div>':'<div class="empty">此期間沒有 GES 意見</div>';
     const detail=table(['日期','餐廳','評級','分類','意見'],rows.map(x=>[x.record_date.slice(5).replace('-','/'),x.restaurant_name||'—',x.feedback_kind||'—',tags(x),String(x.content||'').replace(/\s+/g,' ')]));
     return '<div class="analysis-grid ges-comments"><section class="analysis-panel"><h3>GES 意見分類</h3>'+countTiles+'</section><section class="analysis-panel"><h3>GES 意見</h3>'+detail+'</section></div>';
   }
