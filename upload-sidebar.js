@@ -86,11 +86,14 @@
   // 匯入成功後：移出待辦、記到「最近已匯入」（本機保留最近 20 筆）
   const RESULT={staffing:['staffingImportMessage',t=>/^已匯入/.test(t)],scores:['opsScoreMessage',t=>/^完成匯入/.test(t)],
     feedback:['opsFeedbackMessage',t=>/^完成匯入/.test(t)],bi:['biStatus',t=>/已正式匯入並讀回|無重複/.test(t)&&!/失敗|不一致/.test(t)]};
+  let activeWatch=null;
+  // 只追蹤最後開啟核對的那一批；改開別批時，前一批的監看會先停止，避免把沒匯入的檔案也標成已匯入
   function watchResult(group){
+    if(activeWatch){activeWatch.disconnect();activeWatch=null;}
     const [id,ok]=RESULT[group.route]||[];const node=id&&E(id);if(!node)return;
     const before=node.textContent;
-    const obs=new MutationObserver(()=>{const t=node.textContent.trim();if(t===before||!ok(t))return;obs.disconnect();markDone(group,t).catch(fail);});
-    obs.observe(node,{childList:true,characterData:true,subtree:true});
+    const obs=new MutationObserver(()=>{const t=node.textContent.trim();if(t===before||!ok(t))return;obs.disconnect();if(activeWatch===obs)activeWatch=null;markDone(group,t).catch(fail);});
+    obs.observe(node,{childList:true,characterData:true,subtree:true});activeWatch=obs;
   }
   async function markDone(group,summary){
     const at=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
